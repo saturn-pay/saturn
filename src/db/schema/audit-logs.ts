@@ -5,6 +5,7 @@ export const auditLogs = pgTable('audit_logs', {
   id: text('id').primaryKey(),
   agentId: text('agent_id').notNull().references(() => agents.id),
   serviceSlug: text('service_slug').notNull(),
+  capability: text('capability'),
   operation: text('operation'),
   requestBody: jsonb('request_body'),
   policyResult: text('policy_result', { enum: ['allowed', 'denied'] }).notNull(),

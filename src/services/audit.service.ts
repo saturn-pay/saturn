@@ -11,6 +11,7 @@ import { invalidateDailySpendCache } from './policy.service.js';
 export interface AuditLogParams {
   agentId: string;
   serviceSlug: string;
+  capability?: string;
   operation?: string;
   requestBody?: unknown;
   policyResult: 'allowed' | 'denied';
@@ -88,6 +89,7 @@ export async function logProxyCall(params: AuditLogParams): Promise<string> {
     id,
     agentId: params.agentId,
     serviceSlug: params.serviceSlug,
+    capability: params.capability ?? null,
     operation: params.operation ?? null,
     requestBody: sanitizedBody ?? null,
     policyResult: params.policyResult,

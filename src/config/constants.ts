@@ -31,6 +31,7 @@ export const ID_PREFIXES = {
   transaction: 'txn',
   auditLog: 'aud',
   rateSnapshot: 'rts',
+  submission: 'sub',
 } as const;
 
 export const DAILY_SPEND_CACHE_TTL_MS = 60_000;

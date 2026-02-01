@@ -9,6 +9,8 @@ import { errorHandler } from './middleware/error-handler.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { router } from './routes/index.js';
 import { initAdapters } from './services/proxy/adapter-registry.js';
+import { initCapabilities } from './services/proxy/capability-registry.js';
+import { loadApprovedServices } from './services/registry.service.js';
 import { runRateUpdate, startRateUpdater } from './jobs/rate-updater.js';
 import { startInvoiceWatcher } from './jobs/invoice-watcher.js';
 
@@ -52,6 +54,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.use('/v1/capabilities', proxyLimiter);
 app.use('/v1/proxy', proxyLimiter);
 app.use('/v1', router);
 
@@ -68,6 +71,12 @@ async function start(): Promise<void> {
 
     initAdapters();
     logger.info('Service adapters initialized');
+
+    initCapabilities();
+    logger.info('Capability registry initialized');
+
+    await loadApprovedServices();
+    logger.info('Community services loaded');
 
     try {
       await runRateUpdate();

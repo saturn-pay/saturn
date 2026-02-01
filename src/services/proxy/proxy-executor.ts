@@ -23,6 +23,7 @@ export interface ProxyCallParams {
   policy: Policy;
   serviceSlug: string;
   requestBody: unknown;
+  capability?: string;
 }
 
 export interface ProxyCallResult {
@@ -42,7 +43,7 @@ export interface ProxyCallResult {
 // ---------------------------------------------------------------------------
 
 export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCallResult> {
-  const { agent, wallet, policy, serviceSlug, requestBody } = params;
+  const { agent, wallet, policy, serviceSlug, requestBody, capability } = params;
 
   // 1. Resolve adapter
   const adapter = getAdapter(serviceSlug);
@@ -58,6 +59,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
     agent,
     policy,
     serviceSlug,
+    capability,
     quotedSats,
   });
 
@@ -65,6 +67,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
     await auditService.logProxyCall({
       agentId: agent.id,
       serviceSlug,
+      capability,
       operation,
       requestBody,
       policyResult: 'denied',
@@ -101,6 +104,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
     const auditId = await auditService.logProxyCall({
       agentId: agent.id,
       serviceSlug,
+      capability,
       operation,
       requestBody,
       policyResult: 'allowed',
@@ -132,6 +136,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
     await auditService.logProxyCall({
       agentId: agent.id,
       serviceSlug,
+      capability,
       operation,
       requestBody,
       policyResult: 'allowed',

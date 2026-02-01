@@ -62,7 +62,7 @@ export async function getDailySpend(agentId: string): Promise<number> {
  * Checks are executed in order; the first failure short-circuits.
  */
 export async function evaluate(request: PolicyCheckRequest): Promise<PolicyCheckResult> {
-  const { agent, policy, serviceSlug, quotedSats } = request;
+  const { agent, policy, serviceSlug, capability, quotedSats } = request;
 
   // 1. Agent must be active
   if (agent.status !== 'active') {
@@ -84,12 +84,22 @@ export async function evaluate(request: PolicyCheckRequest): Promise<PolicyCheck
     return { allowed: false, reason: 'service_not_allowed' };
   }
 
-  // 5. Per-call limit
+  // 5. Denied capabilities
+  if (capability && policy.deniedCapabilities && policy.deniedCapabilities.includes(capability)) {
+    return { allowed: false, reason: 'capability_denied' };
+  }
+
+  // 6. Allowed capabilities (if set, capability must be in the list)
+  if (capability && policy.allowedCapabilities && !policy.allowedCapabilities.includes(capability)) {
+    return { allowed: false, reason: 'capability_not_allowed' };
+  }
+
+  // 7. Per-call limit
   if (policy.maxPerCallSats !== null && quotedSats > policy.maxPerCallSats) {
     return { allowed: false, reason: 'per_call_limit_exceeded' };
   }
 
-  // 6. Daily spend limit
+  // 8. Daily spend limit
   if (policy.maxPerDaySats !== null) {
     const dailySpend = await getDailySpend(agent.id);
     if (dailySpend + quotedSats > policy.maxPerDaySats) {
@@ -97,6 +107,6 @@ export async function evaluate(request: PolicyCheckRequest): Promise<PolicyCheck
     }
   }
 
-  // 7. All checks passed
+  // 9. All checks passed
   return { allowed: true };
 }

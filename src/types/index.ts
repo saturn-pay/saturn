@@ -24,6 +24,7 @@ export interface PolicyCheckRequest {
   agent: Agent;
   policy: Policy;
   serviceSlug: string;
+  capability?: string;
   quotedSats: number;
 }
 

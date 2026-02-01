@@ -2,7 +2,9 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { requireAgent } from '../middleware/auth.js';
 import { executeProxyCall } from '../services/proxy/proxy-executor.js';
-import { ValidationError } from '../lib/errors.js';
+import { ValidationError, NotFoundError } from '../lib/errors.js';
+import { resolveProviderSlug, isCapability } from '../services/proxy/capability-registry.js';
+import { normalize } from '../services/proxy/normalizers/index.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -18,6 +20,69 @@ function paramString(value: string | string[] | undefined): string {
 // ---------------------------------------------------------------------------
 
 export const proxyRouter = Router();
+
+// ---------------------------------------------------------------------------
+// Capability Router — POST /capabilities/:capability
+// ---------------------------------------------------------------------------
+
+export const capabilityRouter = Router();
+
+capabilityRouter.post('/:capability', requireAgent, async (req: Request, res: Response) => {
+  const capability = paramString(req.params.capability);
+  const agent = req.agent!;
+  const wallet = req.wallet;
+  const policy = req.policy;
+
+  if (!wallet) {
+    throw new ValidationError('Agent has no wallet configured');
+  }
+
+  if (!policy) {
+    throw new ValidationError('Agent has no policy configured');
+  }
+
+  if (!isCapability(capability)) {
+    throw new NotFoundError('Capability', capability);
+  }
+
+  const serviceSlug = resolveProviderSlug(capability);
+  if (!serviceSlug) {
+    throw new NotFoundError('Provider for capability', capability);
+  }
+
+  const result = await executeProxyCall({
+    agent,
+    wallet,
+    policy,
+    serviceSlug,
+    requestBody: req.body,
+    capability,
+  });
+
+  // Set Saturn metadata headers
+  res.set('X-Saturn-Audit-Id', result.metadata.auditId);
+  res.set('X-Saturn-Quoted-Sats', String(result.metadata.quotedSats));
+  res.set('X-Saturn-Charged-Sats', String(result.metadata.chargedSats));
+  res.set('X-Saturn-Balance-After', String(result.metadata.balanceAfter));
+  res.set('X-Saturn-Capability', capability);
+  res.set('X-Saturn-Provider', serviceSlug);
+
+  // Forward any upstream headers
+  if (result.headers) {
+    for (const [key, value] of Object.entries(result.headers)) {
+      res.set(key, value);
+    }
+  }
+
+  // Normalize response for capability endpoints
+  const normalized = normalize(capability, serviceSlug, result.data);
+
+  res.status(result.status).json(normalized);
+});
+
+// ---------------------------------------------------------------------------
+// Legacy Proxy Router — POST /proxy/:serviceSlug (backward compat)
+// ---------------------------------------------------------------------------
 
 // POST /proxy/:serviceSlug — execute a proxied API call on behalf of an agent
 proxyRouter.post('/:serviceSlug', requireAgent, async (req: Request, res: Response) => {

@@ -8,11 +8,13 @@ import {
   transactions,
   auditLogs,
   rateSnapshots,
+  serviceSubmissions,
 } from '../db/schema/index.js';
 import { eq, and, gte, lte, sql, desc, count, sum, avg } from 'drizzle-orm';
 import { requireAccount } from '../middleware/auth.js';
 import { getCurrentRate } from '../services/pricing.service.js';
-import { NotFoundError } from '../lib/errors.js';
+import { NotFoundError, ValidationError } from '../lib/errors.js';
+import { approveSubmission, rejectSubmission } from '../services/registry.service.js';
 
 function paramString(value: string | string[] | undefined): string {
   if (Array.isArray(value)) return value[0];
@@ -341,4 +343,70 @@ adminRouter.get('/rates', async (_req: Request, res: Response) => {
     current,
     history,
   });
+});
+
+// ---------------------------------------------------------------------------
+// GET /registry/submissions — list all submissions (optionally filter by status)
+// ---------------------------------------------------------------------------
+
+adminRouter.get('/registry/submissions', async (req: Request, res: Response) => {
+  const status = req.query.status as string | undefined;
+
+  const conditions = [];
+  if (status) {
+    conditions.push(eq(serviceSubmissions.status, status as any));
+  }
+
+  const rows = await db
+    .select()
+    .from(serviceSubmissions)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(serviceSubmissions.createdAt));
+
+  res.json(rows);
+});
+
+// ---------------------------------------------------------------------------
+// GET /registry/submissions/:id — single submission detail
+// ---------------------------------------------------------------------------
+
+adminRouter.get('/registry/submissions/:id', async (req: Request, res: Response) => {
+  const submissionId = paramString(req.params.id);
+
+  const [submission] = await db
+    .select()
+    .from(serviceSubmissions)
+    .where(eq(serviceSubmissions.id, submissionId));
+
+  if (!submission) {
+    throw new NotFoundError('Submission', submissionId);
+  }
+
+  res.json(submission);
+});
+
+// ---------------------------------------------------------------------------
+// PATCH /registry/submissions/:id — approve or reject
+// ---------------------------------------------------------------------------
+
+adminRouter.patch('/registry/submissions/:id', async (req: Request, res: Response) => {
+  const submissionId = paramString(req.params.id);
+  const { status, reviewerNotes } = req.body;
+
+  if (!status || !['approved', 'rejected'].includes(status)) {
+    throw new ValidationError('status must be "approved" or "rejected"');
+  }
+
+  if (status === 'approved') {
+    await approveSubmission(submissionId, reviewerNotes);
+  } else {
+    await rejectSubmission(submissionId, reviewerNotes);
+  }
+
+  const [updated] = await db
+    .select()
+    .from(serviceSubmissions)
+    .where(eq(serviceSubmissions.id, submissionId));
+
+  res.json(updated);
 });

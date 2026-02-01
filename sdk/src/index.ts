@@ -5,7 +5,9 @@ import { PoliciesResource } from './resources/policies.js';
 import { WalletsResource } from './resources/wallets.js';
 import { ServicesResource } from './resources/services.js';
 import { ProxyResource } from './resources/proxy.js';
+import { CapabilitiesResource } from './resources/capabilities.js';
 import { AdminResource } from './resources/admin.js';
+import { RegistryResource } from './resources/registry.js';
 import type { SaturnConfig } from './types.js';
 
 const DEFAULT_BASE_URL = 'https://api.saturn-pay.com';
@@ -17,7 +19,9 @@ export class Saturn {
   public readonly wallet: WalletsResource;
   public readonly services: ServicesResource;
   public readonly proxy: ProxyResource;
+  public readonly capabilities: CapabilitiesResource;
   public readonly admin: AdminResource;
+  public readonly registry: RegistryResource;
 
   constructor(config: SaturnConfig) {
     const client = new HttpClient({
@@ -31,7 +35,9 @@ export class Saturn {
     this.wallet = new WalletsResource(client);
     this.services = new ServicesResource(client);
     this.proxy = new ProxyResource(client);
+    this.capabilities = new CapabilitiesResource(client);
     this.admin = new AdminResource(client);
+    this.registry = new RegistryResource(client);
   }
 }
 
@@ -46,4 +52,6 @@ export { PoliciesResource } from './resources/policies.js';
 export { WalletsResource } from './resources/wallets.js';
 export { ServicesResource } from './resources/services.js';
 export { ProxyResource } from './resources/proxy.js';
+export { CapabilitiesResource } from './resources/capabilities.js';
 export { AdminResource } from './resources/admin.js';
+export { RegistryResource } from './resources/registry.js';

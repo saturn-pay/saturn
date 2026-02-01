@@ -86,6 +86,8 @@ export interface Policy {
   maxPerDaySats: number | null;
   allowedServices: string[] | null;
   deniedServices: string[] | null;
+  allowedCapabilities: string[] | null;
+  deniedCapabilities: string[] | null;
   killSwitch: boolean;
   maxBalanceSats: number | null;
   createdAt: string;
@@ -97,6 +99,8 @@ export interface ReplacePolicyRequest {
   maxPerDaySats: number | null;
   allowedServices: string[] | null;
   deniedServices: string[] | null;
+  allowedCapabilities: string[] | null;
+  deniedCapabilities: string[] | null;
   killSwitch: boolean;
   maxBalanceSats: number | null;
 }
@@ -106,6 +110,8 @@ export interface UpdatePolicyRequest {
   maxPerDaySats?: number | null;
   allowedServices?: string[] | null;
   deniedServices?: string[] | null;
+  allowedCapabilities?: string[] | null;
+  deniedCapabilities?: string[] | null;
   killSwitch?: boolean;
   maxBalanceSats?: number | null;
 }
@@ -236,6 +242,7 @@ export interface AuditLog {
   id: string;
   agentId: string;
   serviceSlug: string;
+  capability: string | null;
   operation: string | null;
   policyResult: 'allowed' | 'denied';
   policyReason: string | null;
@@ -275,6 +282,219 @@ export interface RateInfo {
     satsPerUsd: number;
     fetchedAt: string;
   }>;
+}
+
+// ── Capabilities ──
+
+export type CapabilityVerb =
+  | 'reason'
+  | 'search'
+  | 'read'
+  | 'scrape'
+  | 'execute'
+  | 'email'
+  | 'sms'
+  | 'imagine'
+  | 'speak'
+  | 'transcribe';
+
+export interface CapabilityProvider {
+  slug: string;
+  priority: number;
+  active: boolean;
+}
+
+export interface Capability {
+  capability: CapabilityVerb;
+  description: string;
+  providers: CapabilityProvider[];
+  defaultProvider: string;
+  pricing: ServicePricing[];
+}
+
+export interface CapabilityDetail {
+  capability: CapabilityVerb;
+  description: string;
+  defaultProvider: string;
+  providers: Array<CapabilityProvider & {
+    name: string;
+    pricing: ServicePricing[];
+  }>;
+}
+
+// ── Capability Request Types ──
+
+export interface ReasonRequest {
+  prompt?: string;
+  messages?: Array<{ role: string; content: string }>;
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
+  [key: string]: unknown;
+}
+
+export interface SearchRequest {
+  query: string;
+  numResults?: number;
+  [key: string]: unknown;
+}
+
+export interface ReadRequest {
+  url: string;
+  [key: string]: unknown;
+}
+
+export interface ScrapeRequest {
+  url: string;
+  [key: string]: unknown;
+}
+
+export interface ExecuteRequest {
+  language?: string;
+  code: string;
+  [key: string]: unknown;
+}
+
+export interface EmailRequest {
+  to: string;
+  subject: string;
+  body: string;
+  from?: string;
+  [key: string]: unknown;
+}
+
+export interface SmsRequest {
+  to: string;
+  body: string;
+  [key: string]: unknown;
+}
+
+export interface ImagineRequest {
+  prompt: string;
+  model?: string;
+  width?: number;
+  height?: number;
+  [key: string]: unknown;
+}
+
+export interface SpeakRequest {
+  text: string;
+  voice?: string;
+  [key: string]: unknown;
+}
+
+export interface TranscribeRequest {
+  audio: string;
+  language?: string;
+  [key: string]: unknown;
+}
+
+// ── Registry ──
+
+export interface RegistrySubmission {
+  serviceName: string;
+  serviceSlug: string;
+  description?: string;
+  baseUrl: string;
+  authType: 'bearer' | 'api_key_header' | 'basic' | 'query_param';
+  authCredentialEnv: string;
+  capability: CapabilityVerb;
+  proposedPricing?: Array<{
+    operation: string;
+    costUsdMicros: number;
+    priceUsdMicros: number;
+    unit: 'per_request' | 'per_1k_tokens' | 'per_minute';
+  }>;
+  notes?: string;
+}
+
+export interface ServiceSubmission {
+  id: string;
+  accountId: string;
+  serviceName: string;
+  serviceSlug: string;
+  description: string | null;
+  baseUrl: string;
+  authType: 'bearer' | 'api_key_header' | 'basic' | 'query_param';
+  authCredentialEnv: string;
+  capability: string;
+  proposedPricing: unknown;
+  notes: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewerNotes: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Normalized Responses ──
+
+export interface NormalizedReasonResponse {
+  content: string;
+  model: string;
+  usage: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
+  raw: unknown;
+}
+
+export interface NormalizedSearchResponse {
+  results: Array<{
+    title: string;
+    url: string;
+    snippet: string;
+  }>;
+  raw: unknown;
+}
+
+export interface NormalizedReadResponse {
+  content: string;
+  title?: string;
+  raw: unknown;
+}
+
+export interface NormalizedScrapeResponse {
+  html: string;
+  text?: string;
+  metadata?: Record<string, unknown>;
+  raw: unknown;
+}
+
+export interface NormalizedExecuteResponse {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  raw: unknown;
+}
+
+export interface NormalizedEmailResponse {
+  id: string;
+  status: string;
+  raw: unknown;
+}
+
+export interface NormalizedSmsResponse {
+  sid: string;
+  status: string;
+  raw: unknown;
+}
+
+export interface NormalizedImagineResponse {
+  url: string;
+  raw: unknown;
+}
+
+export interface NormalizedSpeakResponse {
+  audio: string;
+  format: string;
+  raw: unknown;
+}
+
+export interface NormalizedTranscribeResponse {
+  text: string;
+  raw: unknown;
 }
 
 // ── Proxy convenience types ──

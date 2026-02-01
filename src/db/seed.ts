@@ -33,6 +33,7 @@ const SERVICE_DEFS: ServiceDef[] = [
   { slug: 'deepgram', name: 'Deepgram STT', tier: 'premium', authType: 'bearer', authCredentialEnv: 'DEEPGRAM_API_KEY', baseUrl: 'https://api.deepgram.com' },
   { slug: 'scraperapi', name: 'ScraperAPI', tier: 'standard', authType: 'query_param', authCredentialEnv: 'SCRAPERAPI_API_KEY', baseUrl: 'https://api.scraperapi.com' },
   { slug: 'hunter', name: 'Hunter.io', tier: 'standard', authType: 'query_param', authCredentialEnv: 'HUNTER_API_KEY', baseUrl: 'https://api.hunter.io' },
+  { slug: 'pinecone', name: 'Pinecone Vector DB', tier: 'premium', authType: 'api_key_header', authCredentialEnv: 'PINECONE_API_KEY', baseUrl: 'https://api.pinecone.io' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -64,6 +65,8 @@ const PRICING_DEFS: PricingDef[] = [
   { serviceSlug: 'deepgram', operation: 'transcribe', costUsdMicros: 2500, priceUsdMicros: 3250, unit: 'per_minute' },
   { serviceSlug: 'scraperapi', operation: 'scrape', costUsdMicros: 2000, priceUsdMicros: 2600, unit: 'per_request' },
   { serviceSlug: 'hunter', operation: 'lookup', costUsdMicros: 2000, priceUsdMicros: 2600, unit: 'per_request' },
+  { serviceSlug: 'pinecone', operation: 'upsert', costUsdMicros: 500, priceUsdMicros: 650, unit: 'per_request' },
+  { serviceSlug: 'pinecone', operation: 'query', costUsdMicros: 300, priceUsdMicros: 390, unit: 'per_request' },
 ];
 
 // ---------------------------------------------------------------------------
