@@ -12,8 +12,9 @@ import { initAdapters } from './services/proxy/adapter-registry.js';
 import { initCapabilities } from './services/proxy/capability-registry.js';
 import { loadApprovedServices } from './services/registry.service.js';
 import { runRateUpdate, startRateUpdater } from './jobs/rate-updater.js';
-import { startInvoiceWatcher } from './jobs/invoice-watcher.js';
+import { startInvoiceWatcher, stopInvoiceWatcher } from './jobs/invoice-watcher.js';
 import { startInvoiceExpiryJob } from './jobs/invoice-expiry.js';
+import { getPool } from './db/client.js';
 
 const app = express();
 
@@ -69,6 +70,10 @@ app.use(errorHandler);
 // Startup
 // ---------------------------------------------------------------------------
 
+import type { Server } from 'http';
+
+let server: Server | null = null;
+
 async function start(): Promise<void> {
   try {
     await testConnection();
@@ -102,7 +107,7 @@ async function start(): Promise<void> {
     startInvoiceExpiryJob();
     logger.info('Invoice expiry job started');
 
-    app.listen(env.PORT, () => {
+    server = app.listen(env.PORT, () => {
       logger.info(`Saturn listening on port ${env.PORT}`);
     });
   } catch (err) {
@@ -110,6 +115,35 @@ async function start(): Promise<void> {
     process.exit(1);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Graceful shutdown
+// ---------------------------------------------------------------------------
+
+async function shutdown(signal: string): Promise<void> {
+  logger.info({ signal }, 'Shutdown signal received');
+
+  // 1. Stop accepting new connections
+  if (server) {
+    await new Promise<void>((resolve) => {
+      server!.close(() => resolve());
+    });
+    logger.info('HTTP server closed');
+  }
+
+  // 2. Stop LND subscription
+  stopInvoiceWatcher();
+
+  // 3. Close database pool
+  await getPool().end();
+  logger.info('Database pool closed');
+
+  logger.info('Shutdown complete');
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT', () => void shutdown('SIGINT'));
 
 start();
 

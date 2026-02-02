@@ -108,3 +108,11 @@ function scheduleReconnect(): void {
 export function startInvoiceWatcher(): void {
   subscribe();
 }
+
+export function stopInvoiceWatcher(): void {
+  if (subscription) {
+    subscription.removeAllListeners();
+    subscription = null;
+    logger.info('Invoice watcher stopped');
+  }
+}
