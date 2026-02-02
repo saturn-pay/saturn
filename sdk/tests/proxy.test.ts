@@ -18,7 +18,7 @@ const defaultHeaders = {
   'x-saturn-balance-after': '9955',
 };
 
-describe('ProxyResource — Capability Methods', () => {
+describe('Saturn — Capability Methods', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -29,7 +29,7 @@ describe('ProxyResource — Capability Methods', () => {
     vi.stubGlobal('fetch', fetchSpy);
 
     const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    const result = await saturn.proxy.reason({
+    const result = await saturn.reason({
       messages: [{ role: 'user', content: 'hello' }],
     });
 
@@ -45,7 +45,7 @@ describe('ProxyResource — Capability Methods', () => {
     vi.stubGlobal('fetch', fetchSpy);
 
     const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    const result = await saturn.proxy.search({ query: 'bitcoin price' });
+    const result = await saturn.search({ query: 'bitcoin price' });
 
     const [url] = fetchSpy.mock.calls[0];
     expect(url).toBe('https://api.test.com/v1/capabilities/search');
@@ -58,7 +58,7 @@ describe('ProxyResource — Capability Methods', () => {
     vi.stubGlobal('fetch', fetchSpy);
 
     const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    const result = await saturn.proxy.read({ url: 'https://example.com' });
+    const result = await saturn.read({ url: 'https://example.com' });
 
     const [url] = fetchSpy.mock.calls[0];
     expect(url).toBe('https://api.test.com/v1/capabilities/read');
@@ -71,7 +71,7 @@ describe('ProxyResource — Capability Methods', () => {
     vi.stubGlobal('fetch', fetchSpy);
 
     const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    const result = await saturn.proxy.execute({ code: 'print(2+2)', language: 'python' });
+    const result = await saturn.execute({ code: 'print(2+2)', language: 'python' });
 
     const [url] = fetchSpy.mock.calls[0];
     expect(url).toBe('https://api.test.com/v1/capabilities/execute');
@@ -84,7 +84,7 @@ describe('ProxyResource — Capability Methods', () => {
     vi.stubGlobal('fetch', fetchSpy);
 
     const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    const result = await saturn.proxy.email({ to: 'test@example.com', subject: 'Hi', body: 'Hello' });
+    const result = await saturn.email({ to: 'test@example.com', subject: 'Hi', body: 'Hello' });
 
     const [url] = fetchSpy.mock.calls[0];
     expect(url).toBe('https://api.test.com/v1/capabilities/email');
@@ -97,7 +97,7 @@ describe('ProxyResource — Capability Methods', () => {
     vi.stubGlobal('fetch', fetchSpy);
 
     const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    const result = await saturn.proxy.sms({ to: '+1234567890', body: 'Hello' });
+    const result = await saturn.sms({ to: '+1234567890', body: 'Hello' });
 
     const [url] = fetchSpy.mock.calls[0];
     expect(url).toBe('https://api.test.com/v1/capabilities/sms');
@@ -110,7 +110,7 @@ describe('ProxyResource — Capability Methods', () => {
     vi.stubGlobal('fetch', fetchSpy);
 
     const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    const result = await saturn.proxy.imagine({ prompt: 'a cat in space' });
+    const result = await saturn.imagine({ prompt: 'a cat in space' });
 
     const [url] = fetchSpy.mock.calls[0];
     expect(url).toBe('https://api.test.com/v1/capabilities/imagine');
@@ -123,7 +123,7 @@ describe('ProxyResource — Capability Methods', () => {
     vi.stubGlobal('fetch', fetchSpy);
 
     const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    const result = await saturn.proxy.speak({ text: 'Hello world' });
+    const result = await saturn.speak({ text: 'Hello world' });
 
     const [url] = fetchSpy.mock.calls[0];
     expect(url).toBe('https://api.test.com/v1/capabilities/speak');
@@ -136,7 +136,7 @@ describe('ProxyResource — Capability Methods', () => {
     vi.stubGlobal('fetch', fetchSpy);
 
     const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    const result = await saturn.proxy.transcribe({ audio: 'base64...' });
+    const result = await saturn.transcribe({ audio: 'base64...' });
 
     const [url] = fetchSpy.mock.calls[0];
     expect(url).toBe('https://api.test.com/v1/capabilities/transcribe');
@@ -149,7 +149,7 @@ describe('ProxyResource — Capability Methods', () => {
     vi.stubGlobal('fetch', fetchSpy);
 
     const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    const result = await saturn.proxy.scrape({ url: 'https://example.com' });
+    const result = await saturn.scrape({ url: 'https://example.com' });
 
     const [url] = fetchSpy.mock.calls[0];
     expect(url).toBe('https://api.test.com/v1/capabilities/scrape');
@@ -157,7 +157,7 @@ describe('ProxyResource — Capability Methods', () => {
   });
 });
 
-describe('ProxyResource — Legacy Methods (Backward Compat)', () => {
+describe('Saturn — Generic call() + Policy Errors', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -173,7 +173,7 @@ describe('ProxyResource — Legacy Methods (Backward Compat)', () => {
     vi.stubGlobal('fetch', fetchSpy);
 
     const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    const result = await saturn.proxy.call('openai', { model: 'gpt-4o', messages: [] });
+    const result = await saturn.call('openai', { model: 'gpt-4o', messages: [] });
 
     expect(result.data).toEqual(upstream);
     expect(result.metadata).toEqual({
@@ -188,42 +188,6 @@ describe('ProxyResource — Legacy Methods (Backward Compat)', () => {
     expect(init.method).toBe('POST');
   });
 
-  it('openai() is a convenience wrapper for call("openai", ...)', async () => {
-    const upstream = { id: 'chatcmpl-1', choices: [] };
-    const fetchSpy = mockFetch(200, upstream, {
-      'x-saturn-audit-id': 'aud_1',
-      'x-saturn-quoted-sats': '10',
-      'x-saturn-charged-sats': '10',
-      'x-saturn-balance-after': '990',
-    });
-    vi.stubGlobal('fetch', fetchSpy);
-
-    const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    const result = await saturn.proxy.openai({ model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }] });
-
-    expect(result.data.id).toBe('chatcmpl-1');
-    const [url] = fetchSpy.mock.calls[0];
-    expect(url).toBe('https://api.test.com/v1/proxy/openai');
-  });
-
-  it('anthropic() routes to /v1/proxy/anthropic', async () => {
-    const upstream = { id: 'msg_1', content: [{ type: 'text', text: 'hello' }] };
-    const fetchSpy = mockFetch(200, upstream, {
-      'x-saturn-audit-id': 'aud_2',
-      'x-saturn-quoted-sats': '20',
-      'x-saturn-charged-sats': '18',
-      'x-saturn-balance-after': '982',
-    });
-    vi.stubGlobal('fetch', fetchSpy);
-
-    const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    const result = await saturn.proxy.anthropic({ model: 'claude-3', max_tokens: 100, messages: [] });
-
-    const [url] = fetchSpy.mock.calls[0];
-    expect(url).toBe('https://api.test.com/v1/proxy/anthropic');
-    expect(result.data).toEqual(upstream);
-  });
-
   it('throws SaturnPolicyDeniedError on policy failure', async () => {
     const fetchSpy = mockFetch(403, {
       error: { code: 'POLICY_DENIED', message: 'Kill switch active' },
@@ -236,24 +200,7 @@ describe('ProxyResource — Legacy Methods (Backward Compat)', () => {
     vi.stubGlobal('fetch', fetchSpy);
 
     const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    await expect(saturn.proxy.call('openai', {})).rejects.toThrow(SaturnPolicyDeniedError);
-  });
-
-  it('serper() routes to /v1/proxy/serper', async () => {
-    const fetchSpy = mockFetch(200, { organic: [] }, {
-      'x-saturn-audit-id': 'aud_3',
-      'x-saturn-quoted-sats': '5',
-      'x-saturn-charged-sats': '5',
-      'x-saturn-balance-after': '995',
-    });
-    vi.stubGlobal('fetch', fetchSpy);
-
-    const saturn = new Saturn({ apiKey: 'sk_agt_abc', baseUrl: 'https://api.test.com' });
-    const result = await saturn.proxy.serper({ q: 'bitcoin price' });
-
-    const [url] = fetchSpy.mock.calls[0];
-    expect(url).toBe('https://api.test.com/v1/proxy/serper');
-    expect(result.data).toEqual({ organic: [] });
+    await expect(saturn.call('openai', {})).rejects.toThrow(SaturnPolicyDeniedError);
   });
 });
 

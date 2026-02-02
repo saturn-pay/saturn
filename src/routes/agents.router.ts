@@ -8,7 +8,7 @@ import { agents, wallets, policies } from '../db/schema/index.js';
 import { eq, and } from 'drizzle-orm';
 import { generateId } from '../lib/id.js';
 import { ID_PREFIXES, API_KEY_PREFIXES, DEFAULT_POLICY } from '../config/constants.js';
-import { requireAccount } from '../middleware/auth.js';
+import { requirePrimary } from '../middleware/auth.js';
 import { NotFoundError, ValidationError } from '../lib/errors.js';
 
 const BCRYPT_SALT_ROUNDS = 10;
@@ -65,10 +65,10 @@ async function findAgentOrThrow(agentId: string, accountId: string) {
 
 export const agentsRouter = Router();
 
-// All routes require account-level auth
-agentsRouter.use(requireAccount);
+// All routes require primary agent auth
+agentsRouter.use(requirePrimary);
 
-// POST /agents — create a new agent with wallet and default policy
+// POST /agents — create a new worker agent with wallet and default policy
 agentsRouter.post('/', async (req: Request, res: Response) => {
   const parsed = createAgentSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -94,6 +94,7 @@ agentsRouter.post('/', async (req: Request, res: Response) => {
         accountId: account.id,
         name,
         apiKeyHash,
+        role: 'worker',
         status: 'active',
         metadata: metadata ?? null,
         createdAt: now,
@@ -124,6 +125,8 @@ agentsRouter.post('/', async (req: Request, res: Response) => {
         maxPerDaySats: DEFAULT_POLICY.maxPerDaySats,
         allowedServices: DEFAULT_POLICY.allowedServices,
         deniedServices: DEFAULT_POLICY.deniedServices,
+        allowedCapabilities: DEFAULT_POLICY.allowedCapabilities,
+        deniedCapabilities: DEFAULT_POLICY.deniedCapabilities,
         killSwitch: DEFAULT_POLICY.killSwitch,
         maxBalanceSats: DEFAULT_POLICY.maxBalanceSats,
         createdAt: now,

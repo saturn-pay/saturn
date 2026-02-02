@@ -19,6 +19,19 @@ export interface PaginationParams {
   offset?: number;
 }
 
+// ── Signup ──
+
+export interface SignupRequest {
+  name: string;
+  email?: string;
+}
+
+export interface SignupResponse {
+  agentId: string;
+  apiKey: string;
+  accountId: string;
+}
+
 // ── Accounts ──
 
 export interface Account {

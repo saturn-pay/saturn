@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { db } from '../db/client.js';
 import { agents, policies } from '../db/schema/index.js';
 import { eq, and } from 'drizzle-orm';
-import { requireAccount } from '../middleware/auth.js';
+import { requirePrimary } from '../middleware/auth.js';
 import { NotFoundError, ValidationError } from '../lib/errors.js';
 
 // ---------------------------------------------------------------------------
@@ -70,8 +70,8 @@ async function findPolicyOrThrow(agentId: string) {
 
 export const policiesRouter = Router({ mergeParams: true });
 
-// All routes require account-level auth
-policiesRouter.use(requireAccount);
+// All routes require primary agent auth
+policiesRouter.use(requirePrimary);
 
 // GET /agents/:agentId/policy — get current policy
 policiesRouter.get('/', async (req: Request, res: Response) => {

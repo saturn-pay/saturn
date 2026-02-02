@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { eq, and, desc } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { wallets, invoices, transactions, policies, agents } from '../db/schema/index.js';
-import { requireAccount, requireAgent } from '../middleware/auth.js';
+import { requirePrimary, requireAuth } from '../middleware/auth.js';
 import { generateId } from '../lib/id.js';
 import { ID_PREFIXES, FUNDING } from '../config/constants.js';
 import { NotFoundError, ValidationError } from '../lib/errors.js';
@@ -199,7 +199,7 @@ async function handleGetTransactions(
 
 export const walletsRouter = Router({ mergeParams: true });
 
-walletsRouter.use(requireAccount);
+walletsRouter.use(requirePrimary);
 
 // GET /agents/:agentId/wallet
 walletsRouter.get('/', async (req: Request, res: Response) => {
@@ -247,7 +247,7 @@ walletsRouter.get('/transactions', async (req: Request, res: Response) => {
 
 export const agentWalletsRouter = Router();
 
-agentWalletsRouter.use(requireAgent);
+agentWalletsRouter.use(requireAuth);
 
 // GET /wallet
 agentWalletsRouter.get('/', async (req: Request, res: Response) => {

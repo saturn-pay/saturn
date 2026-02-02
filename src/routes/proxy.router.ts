@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { requireAgent } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { executeProxyCall } from '../services/proxy/proxy-executor.js';
 import { ValidationError, NotFoundError } from '../lib/errors.js';
 import { resolveProviderSlug, isCapability } from '../services/proxy/capability-registry.js';
@@ -27,7 +27,7 @@ export const proxyRouter = Router();
 
 export const capabilityRouter = Router();
 
-capabilityRouter.post('/:capability', requireAgent, async (req: Request, res: Response) => {
+capabilityRouter.post('/:capability', requireAuth, async (req: Request, res: Response) => {
   const capability = paramString(req.params.capability);
   const agent = req.agent!;
   const wallet = req.wallet;
@@ -85,7 +85,7 @@ capabilityRouter.post('/:capability', requireAgent, async (req: Request, res: Re
 // ---------------------------------------------------------------------------
 
 // POST /proxy/:serviceSlug — execute a proxied API call on behalf of an agent
-proxyRouter.post('/:serviceSlug', requireAgent, async (req: Request, res: Response) => {
+proxyRouter.post('/:serviceSlug', requireAuth, async (req: Request, res: Response) => {
   const serviceSlug = paramString(req.params.serviceSlug);
   const agent = req.agent!;
   const wallet = req.wallet;

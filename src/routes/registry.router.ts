@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { eq, and } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { services, serviceSubmissions } from '../db/schema/index.js';
-import { requireAccount } from '../middleware/auth.js';
+import { requirePrimary } from '../middleware/auth.js';
 import { generateId } from '../lib/id.js';
 import { ID_PREFIXES } from '../config/constants.js';
 import { ValidationError, NotFoundError } from '../lib/errors.js';
@@ -16,7 +16,7 @@ function paramString(value: string | string[] | undefined): string {
 
 export const registryRouter = Router();
 
-registryRouter.use(requireAccount);
+registryRouter.use(requirePrimary);
 
 // ---------------------------------------------------------------------------
 // POST /submit — submit a service for review

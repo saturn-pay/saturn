@@ -11,7 +11,7 @@ import {
   serviceSubmissions,
 } from '../db/schema/index.js';
 import { eq, and, gte, lte, sql, desc, count, sum, avg } from 'drizzle-orm';
-import { requireAccount } from '../middleware/auth.js';
+import { requirePrimary } from '../middleware/auth.js';
 import { getCurrentRate } from '../services/pricing.service.js';
 import { NotFoundError, ValidationError } from '../lib/errors.js';
 import { approveSubmission, rejectSubmission } from '../services/registry.service.js';
@@ -23,7 +23,7 @@ function paramString(value: string | string[] | undefined): string {
 
 export const adminRouter = Router();
 
-adminRouter.use(requireAccount);
+adminRouter.use(requirePrimary);
 
 // ---------------------------------------------------------------------------
 // GET /stats
@@ -410,3 +410,4 @@ adminRouter.patch('/registry/submissions/:id', async (req: Request, res: Respons
 
   res.json(updated);
 });
+

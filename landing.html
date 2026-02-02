@@ -3,804 +3,902 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Saturn — Spend control for AI agents</title>
-  <meta name="description" content="Stop runaway agent spend. One wallet + hard caps + receipts per action across every API. Fund once, call anything, pay per action." />
-  <meta name="theme-color" content="#ffffff" />
+  <title>Saturn — The execution layer for AI agents</title>
+  <meta name="description" content="Saturn lets agents call capabilities, enforce budgets, and settle payments instantly." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
   <style>
-    :root{
-      --bg:#ffffff;
-      --surface:#f7f8fa;
-      --text:#0f1419;
-      --secondary:#3d4854;
-      --muted:#6b7a8d;
-      --faint:#9ba8b7;
-      --line:#e2e6eb;
-      --line2:#edf0f3;
-      --accent:#2563eb;
-      --accent-light:#eff4ff;
-      --green:#16a34a;
-      --green-light:#f0fdf4;
-      --red:#dc2626;
-      --red-light:#fef2f2;
-      --amber:#d97706;
-      --amber-light:#fffbeb;
-      --shadow: 0 1px 3px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.05);
-      --shadow-lg: 0 4px 12px rgba(0,0,0,.06), 0 20px 48px rgba(0,0,0,.08);
-      --r: 12px;
-      --r2: 16px;
-      --max: 1060px;
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
+    *{ box-sizing:border-box; margin:0; }
+    html{ height:100%; scroll-behavior:smooth; }
     body{
-      margin:0;
-      font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      color:var(--text);
+      font-family:"Inter",system-ui,sans-serif;
+      background:#fff; color:#000;
       line-height:1.5;
-      -webkit-font-smoothing: antialiased;
+      -webkit-font-smoothing:antialiased;
+      min-height:100%;
+      overflow-x:hidden;
     }
-
-    a{ color:inherit; text-decoration:none; }
-    a:hover{ text-decoration:underline; text-underline-offset: 3px; }
-
-    .wrap{ max-width: var(--max); margin:0 auto; padding: 0 24px 80px; }
+    a{ color:inherit; }
+    ::selection{ background:#000; color:#fff; }
+    .mono{ font-family:"JetBrains Mono",ui-monospace,monospace; }
 
     /* ── Nav ── */
-    .nav{
+    nav{
+      position:sticky; top:0; z-index:100;
+      background:rgba(255,255,255,.92);
+      backdrop-filter:blur(20px);
+      -webkit-backdrop-filter:blur(20px);
+      border-bottom:1px solid #eaeaea;
+    }
+    .navInner{
       display:flex; align-items:center; justify-content:space-between;
-      padding: 16px 0 46px;
-      gap:14px;
+      max-width:1200px; margin:0 auto;
+      padding:0 32px; height:56px;
     }
     .brand{
+      font-weight:800; font-size:15px; color:#000;
+      letter-spacing:-.2px;
       display:flex; align-items:center; gap:8px;
-      font-weight:650; font-size:15px; letter-spacing:.2px;
-      color:var(--text);
     }
-    .logo{
-      width:26px; height:26px; border-radius:7px;
-      background: linear-gradient(135deg, var(--accent), #7c3aed);
+    .brandMark{
+      width:20px; height:20px; border-radius:50%;
+      background:#000;
     }
-    .navlinks{ display:flex; gap:22px; color:var(--muted); font-size:13.5px; font-weight:500; }
-    .navlinks a:hover{ color:var(--text); text-decoration:none; }
-    .ctaRow{ display:flex; gap:8px; }
-    .btn{
-      display:inline-flex; align-items:center; gap:6px;
-      padding: 8px 14px;
-      border-radius: 8px;
-      border:1px solid var(--line);
-      background: var(--bg);
-      color:var(--secondary);
-      font-weight:550; font-size:13.5px;
-      cursor:pointer;
-      transition: all .15s;
+    .navLinks{ display:flex; gap:28px; align-items:center; font-size:14px; }
+    .navLinks a{ color:#666; text-decoration:none; transition:color .15s; }
+    .navLinks a:hover{ color:#000; }
+    .navCta{
+      background:#000; color:#fff;
+      padding:6px 14px; border-radius:6px;
+      font-weight:500; font-size:13px;
+      text-decoration:none;
+      transition:background .15s;
     }
-    .btn:hover{ text-decoration:none; border-color:#c5cdd6; background:var(--surface); }
-    .btn.primary{
-      border-color:var(--accent);
-      background:var(--accent);
-      color:#fff;
-    }
-    .btn.primary:hover{ background:#1d4fd8; border-color:#1d4fd8; }
-    .btn.ghost{ background:transparent; border-color:transparent; color:var(--muted); }
-    .btn.ghost:hover{ color:var(--text); background:var(--surface); }
+    .navCta:hover{ background:#333; }
 
     /* ── Hero ── */
-    .heroGrid{
+    .hero{
+      padding:100px 32px 80px;
+      max-width:1200px; margin:0 auto;
       display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap: 18px;
-      align-items:start;
-    }
-    .hero{ max-width: 660px; padding: 12px 0 0; }
-    .badgeRow{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .badge{
-      display:inline-flex; align-items:center; gap:7px;
-      font-size:12px; color:var(--muted);
-      border:1px solid var(--line);
-      padding:5px 11px; border-radius:999px;
-      background:var(--surface);
-      font-family: var(--mono);
-      font-weight:500;
-      letter-spacing:.2px;
-    }
-    .badge .dot{
-      width:6px; height:6px; border-radius:999px;
-      background:var(--green);
-      box-shadow: 0 0 8px rgba(22,163,74,.4);
-    }
-    .badge.alt{
-      background: var(--accent-light);
-      border-color: rgba(37,99,235,.25);
-      color: rgba(37,99,235,.95);
-    }
-
-    h1{
-      margin:18px 0 14px;
-      font-size: clamp(32px, 4.2vw, 46px);
-      line-height:1.08;
-      letter-spacing:-.7px;
-      font-weight:780;
-      color:var(--text);
-    }
-    h1 .hl{ color:var(--accent); }
-
-    .heroSub{
-      color:var(--secondary);
-      font-size:17px;
-      line-height:1.65;
-      max-width:60ch;
-      margin:0 0 18px;
-    }
-    .heroSub b{ font-weight:650; color:var(--text); }
-
-    .heroActions{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top: 10px; }
-    .hintRow{
-      margin-top: 14px;
-      color: var(--muted);
-      font-size: 13.5px;
-      display:flex;
-      gap: 10px;
-      flex-wrap:wrap;
+      grid-template-columns:1fr 1fr;
+      gap:48px;
       align-items:center;
     }
-    .hintRow .sep{ color: var(--faint); }
-
-    /* Trust strip */
-    .trustStrip{
-      margin-top: 18px;
-      border: 1px solid var(--line);
-      border-radius: var(--r2);
-      background: var(--surface);
-      padding: 12px 14px;
-      display:flex;
-      gap: 12px;
-      flex-wrap:wrap;
-      align-items:center;
+    .heroLeft{}
+    .hero h1{
+      font-size:72px; font-weight:900;
+      line-height:1.0; letter-spacing:-3.5px;
+      color:#000;
+      max-width:800px;
     }
-    .trustItem{
-      display:flex; gap:8px; align-items:center;
-      font-size: 12.5px;
-      color: var(--secondary);
+    .hero h1 .muted{ color:#999; }
+
+    /* Hero terminal */
+    .heroTerminal{
+      border:1px solid #eaeaea;
+      border-radius:10px;
+      overflow:hidden;
+      font-family:"JetBrains Mono",monospace;
+      font-size:12px;
+      line-height:1.7;
+    }
+    .heroTerminal .htBar{
+      display:flex; align-items:center; gap:6px;
+      padding:10px 16px;
+      border-bottom:1px solid #eaeaea;
+      background:#fafafa;
+    }
+    .heroTerminal .htBar .d{ width:8px; height:8px; border-radius:50%; background:#e0e0e0; }
+    .heroTerminal .htBar .htLabel{ margin-left:10px; font-size:11px; color:#999; }
+    .heroTerminal .htBody{ padding:16px 20px; background:#fff; }
+    .heroTerminal .htLine{
+      display:flex; gap:8px;
+      padding:2px 0;
       white-space:nowrap;
     }
-    .trustItem .t{
-      width: 18px; height: 18px;
-      border-radius: 6px;
-      display:flex; align-items:center; justify-content:center;
-      background: var(--accent-light);
-      color: var(--accent);
-      font-size: 12px;
-      font-weight: 800;
-      font-family: var(--mono);
+    .heroTerminal .htPrompt{ color:#999; user-select:none; }
+    .heroTerminal .htCmd{ color:#000; }
+    .heroTerminal .htResult{ color:#666; padding:2px 0; }
+    .heroTerminal .htDim{ color:#ccc; }
+    .heroTerminal .htGreen{ color:#1a7f37; }
+    .heroTerminal .htBlue{ color:#0550ae; }
+    .heroTerminal .htSep{
+      border-top:1px solid #f0f0f0;
+      margin:8px 0;
+    }
+    .heroTerminal .htReceipt{
+      display:flex; justify-content:space-between;
+      padding:1px 0;
+    }
+    .heroTerminal .htKey{ color:#999; }
+    .heroTerminal .htVal{ color:#000; font-weight:500; }
+    /* Typing animation */
+    .htTyping .htLine,
+    .htTyping .htResult,
+    .htTyping .htSep,
+    .htTyping .htReceipt{
+      opacity:0; animation:htReveal .3s ease-out forwards;
+    }
+    .htTyping > :nth-child(1){ animation-delay:.3s; }
+    .htTyping > :nth-child(2){ animation-delay:.8s; }
+    .htTyping > :nth-child(3){ animation-delay:1.3s; }
+    .htTyping > :nth-child(4){ animation-delay:1.8s; }
+    .htTyping > :nth-child(5){ animation-delay:2.3s; }
+    .htTyping > :nth-child(6){ animation-delay:2.6s; }
+    .htTyping > :nth-child(7){ animation-delay:2.8s; }
+    .htTyping > :nth-child(8){ animation-delay:3.0s; }
+    .htTyping > :nth-child(9){ animation-delay:3.15s; }
+    .htTyping > :nth-child(10){ animation-delay:3.3s; }
+    .htTyping > :nth-child(11){ animation-delay:3.45s; }
+    .htTyping > :nth-child(12){ animation-delay:3.6s; }
+    .htTyping > :nth-child(13){ animation-delay:3.75s; }
+    @keyframes htReveal{
+      from{ opacity:0; transform:translateY(4px); }
+      to{ opacity:1; transform:translateY(0); }
+    }
+    .heroCopy{
+      margin:28px 0 0;
+      font-size:18px; color:#666;
+      line-height:1.6;
+      max-width:540px;
+    }
+    .heroCopy strong{ color:#000; font-weight:600; }
+    .heroActions{
+      display:flex; gap:12px; align-items:center;
+      margin:36px 0 0;
+    }
+    .btnBlack{
+      display:inline-flex; align-items:center;
+      background:#000; color:#fff;
+      padding:10px 20px; border-radius:8px;
+      font-weight:600; font-size:14px;
+      border:none; cursor:pointer;
+      text-decoration:none;
+      transition:all .15s;
+    }
+    .btnBlack:hover{ background:#222; }
+    .btnGhost{
+      display:inline-flex; align-items:center;
+      background:transparent; color:#666;
+      padding:10px 20px; border-radius:8px;
+      font-weight:500; font-size:14px;
+      border:1px solid #eaeaea;
+      text-decoration:none;
+      cursor:pointer;
+      transition:all .15s;
+    }
+    .btnGhost:hover{ border-color:#999; color:#000; }
+
+    /* ── Trust bar ── */
+    .trustBar{
+      border-top:1px solid #eaeaea;
+      border-bottom:1px solid #eaeaea;
+      padding:0;
+    }
+    .trustBarInner{
+      display:grid; grid-template-columns:repeat(4,1fr);
+      max-width:1200px; margin:0 auto;
+    }
+    .trustBarItem{
+      padding:20px 32px;
+      border-right:1px solid #eaeaea;
+      font-size:13px; color:#666;
+    }
+    .trustBarItem:last-child{ border-right:none; }
+    .trustBarItem strong{
+      display:block;
+      font-size:14px; color:#000; font-weight:600;
+      margin:0 0 2px;
     }
 
-    /* This is for you if */
-    .qualify{
-      padding: 16px;
-      border-radius: var(--r2);
-      border: 1px solid var(--line);
-      background: var(--bg);
-      box-shadow: var(--shadow);
+    /* ── Terminal block ── */
+    .termSection{
+      padding:80px 32px;
+      max-width:1200px; margin:0 auto;
     }
-    .qualify h3{
-      margin:0 0 8px;
-      font-size: 13px;
-      font-family: var(--mono);
-      color: var(--muted);
-      letter-spacing:.2px;
-      font-weight:650;
-      text-transform: uppercase;
+    .termSection .sectionTag{
+      font-family:"JetBrains Mono",monospace;
+      font-size:13px; font-weight:500;
+      color:#999; margin:0 0 16px;
+      text-transform:uppercase; letter-spacing:1px;
     }
-    .qualify .qList{ margin: 10px 0 0; display:grid; gap:10px; }
-    .qItem{
-      display:flex; gap:10px; align-items:flex-start;
-      font-size: 14px;
-      color: var(--secondary);
-      line-height: 1.45;
+    .termSection h2{
+      font-size:40px; font-weight:800;
+      letter-spacing:-1.5px; line-height:1.1;
+      margin:0 0 12px;
     }
-    .qItem .ic{
-      width: 22px; height: 22px; border-radius: 7px;
-      display:flex; align-items:center; justify-content:center;
-      background: var(--green-light);
-      color: var(--green);
-      font-weight: 900;
-      font-size: 12px;
-      flex: 0 0 auto;
-      margin-top: 1px;
+    .termSection .lead{
+      font-size:16px; color:#666; line-height:1.6;
+      max-width:480px; margin:0 0 40px;
     }
-    .qItem b{ color: var(--text); font-weight: 650; }
-
-    /* ── Code block (dark) ── */
-    .codeWrap{
-      margin: 22px 0 0;
-      border:1px solid var(--line);
-      border-radius: var(--r2);
-      background: #0f172a;
-      box-shadow: var(--shadow-lg);
+    .termGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:1px;
+      background:#eaeaea;
+      border:1px solid #eaeaea;
+      border-radius:12px;
       overflow:hidden;
     }
-    .codeBar{
-      display:flex; align-items:center; justify-content:space-between;
-      padding: 10px 16px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      font-size:12px; color:#64748b;
-      font-family:var(--mono);
+    .termPane{
+      background:#fff;
+      padding:0;
     }
-    .codeBar .dots{ display:flex; gap:6px; }
-    .codeBar .dots span{ width:10px; height:10px; border-radius:999px; background:rgba(255,255,255,.1); }
-
+    .termBar{
+      display:flex; align-items:center; gap:8px;
+      padding:12px 20px;
+      border-bottom:1px solid #eaeaea;
+      font-family:"JetBrains Mono",monospace;
+      font-size:12px; color:#999;
+    }
+    .termBar .dots{ display:flex; gap:6px; }
+    .termBar .dots span{ width:10px; height:10px; border-radius:50%; background:#eaeaea; }
+    .termBar .fileName{ margin-left:12px; }
     pre{
-      margin:0; padding:20px;
-      font-family:var(--mono);
-      font-size:13px; line-height:1.65;
-      color: #e2e8f0;
+      margin:0; padding:24px;
+      font-family:"JetBrains Mono",monospace;
+      font-size:13px; line-height:1.8;
+      color:#000;
       overflow-x:auto;
+      background:#fff;
     }
-    pre .cm{ color:#64748b; }
-    pre .kw{ color:#7dd3fc; }
-    pre .str{ color:#86efac; }
-    pre .num{ color:#fcd34d; }
-    pre .fn{ color:#c4b5fd; }
-    pre .err{ color:#fda4af; }
-    pre .dim{ color:#94a3b8; }
+    pre .cm{ color:#8b949e; }
+    pre .kw{ color:#cf222e; }
+    pre .str{ color:#0a3069; }
+    pre .fn{ color:#8250df; }
+    pre .prop{ color:#0550ae; }
+    pre .dim{ color:#ccc; }
+    .cursor{
+      display:inline-block;
+      width:8px; height:16px;
+      background:#000;
+      vertical-align:text-bottom;
+      animation:blink .8s step-end infinite;
+    }
+    @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:0;} }
 
-    /* ── Sections ── */
-    .section{ margin-top:72px; }
-    .sectionLabel{
-      font-size:12px; font-weight:600;
-      color:var(--accent);
-      letter-spacing:1px;
-      text-transform:uppercase;
-      margin:0 0 6px;
-      font-family:var(--mono);
+    /* Receipt pane */
+    .receiptPane{ font-family:"JetBrains Mono",monospace; }
+    .receiptPane .receiptRow{
+      display:flex; justify-content:space-between;
+      padding:8px 24px;
+      font-size:12px;
+      border-bottom:1px solid #f5f5f5;
     }
-    .sectionTitle{
-      font-size:26px; font-weight:780;
-      letter-spacing:-.4px;
-      margin:0 0 6px;
-      color:var(--text);
-    }
-    .sectionDesc{
-      color:var(--muted); font-size:15px; margin:0 0 28px; max-width:68ch; line-height:1.65;
-    }
-
-    .grid{ display:grid; gap:12px; }
-    .cols2{ grid-template-columns:1fr 1fr; }
-    .cols3{ grid-template-columns:1fr 1fr 1fr; }
-
-    .card{
-      padding:22px;
-      border-radius:var(--r);
-      border:1px solid var(--line);
-      background:var(--bg);
-      transition: box-shadow .15s, transform .15s;
-    }
-    .card:hover{ box-shadow: var(--shadow); transform: translateY(-1px); }
-    .card h3{
-      margin:0 0 6px; font-size:15px; font-weight:650; color:var(--text);
-    }
-    .card p{
-      margin:0; color:var(--muted); font-size:14px; line-height:1.6;
-    }
-    .iconDot{
-      width:34px; height:34px; border-radius:9px;
-      display:flex; align-items:center; justify-content:center;
-      font-size:16px;
-      margin-bottom:14px;
-      background:var(--accent-light);
+    .receiptPane .receiptRow:last-child{ border-bottom:none; }
+    .receiptPane .receiptRow .rKey{ color:#999; }
+    .receiptPane .receiptRow .rVal{ color:#000; font-weight:500; }
+    .receiptPane .receiptHeader{
+      padding:12px 24px 8px;
+      font-size:11px; font-weight:600;
+      color:#999; text-transform:uppercase; letter-spacing:1px;
     }
 
-    /* ── Comparison (moved up) ── */
-    .compare{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .compare .card h3{ font-size:14px; font-weight:650; margin-bottom:12px; }
-    .items{ display:grid; gap:8px; }
-    .item{
-      display:flex; gap:9px; align-items:flex-start;
-      font-size:13.5px; color:var(--secondary); line-height:1.45;
+    /* ── Capabilities ── */
+    .capSection{
+      border-top:1px solid #eaeaea;
+      padding:80px 32px;
+      max-width:1200px; margin:0 auto;
     }
-    .item .ic{
-      flex:0 0 auto;
-      width:20px; height:20px; border-radius:6px;
-      display:flex; align-items:center; justify-content:center;
-      font-size:11px; font-weight:800;
-      font-family: var(--mono);
+    .capSection .sectionTag{
+      font-family:"JetBrains Mono",monospace;
+      font-size:13px; font-weight:500;
+      color:#999; margin:0 0 16px;
+      text-transform:uppercase; letter-spacing:1px;
     }
-    .ic.ok{ background:var(--green-light); color:var(--green); }
-    .ic.no{ background:var(--red-light); color:var(--red); }
-
-    /* ── How it works ── */
-    .steps{ display:grid; gap:0; }
-    .step{
-      display:grid; grid-template-columns: 36px 1fr;
-      gap:16px; align-items:start;
-      padding:16px 0;
-      border-bottom:1px solid var(--line2);
+    .capSection h2{
+      font-size:40px; font-weight:800;
+      letter-spacing:-1.5px; line-height:1.1;
+      margin:0 0 48px;
     }
-    .step:last-child{ border-bottom:none; }
-    .stepNum{
-      width:36px; height:36px; border-radius:10px;
-      display:flex; align-items:center; justify-content:center;
-      font-size:14px; font-weight:800;
-      font-family:var(--mono);
-      background:var(--accent-light);
-      color:var(--accent);
-    }
-    .step h4{ margin:0 0 2px; font-size:14.5px; font-weight:650; color:var(--text); }
-    .step p{ margin:0; font-size:13.5px; color:var(--muted); line-height:1.55; }
-
-    /* ── Outcomes (renamed features) ── */
-    .tagPill{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: var(--surface);
-      color: var(--muted);
-      font-size: 12px;
-      font-family: var(--mono);
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-
-    /* ── Security strip ── */
-    .secure{
+    .capList{
       display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      grid-template-columns:repeat(2,1fr);
+      gap:0;
+      border:1px solid #eaeaea;
+      border-radius:12px;
+      overflow:hidden;
     }
-    .secure .card{ background: var(--surface); }
-    .miniList{ margin-top: 10px; display:grid; gap:8px; }
-    .mini{
-      display:flex; gap:9px; align-items:flex-start;
-      color: var(--secondary);
-      font-size: 13.5px;
-      line-height: 1.45;
+    .capItem{
+      padding:24px 28px;
+      border-bottom:1px solid #eaeaea;
+      border-right:1px solid #eaeaea;
+      display:flex; align-items:baseline; gap:16px;
+      transition:background .15s;
     }
-    .mini .b{
-      width: 20px; height: 20px;
-      border-radius: 6px;
-      display:flex; align-items:center; justify-content:center;
-      background: var(--amber-light);
-      color: var(--amber);
-      font-weight: 900;
-      font-size: 12px;
-      font-family: var(--mono);
-      flex: 0 0 auto;
-      margin-top: 1px;
+    .capItem:hover{ background:#fafafa; }
+    .capItem:nth-child(2n){ border-right:none; }
+    .capItem:nth-last-child(-n+2){ border-bottom:none; }
+    .capItem .verb{
+      font-family:"JetBrains Mono",monospace;
+      font-size:14px; font-weight:600; color:#000;
+      flex-shrink:0; width:100px;
+    }
+    .capItem .what{
+      font-size:14px; color:#666; flex:1;
+    }
+    .capItem .who{
+      font-size:12px; color:#ccc;
+      font-family:"JetBrains Mono",monospace;
+      flex-shrink:0;
     }
 
-    /* ── Pricing ── */
-    .priceGrid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .priceCard{
-      padding:24px;
-      border-radius:var(--r2);
-      border:1px solid var(--line);
-      background:var(--bg);
-      transition: transform .15s, box-shadow .15s;
+    /* ── Architecture ── */
+    .archSection{
+      border-top:1px solid #eaeaea;
+      padding:80px 32px;
+      max-width:1200px; margin:0 auto;
     }
-    .priceCard:hover{ transform: translateY(-1px); box-shadow: var(--shadow); }
-    .priceCard.featured{
-      border-color:var(--accent);
-      box-shadow: 0 0 0 1px var(--accent), var(--shadow);
+    .archSection .sectionTag{
+      font-family:"JetBrains Mono",monospace;
+      font-size:13px; font-weight:500;
+      color:#999; margin:0 0 16px;
+      text-transform:uppercase; letter-spacing:1px;
     }
-    .priceLabel{ font-size:12px; color:var(--muted); font-weight:650; text-transform:uppercase; letter-spacing:.8px; font-family:var(--mono); }
-    .priceVal{ font-size:30px; font-weight:850; letter-spacing:-.5px; margin:8px 0 4px; color:var(--text); }
-    .priceVal small{ font-size:14px; color:var(--muted); font-weight:500; }
-    .priceNote{ font-size:13.5px; color:var(--muted); margin:0 0 14px; line-height:1.6; }
-    .priceCard .items{ margin-top:14px; }
+    .archSection h2{
+      font-size:40px; font-weight:800;
+      letter-spacing:-1.5px; line-height:1.1;
+      margin:0 0 48px;
+    }
+    .archSteps{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:0;
+      border:1px solid #eaeaea;
+      border-radius:12px;
+      overflow:hidden;
+    }
+    .archStep{
+      padding:32px 24px;
+      border-right:1px solid #eaeaea;
+      position:relative;
+    }
+    .archStep:last-child{ border-right:none; }
+    .archStep .stepNum{
+      font-family:"JetBrains Mono",monospace;
+      font-size:48px; font-weight:700;
+      color:#f0f0f0;
+      line-height:1; margin:0 0 16px;
+    }
+    .archStep h4{
+      font-size:15px; font-weight:700;
+      margin:0 0 8px;
+    }
+    .archStep p{
+      font-size:13px; color:#666; line-height:1.55; margin:0;
+    }
+    /* arrow between steps */
+    .archStep:not(:last-child)::after{
+      content:'→';
+      position:absolute;
+      right:-8px; top:50%;
+      transform:translateY(-50%);
+      font-size:16px; color:#ccc;
+      z-index:1;
+      background:#fff;
+      padding:4px 0;
+    }
+
+    /* ── Ecosystem ── */
+    .ecoSection{
+      border-top:1px solid #eaeaea;
+      padding:80px 32px;
+      max-width:1200px; margin:0 auto;
+    }
+    .ecoSection .sectionTag{
+      font-family:"JetBrains Mono",monospace;
+      font-size:13px; font-weight:500;
+      color:#999; margin:0 0 16px;
+      text-transform:uppercase; letter-spacing:1px;
+    }
+    .ecoSection h2{
+      font-size:40px; font-weight:800;
+      letter-spacing:-1.5px; line-height:1.1;
+      margin:0 0 12px;
+    }
+    .ecoSection .lead{
+      font-size:16px; color:#666; line-height:1.6;
+      max-width:520px; margin:0 0 48px;
+    }
+    .ecoGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:1px;
+      background:#eaeaea;
+      border:1px solid #eaeaea;
+      border-radius:12px;
+      overflow:hidden;
+    }
+    .ecoCard{
+      background:#fff;
+      padding:32px 28px;
+    }
+    .ecoCard .ecoRole{
+      font-family:"JetBrains Mono",monospace;
+      font-size:11px; font-weight:600;
+      text-transform:uppercase; letter-spacing:1px;
+      color:#999; margin:0 0 12px;
+    }
+    .ecoCard h3{
+      font-size:20px; font-weight:800;
+      letter-spacing:-.3px; margin:0 0 12px;
+    }
+    .ecoCard p{
+      font-size:14px; color:#666; line-height:1.6; margin:0 0 16px;
+    }
+    .ecoCard .ecoSteps{
+      list-style:none; padding:0; margin:0 0 20px;
+      font-size:13px;
+    }
+    .ecoCard .ecoSteps li{
+      padding:6px 0;
+      border-bottom:1px solid #f5f5f5;
+      color:#000;
+      display:flex; align-items:center; gap:10px;
+    }
+    .ecoCard .ecoSteps li:last-child{ border-bottom:none; }
+    .ecoCard .ecoSteps .stepIcon{
+      font-family:"JetBrains Mono",monospace;
+      font-size:11px; color:#999;
+      width:20px; text-align:center; flex-shrink:0;
+    }
 
     /* ── FAQ ── */
-    details{
-      border:1px solid var(--line);
-      border-radius:var(--r);
-      padding:16px 18px;
-      background:var(--bg);
-      transition: box-shadow .15s;
+    .faqSection{
+      border-top:1px solid #eaeaea;
+      padding:80px 32px;
+      max-width:1200px; margin:0 auto;
     }
-    details:hover{ box-shadow: var(--shadow); }
-    details[open]{ box-shadow: var(--shadow); }
-    summary{
-      cursor:pointer; font-weight:650; font-size:14.5px;
-      color:var(--text);
-      list-style:none;
+    .faqSection h2{
+      font-size:40px; font-weight:800;
+      letter-spacing:-1.5px; margin:0 0 48px;
     }
-    summary::-webkit-details-marker{ display:none; }
-    details p{ margin:10px 0 0; color:var(--muted); font-size:14px; line-height:1.65; }
+    .faqGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:0 64px;
+    }
+    .faqItem{ padding:20px 0; border-bottom:1px solid #eaeaea; }
+    .faqItem:last-child{ border-bottom:none; }
+    .faqQ{ font-size:15px; font-weight:700; margin:0 0 8px; }
+    .faqA{ font-size:14px; color:#666; line-height:1.6; margin:0; }
 
     /* ── CTA ── */
-    .finalCTA{
-      margin-top:72px;
-      padding:36px 32px;
-      border-radius:var(--r2);
-      border:1px solid var(--line);
-      background: var(--surface);
-      box-shadow: var(--shadow);
+    .ctaSection{
+      border-top:1px solid #eaeaea;
+      background:#000; color:#fff;
+      padding:100px 32px;
+      text-align:center;
     }
-    .finalCTA h2{ margin:0 0 8px; font-size:24px; font-weight:780; letter-spacing:-.3px; }
-    .finalCTA p{ margin:0 0 20px; color:var(--muted); font-size:15px; max-width:70ch; line-height:1.7; }
-
-    form{ display:flex; gap:8px; flex-wrap:wrap; }
-    input[type="email"]{
-      flex:1 1 260px;
-      padding:10px 14px;
-      border-radius:8px;
-      border:1px solid var(--line);
-      background:var(--bg);
-      color:var(--text); font-size:14px;
-      outline:none;
-      transition: border-color .15s;
+    .ctaSection h2{
+      font-size:48px; font-weight:900;
+      letter-spacing:-2px; margin:0 0 16px;
     }
-    input[type="email"]::placeholder{ color:var(--faint); }
-    input[type="email"]:focus{ border-color:var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
-    .fineprint{ margin-top:12px; color:var(--faint); font-size:12.5px; }
+    .ctaSection p{
+      font-size:16px; color:#888; margin:0 0 36px;
+    }
+    .ctaRow{
+      display:flex; gap:8px; justify-content:center;
+    }
+    .ctaRow input{
+      width:280px; padding:12px 16px;
+      border:1px solid #333; border-radius:8px;
+      background:#111; color:#fff;
+      font-size:14px; outline:none;
+      transition:border-color .15s;
+    }
+    .ctaRow input:focus{ border-color:#666; }
+    .ctaRow input::placeholder{ color:#555; }
+    .btnWhite{
+      display:inline-flex; align-items:center;
+      background:#fff; color:#000;
+      padding:12px 20px; border-radius:8px;
+      font-weight:600; font-size:14px;
+      border:none; cursor:pointer;
+      transition:all .15s;
+    }
+    .btnWhite:hover{ background:#eee; }
 
     footer{
-      margin-top:56px;
-      padding-top:20px;
-      border-top:1px solid var(--line);
-      color:var(--faint); font-size:12.5px;
-      display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
-    }
-    footer a:hover{ color:var(--secondary); }
-
-    /* Motion (subtle) */
-    .fadeIn{
-      animation: fadeUp .55s ease-out both;
-    }
-    .fadeDelay1{ animation-delay: .05s; }
-    .fadeDelay2{ animation-delay: .12s; }
-    .fadeDelay3{ animation-delay: .18s; }
-    @keyframes fadeUp{
-      from{ opacity:0; transform: translateY(8px); }
-      to{ opacity:1; transform: translateY(0); }
+      background:#000; color:#555;
+      padding:20px 32px;
+      text-align:center;
+      font-size:12px;
+      border-top:1px solid #222;
     }
 
-    @media (max-width:900px){
-      .heroGrid{ grid-template-columns: 1fr; }
+    /* ── Motion ── */
+    .reveal{
+      opacity:0; transform:translateY(16px);
+      transition:opacity .5s ease-out, transform .5s ease-out;
     }
-    @media (max-width:800px){
-      .cols2,.cols3,.compare,.priceGrid,.secure{ grid-template-columns:1fr; }
-      .navlinks{ display:none; }
-      .hero{ max-width:100%; }
-      .trustItem{ white-space: normal; }
+    .reveal.visible{ opacity:1; transform:translateY(0); }
+    .hero-enter{ animation:fadeIn .6s ease-out both; }
+    .hero-enter.d1{ animation-delay:.08s; }
+    .hero-enter.d2{ animation-delay:.16s; }
+    .hero-enter.d3{ animation-delay:.24s; }
+    @keyframes fadeIn{
+      from{ opacity:0; transform:translateY(12px); }
+      to{ opacity:1; transform:translateY(0); }
+    }
+
+    /* ── Responsive ── */
+    @media(max-width:900px){
+      .hero{ grid-template-columns:1fr; }
+      .heroTerminal{ display:none; }
+      .hero h1{ font-size:48px; letter-spacing:-2px; }
+      .capList{ grid-template-columns:1fr; }
+      .capItem{ border-right:none; }
+      .capItem:last-child{ border-bottom:none; }
+      .archSteps{ grid-template-columns:1fr 1fr; }
+      .archStep:nth-child(2){ border-right:none; }
+      .archStep:nth-child(-n+2){ border-bottom:1px solid #eaeaea; }
+      .archStep::after{ display:none; }
+      .ecoGrid{ grid-template-columns:1fr; }
+      .termGrid{ grid-template-columns:1fr; }
+      .faqGrid{ grid-template-columns:1fr; }
+      .trustBarInner{ grid-template-columns:1fr 1fr; }
+      .trustBarItem:nth-child(2){ border-right:none; }
+      .trustBarItem:nth-child(-n+2){ border-bottom:1px solid #eaeaea; }
+    }
+    @media(max-width:600px){
+      .hero h1{ font-size:36px; letter-spacing:-1.5px; }
+      .hero{ padding:60px 20px 48px; }
+      .ctaSection h2{ font-size:32px; }
+      .archSteps{ grid-template-columns:1fr; }
+      .archStep{ border-right:none; border-bottom:1px solid #eaeaea; }
+      .archStep:last-child{ border-bottom:none; }
+      .trustBarInner{ grid-template-columns:1fr; }
+      .trustBarItem{ border-right:none; border-bottom:1px solid #eaeaea; }
+      .trustBarItem:last-child{ border-bottom:none; }
+      .navLinks span:not(.navCta){ display:none; }
     }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
 
-    <header class="nav">
+  <nav>
+    <div class="navInner">
       <div class="brand">
-        <div class="logo" aria-hidden="true"></div>
+        <div class="brandMark"></div>
         Saturn
       </div>
-
-      <nav class="navlinks" aria-label="Primary">
-        <a href="#why">Why</a>
-        <a href="#how">How it works</a>
-        <a href="#outcomes">Outcomes</a>
-        <a href="#pricing">Pricing</a>
-        <a href="#faq">FAQ</a>
-      </nav>
-
-      <div class="ctaRow">
-        <a class="btn ghost" href="#faq">Docs</a>
-        <a class="btn primary" href="#access">Get spend control</a>
+      <div class="navLinks">
+        <a href="#capabilities"><span>Capabilities</span></a>
+        <a href="#how"><span>Architecture</span></a>
+        <a href="#ecosystem"><span>Ecosystem</span></a>
+        <a href="#security"><span>Security</span></a>
+        <a href="#access" class="navCta">Get beta access</a>
       </div>
-    </header>
+    </div>
+  </nav>
 
-    <!-- ── Hero + Qualify ── -->
-    <section class="heroGrid">
-      <div class="hero fadeIn">
-        <div class="badgeRow">
-          <div class="badge"><span class="dot"></span> Production-focused private beta</div>
-          <div class="badge alt">Built for 5–50 agents</div>
-        </div>
-
-        <h1 class="fadeIn fadeDelay1">Stop runaway agent spend.<br/><span class="hl">Enforce budgets at call time.</span></h1>
-
-        <p class="heroSub fadeIn fadeDelay2">
-          Saturn sits between your agents and every API they use.
-          One wallet + one SDK gives you <b>hard caps</b>, <b>receipts per action</b>, and a <b>kill switch</b> —
-          across your entire agent stack.
-        </p>
-
-        <div class="heroActions fadeIn fadeDelay3">
-          <a class="btn primary" href="#access">Request early access</a>
-          <a class="btn" href="#why">See before → after</a>
-          <a class="btn ghost" href="#pricing">See per-call pricing</a>
-        </div>
-
-        <div class="trustStrip fadeIn fadeDelay3" aria-label="Trust indicators">
-          <div class="trustItem"><span class="t">✓</span> Budget enforced before upstream call</div>
-          <div class="trustItem"><span class="t">✓</span> Receipts per agent + task</div>
-          <div class="trustItem"><span class="t">✓</span> Provider keys never touch agents</div>
-          <div class="trustItem"><span class="t">✓</span> Export logs (CSV/JSON)</div>
-        </div>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="heroLeft">
+      <h1 class="hero-enter">
+        Give your agent a budget,<br/>
+        <span class="muted">not your API keys.</span>
+      </h1>
+      <p class="heroCopy hero-enter d1">
+        Saturn is the execution layer for AI agents — routing, auth, policy enforcement, and receipts in one SDK.
+        Call any capability — inference, search, code execution, email — with
+        <strong>hard spend limits, per-call receipts, and zero provider credentials in your runtime.</strong>
+      </p>
+      <div class="heroActions hero-enter d2">
+        <a href="#access" class="btnBlack">Get beta access</a>
+        <a href="#sdk" class="btnGhost">See the SDK &darr;</a>
       </div>
-
-      <aside class="qualify fadeIn fadeDelay2" aria-label="Self-qualification">
-        <h3>This is for you if</h3>
-        <div class="qList">
-          <div class="qItem"><span class="ic">✓</span> You run <b>multiple agents</b> across <b>multiple APIs</b></div>
-          <div class="qItem"><span class="ic">✓</span> You’ve had (or fear) <b>runaway loops</b> and surprise bills</div>
-          <div class="qItem"><span class="ic">✓</span> You need <b>per-agent attribution</b> for ops or compliance</div>
-        </div>
-      </aside>
-    </section>
-
-    <!-- ── Code (dark block on light page) ── -->
-    <div class="codeWrap fadeIn fadeDelay3">
-      <div class="codeBar">
-        <div class="dots"><span></span><span></span><span></span></div>
-        agent.py
-      </div>
-      <pre><span class="kw">from</span> saturn <span class="kw">import</span> Agent, Budget, PolicyError
-
-agent = Agent(
-    name=<span class="str">"research-bot"</span>,
-    budget=Budget(daily_sats=<span class="num">50_000</span>),
-    services=[<span class="str">"openai"</span>, <span class="str">"serper"</span>, <span class="str">"resend"</span>]
-)
-
-<span class="cm"># Preflight: see the sat cost before executing</span>
-quote = agent.<span class="fn">quote</span>(<span class="str">"openai"</span>, model=<span class="str">"gpt-4o"</span>, tokens=<span class="num">1200</span>)
-<span class="kw">print</span>(quote.sats)  <span class="cm"># 1_800 sats</span>
-
-<span class="cm"># Execute: returns a receipt for auditing + attribution</span>
-receipt = agent.<span class="fn">call</span>(<span class="str">"openai"</span>, model=<span class="str">"gpt-4o"</span>, messages=messages, task=<span class="str">"daily-brief"</span>)
-<span class="kw">print</span>(receipt.id, receipt.sats, receipt.agent, receipt.service)
-<span class="cm"># sat_01H...  1_800  research-bot  openai</span>
-
-<span class="cm"># Enforced: budgets are hard caps (blocked before upstream)</span>
-<span class="kw">try</span>:
-    agent.<span class="fn">call</span>(<span class="str">"openai"</span>, model=<span class="str">"gpt-4o"</span>, tokens=<span class="num">200_000</span>)
-<span class="kw">except</span> PolicyError <span class="kw">as</span> e:
-    <span class="kw">print</span>(<span class="str">"blocked:"</span>, e.code, e.remaining_sats)  <span class="cm"># budget_exceeded 48_200</span></pre>
+      <p class="hero-enter d3" style="margin-top:20px; font-size:13px; color:#999;">For teams running agents across multiple APIs in production.</p>
     </div>
 
-    <!-- ── Comparison (moved up) ── -->
-    <section class="section" id="why">
-      <div class="sectionLabel">Why Saturn</div>
-      <div class="sectionTitle">Before and after</div>
-      <p class="sectionDesc">Put Saturn between your agents and the APIs they use. Get control, receipts, and safety — without rebuilding your stack.</p>
-
-      <div class="compare">
-        <div class="card">
-          <h3 style="color:var(--muted);">Without Saturn</h3>
-          <div class="items">
-            <div class="item"><span class="ic no">×</span> Separate account per API provider</div>
-            <div class="item"><span class="ic no">×</span> Shared API keys across agents</div>
-            <div class="item"><span class="ic no">×</span> Spend limits are “check it tomorrow”</div>
-            <div class="item"><span class="ic no">×</span> Attribution requires custom glue code</div>
-            <div class="item"><span class="ic no">×</span> Killing a runaway agent = revoke keys</div>
-          </div>
-        </div>
-
-        <div class="card" style="border-color:var(--accent);">
-          <h3 style="color:var(--accent);">With Saturn</h3>
-          <div class="items">
-            <div class="item"><span class="ic ok">✓</span> One wallet + one SDK across providers</div>
-            <div class="item"><span class="ic ok">✓</span> Agent-scoped auth (no provider keys)</div>
-            <div class="item"><span class="ic ok">✓</span> Hard caps enforced per call</div>
-            <div class="item"><span class="ic ok">✓</span> Receipts per agent + task</div>
-            <div class="item"><span class="ic ok">✓</span> One-click kill switch, instant effect</div>
-          </div>
-        </div>
+    <div class="heroTerminal hero-enter d3">
+      <div class="htBar">
+        <span class="d"></span><span class="d"></span><span class="d"></span>
+        <span class="htLabel">agent session</span>
       </div>
-    </section>
+      <div class="htBody htTyping">
+        <div class="htLine"><span class="htPrompt">&gt;</span> <span class="htCmd">saturn.<span class="htBlue">search</span>({ query: <span class="htDim">'AAPL Q4 earnings'</span> })</span></div>
+        <div class="htResult"><span class="htGreen">&#10003;</span> 10 results &middot; 340 sats</div>
 
-    <!-- ── How it works ── -->
-    <section class="section" id="how">
-      <div class="sectionLabel">How it works</div>
-      <div class="sectionTitle">Three steps to production</div>
-      <p class="sectionDesc">Fund your Saturn wallet, define policies, and let agents call any service. Saturn handles auth, billing, and enforcement.</p>
+        <div class="htLine"><span class="htPrompt">&gt;</span> <span class="htCmd">saturn.<span class="htBlue">read</span>({ url: results[0].url })</span></div>
+        <div class="htResult"><span class="htGreen">&#10003;</span> 4,200 words extracted &middot; 360 sats</div>
 
-      <div class="steps">
-        <div class="step">
-          <div class="stepNum">1</div>
-          <div>
-            <h4>Fund your wallet</h4>
-            <p>Deposit sats via Lightning. Your balance is shared across agents — each with isolated budgets.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="stepNum">2</div>
-          <div>
-            <h4>Define policies</h4>
-            <p>Set per-agent budgets, rate limits, and service allowlists. Policies are enforced at call time.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="stepNum">3</div>
-          <div>
-            <h4>Agents call APIs through Saturn</h4>
-            <p>Agents authenticate to Saturn, Saturn authenticates upstream, deducts sats, and issues receipts.</p>
-          </div>
-        </div>
+        <div class="htLine"><span class="htPrompt">&gt;</span> <span class="htCmd">saturn.<span class="htBlue">reason</span>({ prompt: <span class="htDim">'Summarize...'</span> })</span></div>
+        <div class="htResult"><span class="htGreen">&#10003;</span> 280 tokens &middot; 2,400 sats</div>
+
+        <div class="htSep"></div>
+
+        <div class="htReceipt"><span class="htKey">total</span> <span class="htVal">3,100 sats</span></div>
+        <div class="htReceipt"><span class="htKey">calls</span> <span class="htVal">3</span></div>
+        <div class="htReceipt"><span class="htKey">budget used</span> <span class="htVal">3.1%</span></div>
+        <div class="htReceipt"><span class="htKey">policy</span> <span class="htVal">pol_agt_prod_001</span></div>
+        <div class="htReceipt"><span class="htKey">status</span> <span class="htVal"><span class="htGreen">within budget</span></span></div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- ── Outcomes (marketable features) ── -->
-    <section class="section" id="outcomes">
-      <div class="sectionLabel">Outcomes</div>
-      <div class="sectionTitle">Spend safely without slowing down shipping</div>
-      <p class="sectionDesc">Saturn replaces scattered API accounts, key rotation, and spend scripts with a single layer you can trust.</p>
-
-      <div class="grid cols3">
-        <div class="card">
-          <div class="tagPill">No runaway loops</div>
-          <h3>Hard caps, enforced per call</h3>
-          <p>If an agent hits its limit, the call is blocked before it reaches the provider. No surprise bills.</p>
-        </div>
-        <div class="card">
-          <div class="tagPill">Receipts & attribution</div>
-          <h3>Receipts per action</h3>
-          <p>Every call produces a receipt with agent + task context. Export logs to CSV/JSON for reporting.</p>
-        </div>
-        <div class="card">
-          <div class="tagPill">Operational simplicity</div>
-          <h3>One wallet, many services</h3>
-          <p>Replace N provider SDKs with one Saturn client. Add new services without touching agent code.</p>
-        </div>
-        <div class="card">
-          <div class="tagPill">Incident response</div>
-          <h3>Kill switch</h3>
-          <p>Freeze an agent instantly. Pending calls are rejected. Resume safely once you’ve fixed the loop.</p>
-        </div>
-        <div class="card">
-          <div class="tagPill">Security posture</div>
-          <h3>No provider keys in your runtime</h3>
-          <p>Agents never store provider API keys. Saturn handles upstream auth; you manage agent-scoped tokens.</p>
-        </div>
-        <div class="card">
-          <div class="tagPill">Predictable cost</div>
-          <h3>Preflight pricing</h3>
-          <p>Quote the sat cost before executing a call. Your agents can choose cheaper paths when needed.</p>
-        </div>
+  <!-- Trust bar -->
+  <div class="trustBar" id="security">
+    <div class="trustBarInner">
+      <div class="trustBarItem">
+        <strong>Preflight pricing</strong>
+        Exact cost before execution. No reconciliation.
       </div>
-    </section>
-
-    <!-- ── Reliability & Security (trust, but marketable) ── -->
-    <section class="section" id="reliability">
-      <div class="sectionLabel">Trust</div>
-      <div class="sectionTitle">Built like infrastructure</div>
-      <p class="sectionDesc">The stuff you care about when agents run unattended: safety, receipts, and predictable behavior.</p>
-
-      <div class="secure">
-        <div class="card">
-          <h3>Safety by default</h3>
-          <p>Budgets and policies are evaluated before any upstream call happens.</p>
-          <div class="miniList">
-            <div class="mini"><span class="b">!</span> Budget enforced pre-call</div>
-            <div class="mini"><span class="b">!</span> Service allowlists + rate limits</div>
-            <div class="mini"><span class="b">!</span> Clear policy errors to agents</div>
-          </div>
-        </div>
-        <div class="card">
-          <h3>Receipts you can audit</h3>
-          <p>Every call generates a receipt you can query, export, and attribute to a task.</p>
-          <div class="miniList">
-            <div class="mini"><span class="b">!</span> Receipt per action</div>
-            <div class="mini"><span class="b">!</span> Agent + task context</div>
-            <div class="mini"><span class="b">!</span> Export logs (CSV/JSON)</div>
-          </div>
-        </div>
+      <div class="trustBarItem">
+        <strong>Per-call receipts</strong>
+        Receipt with cost, provider, and audit ID on every call.
       </div>
-    </section>
-
-    <!-- ── Pricing ── -->
-    <section class="section" id="pricing">
-      <div class="sectionLabel">Pricing</div>
-      <div class="sectionTitle">Pay for what your agents use</div>
-      <p class="sectionDesc">
-        No subscriptions. No seat-based pricing. You pay per call at Saturn’s posted rates
-        <span style="color:var(--secondary);">(includes routing + policy enforcement + receipts)</span>.
-      </p>
-
-      <div class="priceGrid">
-        <div class="priceCard featured">
-          <div class="priceLabel">Usage-based</div>
-          <div class="priceVal">Pay per call</div>
-          <p class="priceNote">Each service has a posted sat price. Preflight a quote before your agent executes.</p>
-          <div class="items">
-            <div class="item"><span class="ic ok">✓</span> No minimum commitment</div>
-            <div class="item"><span class="ic ok">✓</span> Transparent per-call pricing</div>
-            <div class="item"><span class="ic ok">✓</span> Volume discounts at scale</div>
-            <div class="item"><span class="ic ok">✓</span> Fund via Lightning, spend instantly</div>
-          </div>
-        </div>
-        <div class="priceCard">
-          <div class="priceLabel">Enterprise</div>
-          <div class="priceVal">Custom <small>plans</small></div>
-          <p class="priceNote">For high volume, compliance needs, or custom service integrations.</p>
-          <div class="items">
-            <div class="item"><span class="ic ok">✓</span> Dedicated infrastructure</div>
-            <div class="item"><span class="ic ok">✓</span> SLA guarantees</div>
-            <div class="item"><span class="ic ok">✓</span> Custom service onboarding</div>
-            <div class="item"><span class="ic ok">✓</span> Priority support</div>
-          </div>
-        </div>
+      <div class="trustBarItem">
+        <strong>Hard budget caps</strong>
+        Over-budget rejected before touching upstream.
       </div>
-    </section>
-
-    <!-- ── FAQ ── -->
-    <section class="section" id="faq">
-      <div class="sectionLabel">FAQ</div>
-      <div class="sectionTitle">Common questions</div>
-
-      <div class="grid" style="gap:8px; margin-top:16px;">
-        <details>
-          <summary>Why Bitcoin / Lightning instead of USD?</summary>
-          <p>
-            Lightning is a machine-native payment rail: global, instant, programmable, and granular enough for
-            sub-cent per-call pricing. No chargebacks, no bank hours, no currency conversion for international agents.
-            It’s an infrastructure choice — fiat on-ramps can be added later.
-          </p>
-        </details>
-        <details>
-          <summary>What APIs are in the service catalog?</summary>
-          <p>
-            Typical catalog: LLMs (OpenAI, Anthropic), search, email, and code execution. Add services over time and request integrations.
-          </p>
-        </details>
-        <details>
-          <summary>Can I use Saturn with any agent framework?</summary>
-          <p>
-            Yes. The Saturn SDK is a thin client. It works with LangChain, CrewAI, AutoGen, custom loops — anything that can make an API call.
-          </p>
-        </details>
-        <details>
-          <summary>What happens if an agent exceeds its budget?</summary>
-          <p>
-            The call is rejected before it reaches the upstream provider. Your agent gets a clear policy error with remaining sats. No overspend.
-          </p>
-        </details>
-        <details>
-          <summary>How does Saturn handle API keys?</summary>
-          <p>
-            Saturn manages upstream API credentials. Your agents use agent-scoped tokens to authenticate to Saturn — they never see provider keys.
-          </p>
-        </details>
+      <div class="trustBarItem">
+        <strong>Zero provider keys</strong>
+        Agent &rarr; Saturn &rarr; Provider. You never touch upstream auth.
       </div>
-    </section>
-
-    <!-- ── Final CTA ── -->
-    <section class="finalCTA" id="access">
-      <h2>Get spend control for your agent stack</h2>
-      <p>
-        We’re onboarding teams running agents in production. Drop your email and we’ll send docs + SDK access for the private beta.
-      </p>
-
-      <form action="#" method="post"
-        onsubmit="event.preventDefault(); const b=this.querySelector('button'); b.textContent='Sent'; b.style.background='#16a34a'; b.style.borderColor='#16a34a';">
-        <input type="email" name="email" placeholder="you@company.com" required />
-        <button class="btn primary" type="submit">Request early access</button>
-      </form>
-
-      <div class="fineprint">No spam. Manual onboarding during beta.</div>
-    </section>
-
-    <footer>
-      <div>&copy; <span id="year"></span> Saturn</div>
-      <div style="display:flex; gap:16px;">
-        <a href="#why">Why</a>
-        <a href="#how">How it works</a>
-        <a href="#outcomes">Outcomes</a>
-        <a href="#pricing">Pricing</a>
-        <a href="#faq">FAQ</a>
-      </div>
-    </footer>
-
+    </div>
   </div>
 
-  <script>document.getElementById("year").textContent=new Date().getFullYear();</script>
+  <!-- SDK / Terminal -->
+  <section class="termSection reveal" id="sdk">
+    <div class="sectionTag">SDK</div>
+    <h2>Five lines. Full receipt.</h2>
+    <p class="lead">Agents authenticate to Saturn with a Saturn key. Saturn authenticates upstream. No provider credentials touch your runtime.</p>
+
+    <div class="termGrid">
+      <div class="termPane">
+        <div class="termBar">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <div class="fileName">agent.ts</div>
+        </div>
+        <pre><span class="kw">import</span> { <span class="prop">Saturn</span> } <span class="kw">from</span> <span class="str">'@saturn-pay/sdk'</span>
+
+<span class="kw">const</span> saturn = <span class="kw">new</span> <span class="fn">Saturn</span>({ <span class="prop">apiKey</span>: process.env.<span class="prop">SATURN_KEY</span> })
+<span class="cm">// budget policies configured in dashboard or via saturn.policies API</span>
+
+<span class="cm">// search the web, read the result, reason over it</span>
+<span class="kw">const</span> hits = <span class="kw">await</span> saturn.<span class="fn">search</span>({ <span class="prop">query</span>: <span class="str">'AAPL Q4 earnings'</span> })
+<span class="kw">const</span> page = <span class="kw">await</span> saturn.<span class="fn">read</span>({ <span class="prop">url</span>: hits.data.results[0].url })
+<span class="kw">const</span> brief = <span class="kw">await</span> saturn.<span class="fn">reason</span>({
+  <span class="prop">prompt</span>: <span class="str">`Summarize this:\n${page.data.content}`</span>,
+})
+
+console.<span class="fn">log</span>(brief.data.content)
+console.<span class="fn">log</span>(brief.metadata.chargedSats) <span class="cm">// 2,400</span>
+console.<span class="fn">log</span>(brief.metadata.totalSpent)  <span class="cm">// 3,100 (all 3 calls)</span><span class="cursor"></span></pre>
+      </div>
+      <div class="termPane receiptPane">
+        <div class="termBar">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <div class="fileName">receipt</div>
+        </div>
+        <div class="receiptHeader">receipt from the last call (reason)</div>
+        <div class="receiptRow"><span class="rKey">capability</span><span class="rVal">reason</span></div>
+        <div class="receiptRow"><span class="rKey">provider</span><span class="rVal">openai</span></div>
+        <div class="receiptRow"><span class="rKey">charged</span><span class="rVal">2,400 sats</span></div>
+        <div class="receiptRow"><span class="rKey">balance_after</span><span class="rVal">46,900 sats</span></div>
+        <div class="receiptRow"><span class="rKey">session_total</span><span class="rVal">3,100 sats (3 calls)</span></div>
+        <div class="receiptRow"><span class="rKey">policy</span><span class="rVal">pol_agt_prod_001</span></div>
+        <div class="receiptRow"><span class="rKey">budget_remaining</span><span class="rVal">96,900 / 100,000</span></div>
+        <div class="receiptRow"><span class="rKey">audit_id</span><span class="rVal">aud_7f3k…x9m2</span></div>
+        <div class="receiptRow"><span class="rKey">latency</span><span class="rVal">1,240ms</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Capabilities -->
+  <section class="capSection reveal" id="capabilities">
+    <div class="sectionTag">Capabilities</div>
+    <h2>Every verb, one SDK.<br/>Saturn picks the provider.</h2>
+
+    <div class="capList">
+      <div class="capItem">
+        <span class="verb">reason</span>
+        <span class="what">LLM inference — completions, summarization, extraction</span>
+        <span class="who">openai / anthropic</span>
+      </div>
+      <div class="capItem">
+        <span class="verb">search</span>
+        <span class="what">Web search — query to ranked results</span>
+        <span class="who">serper / brave</span>
+      </div>
+      <div class="capItem">
+        <span class="verb">read</span>
+        <span class="what">URL to clean text — articles, docs, pages</span>
+        <span class="who">jina / firecrawl</span>
+      </div>
+      <div class="capItem">
+        <span class="verb">scrape</span>
+        <span class="what">URL to structured HTML — raw extraction</span>
+        <span class="who">firecrawl / scraperapi</span>
+      </div>
+      <div class="capItem">
+        <span class="verb">execute</span>
+        <span class="what">Sandboxed code execution — Python, JS, shell</span>
+        <span class="who">e2b</span>
+      </div>
+      <div class="capItem">
+        <span class="verb">imagine</span>
+        <span class="what">Text to image — generation, editing</span>
+        <span class="who">replicate</span>
+      </div>
+      <div class="capItem">
+        <span class="verb">speak</span>
+        <span class="what">Text to speech — natural voice synthesis</span>
+        <span class="who">elevenlabs</span>
+      </div>
+      <div class="capItem">
+        <span class="verb">transcribe</span>
+        <span class="what">Speech to text — audio transcription</span>
+        <span class="who">deepgram</span>
+      </div>
+      <div class="capItem">
+        <span class="verb">email</span>
+        <span class="what">Transactional email — send with templates</span>
+        <span class="who">resend</span>
+      </div>
+      <div class="capItem">
+        <span class="verb">sms</span>
+        <span class="what">SMS — programmatic text messages</span>
+        <span class="who">twilio</span>
+      </div>
+    </div>
+    <p style="text-align:center; margin-top:24px; font-size:0.9rem; color:#999;">Saturn picks the best provider by default. Override with <code style="background:#f0f0f0; padding:2px 6px; border-radius:3px; font-size:0.85rem;">{ provider: "openai" }</code> on any call.</p>
+  </section>
+
+  <!-- Architecture -->
+  <section class="archSection reveal" id="how">
+    <div class="sectionTag">Architecture</div>
+    <h2>Fund. Call. Enforce. Settle.</h2>
+
+    <div class="archSteps">
+      <div class="archStep">
+        <div class="stepNum">01</div>
+        <h4>Fund your account</h4>
+        <p>Deposit sats via Lightning. Saturn maintains an internal ledger and issues receipts for every deduction.</p>
+      </div>
+      <div class="archStep">
+        <div class="stepNum">02</div>
+        <h4>Call a capability</h4>
+        <p>saturn.reason(), .search(), .execute(). One interface, any provider.</p>
+      </div>
+      <div class="archStep">
+        <div class="stepNum">03</div>
+        <h4>Enforce policies</h4>
+        <p>Budget, rate limits, and capability allowlists checked before any upstream call leaves Saturn.</p>
+      </div>
+      <div class="archStep">
+        <div class="stepNum">04</div>
+        <h4>Settle instantly</h4>
+        <p>Sats deducted, receipt issued, audit logged. Single round-trip. No invoices.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ecosystem -->
+  <section class="ecoSection reveal" id="ecosystem">
+    <div class="sectionTag">Ecosystem</div>
+    <h2>Two sides. One registry.</h2>
+    <p class="lead">Saturn is a curated ecosystem. Operators run agents. Providers supply capabilities. Every integration is reviewed.</p>
+
+    <div class="ecoGrid">
+      <div class="ecoCard">
+        <div class="ecoRole">For agent operators</div>
+        <h3>Run agents with guardrails</h3>
+        <p>Give each agent a Saturn key, a budget, and a policy. Saturn handles auth, routing, and receipts — your agents never touch provider credentials.</p>
+        <ol class="ecoSteps">
+          <li><span class="stepIcon">1</span> Create an account and fund it via Lightning</li>
+          <li><span class="stepIcon">2</span> Set policies — budget caps, rate limits, capability allowlists</li>
+          <li><span class="stepIcon">3</span> Give your agent a SATURN_KEY and deploy</li>
+          <li><span class="stepIcon">4</span> Monitor spend + audit trail per call</li>
+        </ol>
+        <a href="#access" class="btnBlack">Get beta access</a>
+      </div>
+      <div class="ecoCard">
+        <div class="ecoRole">For service providers</div>
+        <h3>Make your API agent-ready</h3>
+        <p>You run an API. Saturn operates it for agents — handling execution, pricing, budget enforcement, and payments. You get paid per call.</p>
+        <ol class="ecoSteps">
+          <li><span class="stepIcon">1</span> Submit your API for review</li>
+          <li><span class="stepIcon">2</span> Saturn reviews and sets up execution + pricing</li>
+          <li><span class="stepIcon">3</span> Your service becomes available as a capability</li>
+          <li><span class="stepIcon">4</span> Agents call it. You get paid per call.</li>
+        </ol>
+        <a href="#access" class="btnBlack">Submit a service</a>
+        <a href="/docs/provider-eligibility" class="btnGhost" style="margin-left:8px;">Eligibility requirements &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faqSection reveal" id="faq">
+    <h2>FAQ</h2>
+    <div class="faqGrid">
+      <div class="faqItem">
+        <div class="faqQ">Why Lightning?</div>
+        <p class="faqA">Machine-native payments. Global, instant, programmable, granular enough for sub-cent per-call pricing. No chargebacks, no bank hours.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">Is Saturn a marketplace?</div>
+        <p class="faqA">No. Saturn is a curated registry. Providers submit services for review — they don't self-list. Every integration is vetted before agents can call it.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">Can I submit my own API?</div>
+        <p class="faqA">Yes. Submit your service for review. If approved, Saturn operates it — handles execution, pricing, enforcement, and payments. You get paid per call. <a href="/docs/provider-eligibility" style="color:#000; font-weight:500; text-decoration:underline; text-underline-offset:2px;">See eligibility requirements &rarr;</a></p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">Who controls execution?</div>
+        <p class="faqA">Saturn. Every call is policy-checked, budget-enforced, and audited before it touches upstream. Saturn is not an API gateway — it owns the full call lifecycle.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">What does a call cost?</div>
+        <p class="faqA">Per-call, per-capability, per-provider. You see the exact price before every call. No monthly minimums, no subscriptions.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">Is Saturn a wallet?</div>
+        <p class="faqA">No. Saturn maintains an internal ledger. You deposit sats, agents spend them, every deduction produces a receipt. It's a spend balance, not a wallet.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="ctaSection" id="access">
+    <h2>Deploy agents with<br/>hard spend limits.</h2>
+    <p>Beta is live. We're onboarding teams running agents in production.</p>
+    <form class="ctaRow" id="signupForm">
+      <input type="text" name="name" placeholder="Your name or team name" required />
+      <input type="email" name="email" placeholder="Email (optional — enables dashboard)" />
+      <button class="btnWhite" type="submit">Create account</button>
+    </form>
+    <p id="signupMsg" style="display:none; margin-top:12px; font-size:0.95rem;"></p>
+    <script>
+      document.getElementById('signupForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const form = e.target;
+        const btn = form.querySelector('button');
+        const msg = document.getElementById('signupMsg');
+        const name = form.name.value;
+        const email = form.email.value || undefined;
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+        try {
+          const body = { name };
+          if (email) body.email = email;
+          const res = await fetch('/v1/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || 'Signup failed');
+          msg.style.display = 'block';
+          msg.innerHTML = 'Account created! Your API key:<br><code style="background:#333;padding:4px 8px;border-radius:4px;font-size:0.85rem;word-break:break-all;">' + data.apiKey + '</code><br><span style="font-size:0.8rem;opacity:0.7;">Save this key — it won\'t be shown again.</span>';
+          msg.style.color = '#fff';
+          btn.textContent = 'Done';
+        } catch (err) {
+          msg.style.display = 'block';
+          msg.textContent = err.message || 'Something went wrong. Try again.';
+          msg.style.color = '#ff6b6b';
+          btn.disabled = false;
+          btn.textContent = 'Create account';
+        }
+      });
+    </script>
+  </section>
+
+  <footer>&copy; <script>document.write(new Date().getFullYear())</script> Saturn</footer>
+
+  <script>
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  </script>
+
 </body>
 </html>

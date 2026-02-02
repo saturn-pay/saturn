@@ -6,6 +6,8 @@ export const agents = pgTable('agents', {
   accountId: text('account_id').notNull().references(() => accounts.id),
   name: text('name').notNull(),
   apiKeyHash: text('api_key_hash').notNull(),
+  email: text('email'),
+  role: text('role', { enum: ['primary', 'worker'] }).notNull().default('worker'),
   status: text('status', { enum: ['active', 'suspended', 'killed'] }).notNull().default('active'),
   metadata: jsonb('metadata'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

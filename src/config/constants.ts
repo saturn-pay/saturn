@@ -1,8 +1,10 @@
 export const DEFAULT_POLICY = {
   maxPerCallSats: null,
-  maxPerDaySats: null,
+  maxPerDaySats: 10_000,
   allowedServices: null,
   deniedServices: null,
+  allowedCapabilities: null,
+  deniedCapabilities: null,
   killSwitch: false,
   maxBalanceSats: null,
 } as const;
@@ -16,7 +18,6 @@ export const FUNDING = {
 export const RATE_UPDATE_INTERVAL_CRON = '*/5 * * * *'; // every 5 minutes
 
 export const API_KEY_PREFIXES = {
-  account: 'sk_acct_',
   agent: 'sk_agt_',
 } as const;
 
