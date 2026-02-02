@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -15,6 +16,19 @@ import { runRateUpdate, startRateUpdater } from './jobs/rate-updater.js';
 import { startInvoiceWatcher, stopInvoiceWatcher } from './jobs/invoice-watcher.js';
 import { startInvoiceExpiryJob } from './jobs/invoice-expiry.js';
 import { getPool } from './db/client.js';
+
+// ---------------------------------------------------------------------------
+// Sentry
+// ---------------------------------------------------------------------------
+
+if (env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: env.SENTRY_DSN,
+    environment: env.NODE_ENV,
+    tracesSampleRate: env.NODE_ENV === 'production' ? 0.2 : 1.0,
+  });
+  logger.info('Sentry initialized');
+}
 
 const app = express();
 

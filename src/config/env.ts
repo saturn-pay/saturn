@@ -33,6 +33,8 @@ const envSchema = z.object({
   PINECONE_ENVIRONMENT: z.string().optional(),
 
   CORS_ORIGIN: z.string().optional(),
+
+  SENTRY_DSN: z.string().url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
