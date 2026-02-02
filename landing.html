@@ -525,6 +525,14 @@
       to{ opacity:1; transform:translateY(0); }
     }
 
+    /* ── SDK 3-pane grid ── */
+    .sdkGrid{
+      display:grid; grid-template-columns:1fr 1fr 1fr;
+      gap:1px; background:#eaeaea;
+      border:1px solid #eaeaea; border-radius:12px;
+      overflow:hidden;
+    }
+
     /* ── Responsive ── */
     @media(max-width:900px){
       .hero{ grid-template-columns:1fr; }
@@ -539,6 +547,7 @@
       .archStep::after{ display:none; }
       .ecoGrid{ grid-template-columns:1fr; }
       .termGrid{ grid-template-columns:1fr; }
+      .sdkGrid{ grid-template-columns:1fr; }
       .faqGrid{ grid-template-columns:1fr; }
       .trustBarInner{ grid-template-columns:1fr 1fr; }
       .trustBarItem:nth-child(2){ border-right:none; }
@@ -572,7 +581,7 @@
         <a href="#how"><span>Architecture</span></a>
         <a href="#ecosystem"><span>Ecosystem</span></a>
         <a href="#security"><span>Security</span></a>
-        <a href="#access" class="navCta">Get beta access</a>
+        <a href="/signup" class="navCta">Get started</a>
       </div>
     </div>
   </nav>
@@ -590,7 +599,7 @@
         <strong>hard spend limits, per-call receipts, and zero provider credentials in your runtime.</strong>
       </p>
       <div class="heroActions hero-enter d2">
-        <a href="#access" class="btnBlack">Get beta access</a>
+        <a href="/signup" class="btnBlack">Get started</a>
         <a href="#sdk" class="btnGhost">See the SDK &darr;</a>
       </div>
       <p class="hero-enter d3" style="margin-top:20px; font-size:13px; color:#999;">For teams running agents across multiple APIs in production.</p>
@@ -647,37 +656,64 @@
   <!-- SDK / Terminal -->
   <section class="termSection reveal" id="sdk">
     <div class="sectionTag">SDK</div>
-    <h2>Five lines. Full receipt.</h2>
-    <p class="lead">Agents authenticate to Saturn with a Saturn key. Saturn authenticates upstream. No provider credentials touch your runtime.</p>
+    <h2>npm install. Send sats. Ship.</h2>
+    <p class="lead">No signup form. No billing page. No API keys to manage. Just code.</p>
 
-    <div class="termGrid">
+    <div class="sdkGrid">
+
+      <!-- Pane 1: Setup -->
       <div class="termPane">
         <div class="termBar">
           <div class="dots"><span></span><span></span><span></span></div>
-          <div class="fileName">agent.ts</div>
+          <div class="fileName">1. setup</div>
         </div>
-        <pre><span class="kw">import</span> { <span class="prop">Saturn</span> } <span class="kw">from</span> <span class="str">'@saturn-pay/sdk'</span>
+        <pre><span class="cm">// create an agent — no browser needed</span>
+<span class="kw">import</span> { <span class="prop">Saturn</span> } <span class="kw">from</span> <span class="str">'@saturn-pay/sdk'</span>
 
-<span class="kw">const</span> saturn = <span class="kw">new</span> <span class="fn">Saturn</span>({ <span class="prop">apiKey</span>: process.env.<span class="prop">SATURN_KEY</span> })
-<span class="cm">// budget policies configured in dashboard or via saturn.policies API</span>
+<span class="kw">const</span> { saturn, apiKey } = <span class="kw">await</span> Saturn.<span class="fn">signup</span>({
+  <span class="prop">name</span>: <span class="str">'research-agent'</span>
+})
+<span class="cm">// save apiKey to .env as SATURN_KEY</span>
 
-<span class="cm">// search the web, read the result, reason over it</span>
-<span class="kw">const</span> hits = <span class="kw">await</span> saturn.<span class="fn">search</span>({ <span class="prop">query</span>: <span class="str">'AAPL Q4 earnings'</span> })
-<span class="kw">const</span> page = <span class="kw">await</span> saturn.<span class="fn">read</span>({ <span class="prop">url</span>: hits.data.results[0].url })
-<span class="kw">const</span> brief = <span class="kw">await</span> saturn.<span class="fn">reason</span>({
-  <span class="prop">prompt</span>: <span class="str">`Summarize this:\n${page.data.content}`</span>,
+<span class="cm">// fund with Lightning</span>
+<span class="kw">const</span> inv = <span class="kw">await</span> saturn.wallet.<span class="fn">fund</span>({
+  <span class="prop">amountSats</span>: <span class="str">50_000</span>
+})
+<span class="cm">// pay inv.paymentRequest → done</span></pre>
+      </div>
+
+      <!-- Pane 2: Use -->
+      <div class="termPane">
+        <div class="termBar">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <div class="fileName">2. agent.ts</div>
+        </div>
+        <pre><span class="cm">// every run after setup</span>
+<span class="kw">import</span> { <span class="prop">Saturn</span> } <span class="kw">from</span> <span class="str">'@saturn-pay/sdk'</span>
+
+<span class="kw">const</span> saturn = <span class="kw">new</span> <span class="fn">Saturn</span>({
+  <span class="prop">apiKey</span>: process.env.<span class="prop">SATURN_KEY</span>
 })
 
-console.<span class="fn">log</span>(brief.data.content)
-console.<span class="fn">log</span>(brief.metadata.chargedSats) <span class="cm">// 2,400</span>
-console.<span class="fn">log</span>(brief.metadata.totalSpent)  <span class="cm">// 3,100 (all 3 calls)</span><span class="cursor"></span></pre>
+<span class="kw">const</span> hits = <span class="kw">await</span> saturn.<span class="fn">search</span>({
+  <span class="prop">query</span>: <span class="str">'AAPL Q4 earnings'</span>
+})
+<span class="kw">const</span> page = <span class="kw">await</span> saturn.<span class="fn">read</span>({
+  <span class="prop">url</span>: hits.data.results[0].url
+})
+<span class="kw">const</span> brief = <span class="kw">await</span> saturn.<span class="fn">reason</span>({
+  <span class="prop">model</span>: <span class="str">'gpt-4.2'</span>,
+  <span class="prop">prompt</span>: <span class="str">`Summarize:\n${page.data.content}`</span>
+})<span class="cursor"></span></pre>
       </div>
+
+      <!-- Pane 3: Receipt -->
       <div class="termPane receiptPane">
         <div class="termBar">
           <div class="dots"><span></span><span></span><span></span></div>
-          <div class="fileName">receipt</div>
+          <div class="fileName">3. receipt</div>
         </div>
-        <div class="receiptHeader">receipt from the last call (reason)</div>
+        <div class="receiptHeader">every call returns a receipt</div>
         <div class="receiptRow"><span class="rKey">capability</span><span class="rVal">reason</span></div>
         <div class="receiptRow"><span class="rKey">provider</span><span class="rVal">openai</span></div>
         <div class="receiptRow"><span class="rKey">charged</span><span class="rVal">2,400 sats</span></div>
@@ -688,7 +724,9 @@ console.<span class="fn">log</span>(brief.metadata.totalSpent)  <span class="cm"
         <div class="receiptRow"><span class="rKey">audit_id</span><span class="rVal">aud_7f3k…x9m2</span></div>
         <div class="receiptRow"><span class="rKey">latency</span><span class="rVal">1,240ms</span></div>
       </div>
+
     </div>
+    <p style="text-align:center; margin-top:20px; font-size:13px; color:#999;">That's it. No account page. No credit card. No provider keys.</p>
   </section>
 
   <!-- Capabilities -->
@@ -797,7 +835,7 @@ console.<span class="fn">log</span>(brief.metadata.totalSpent)  <span class="cm"
           <li><span class="stepIcon">3</span> Give your agent a SATURN_KEY and deploy</li>
           <li><span class="stepIcon">4</span> Monitor spend + audit trail per call</li>
         </ol>
-        <a href="#access" class="btnBlack">Get beta access</a>
+        <a href="/signup" class="btnBlack">Get started</a>
       </div>
       <div class="ecoCard">
         <div class="ecoRole">For service providers</div>
@@ -849,51 +887,14 @@ console.<span class="fn">log</span>(brief.metadata.totalSpent)  <span class="cm"
   <!-- CTA -->
   <section class="ctaSection" id="access">
     <h2>Deploy agents with<br/>hard spend limits.</h2>
-    <p>Beta is live. We're onboarding teams running agents in production.</p>
-    <form class="ctaRow" id="signupForm">
-      <input type="text" name="name" placeholder="Your name or team name" required />
-      <input type="email" name="email" placeholder="Email (optional — enables dashboard)" />
-      <button class="btnWhite" type="submit">Create account</button>
-    </form>
-    <p id="signupMsg" style="display:none; margin-top:12px; font-size:0.95rem;"></p>
-    <script>
-      document.getElementById('signupForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const form = e.target;
-        const btn = form.querySelector('button');
-        const msg = document.getElementById('signupMsg');
-        const name = form.name.value;
-        const email = form.email.value || undefined;
-        btn.disabled = true;
-        btn.textContent = 'Creating...';
-        try {
-          const body = { name };
-          if (email) body.email = email;
-          const res = await fetch('/v1/signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.message || 'Signup failed');
-          msg.style.display = 'block';
-          msg.innerHTML = 'Account created! Your API key:<br><code style="background:#333;padding:4px 8px;border-radius:4px;font-size:0.85rem;word-break:break-all;">' + data.apiKey + '</code><br><span style="font-size:0.8rem;opacity:0.7;">Save this key — it won\'t be shown again.</span>';
-          msg.style.color = '#fff';
-          btn.textContent = 'Done';
-        } catch (err) {
-          msg.style.display = 'block';
-          msg.textContent = err.message || 'Something went wrong. Try again.';
-          msg.style.color = '#ff6b6b';
-          btn.disabled = false;
-          btn.textContent = 'Create account';
-        }
-      });
-    </script>
+    <p>Create an agent. Fund with Lightning. Start calling.</p>
+    <a href="/signup" class="btnWhite" style="display:inline-flex;text-decoration:none;">Get started</a>
   </section>
 
-  <footer>&copy; <script>document.write(new Date().getFullYear())</script> Saturn</footer>
+  <footer>&copy; <span id="year"></span> Saturn</footer>
 
   <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
     const io = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
     }, { threshold: 0.1 });
