@@ -42,7 +42,7 @@ function generateApiKey(): string {
 }
 
 function sanitizeAgent(agent: typeof agents.$inferSelect) {
-  const { apiKeyHash, ...rest } = agent;
+  const { apiKeyHash, apiKeyPrefix, ...rest } = agent;
   return rest;
 }
 
@@ -80,6 +80,7 @@ agentsRouter.post('/', async (req: Request, res: Response) => {
 
   const rawApiKey = generateApiKey();
   const apiKeyHash = await bcrypt.hash(rawApiKey, BCRYPT_SALT_ROUNDS);
+  const apiKeyPrefix = crypto.createHash('sha256').update(rawApiKey).digest('hex').slice(0, 16);
 
   const agentId = generateId(ID_PREFIXES.agent);
   const walletId = generateId(ID_PREFIXES.wallet);
@@ -94,6 +95,7 @@ agentsRouter.post('/', async (req: Request, res: Response) => {
         accountId: account.id,
         name,
         apiKeyHash,
+        apiKeyPrefix,
         role: 'worker',
         status: 'active',
         metadata: metadata ?? null,

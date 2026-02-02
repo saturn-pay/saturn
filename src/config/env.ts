@@ -10,8 +10,8 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url(),
 
   LND_SOCKET: z.string().default('localhost:10009'),
-  LND_TLS_CERT: z.string().min(1),
-  LND_MACAROON: z.string().min(1),
+  LND_TLS_CERT: z.string().optional(),
+  LND_MACAROON: z.string().optional(),
 
   OPENAI_API_KEY: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
@@ -31,6 +31,8 @@ const envSchema = z.object({
   HUNTER_API_KEY: z.string().optional(),
   PINECONE_API_KEY: z.string().optional(),
   PINECONE_ENVIRONMENT: z.string().optional(),
+
+  CORS_ORIGIN: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

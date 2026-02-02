@@ -31,6 +31,8 @@ export async function createLightningInvoice(
   memo: string,
   expirySecs = 3600,
 ): Promise<CreateInvoiceResult> {
+  if (!lnd) throw new Error('Lightning is not configured');
+
   const invoice = await createInvoice({
     lnd,
     tokens: amountSats,
@@ -46,6 +48,8 @@ export async function createLightningInvoice(
 }
 
 export async function getInvoiceStatus(rHash: string): Promise<InvoiceStatus> {
+  if (!lnd) throw new Error('Lightning is not configured');
+
   const invoice = await getInvoice({ lnd, id: rHash });
 
   return {
@@ -56,6 +60,8 @@ export async function getInvoiceStatus(rHash: string): Promise<InvoiceStatus> {
 }
 
 export async function getNodeInfo(): Promise<NodeInfo> {
+  if (!lnd) throw new Error('Lightning is not configured');
+
   const info = await getWalletInfo({ lnd });
 
   return {

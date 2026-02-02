@@ -1,4 +1,4 @@
-import { pgTable, text, bigint, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, text, bigint, timestamp, unique, index } from 'drizzle-orm/pg-core';
 import { wallets } from './wallets.js';
 
 export const transactions = pgTable('transactions', {
@@ -11,4 +11,7 @@ export const transactions = pgTable('transactions', {
   referenceId: text('reference_id'),
   description: text('description'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => [
+  unique('tx_reference_unique').on(table.referenceType, table.referenceId),
+  index('tx_wallet_created_idx').on(table.walletId, table.createdAt),
+]);

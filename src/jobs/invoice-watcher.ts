@@ -1,5 +1,5 @@
 import { subscribeToInvoices } from 'ln-service';
-import { eq } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { lnd } from '../lib/lnd-client.js';
 import { db } from '../db/client.js';
 import { invoices } from '../db/schema/index.js';
@@ -28,40 +28,32 @@ async function handleSettledInvoice(invoice: {
   const rHash = invoice.id;
 
   try {
-    // Look up the invoice in our DB by r_hash
-    const [dbInvoice] = await db
-      .select()
-      .from(invoices)
-      .where(eq(invoices.rHash, rHash));
-
-    if (!dbInvoice) {
-      logger.debug({ rHash }, 'Settled invoice not found in DB — ignoring (external payment)');
-      return;
-    }
-
-    if (dbInvoice.status === 'settled') {
-      logger.debug({ rHash }, 'Invoice already settled — skipping');
-      return;
-    }
-
-    // Credit the wallet
-    await walletService.creditFromInvoice(
-      dbInvoice.walletId,
-      dbInvoice.amountSats,
-      dbInvoice.id,
-    );
-
-    // Mark invoice as settled
-    await db
+    // Atomically claim the invoice — UPDATE only succeeds if status is still 'pending'.
+    // This prevents double-credit when duplicate events arrive.
+    const [claimed] = await db
       .update(invoices)
       .set({
         status: 'settled',
         settledAt: new Date(),
       })
-      .where(eq(invoices.id, dbInvoice.id));
+      .where(and(eq(invoices.rHash, rHash), eq(invoices.status, 'pending')))
+      .returning();
+
+    if (!claimed) {
+      // Either not our invoice, or already settled/expired — safe to ignore
+      logger.debug({ rHash }, 'Invoice not found or already settled — skipping');
+      return;
+    }
+
+    // Credit the wallet (idempotent via unique constraint on transactions)
+    await walletService.creditFromInvoice(
+      claimed.walletId,
+      claimed.amountSats,
+      claimed.id,
+    );
 
     logger.info(
-      { invoiceId: dbInvoice.id, walletId: dbInvoice.walletId, amountSats: dbInvoice.amountSats },
+      { invoiceId: claimed.id, walletId: claimed.walletId, amountSats: claimed.amountSats },
       'Invoice settled and wallet credited',
     );
   } catch (err) {
@@ -74,6 +66,11 @@ async function handleSettledInvoice(invoice: {
 // ---------------------------------------------------------------------------
 
 function subscribe(): void {
+  if (!lnd) {
+    logger.warn('LND not available — invoice watcher not started');
+    return;
+  }
+
   logger.info('Subscribing to LND invoice stream');
 
   subscription = subscribeToInvoices({ lnd });

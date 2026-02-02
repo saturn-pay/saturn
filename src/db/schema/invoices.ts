@@ -1,4 +1,4 @@
-import { pgTable, text, bigint, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, text, bigint, timestamp, index } from 'drizzle-orm/pg-core';
 import { wallets } from './wallets.js';
 
 export const invoices = pgTable('invoices', {
@@ -11,4 +11,7 @@ export const invoices = pgTable('invoices', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   settledAt: timestamp('settled_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => [
+  index('invoices_wallet_idx').on(table.walletId),
+  index('invoices_status_expires_idx').on(table.status, table.expiresAt),
+]);

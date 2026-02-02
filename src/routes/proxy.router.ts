@@ -15,6 +15,20 @@ function paramString(value: string | string[] | undefined): string {
   return value ?? '';
 }
 
+// Headers that must never be forwarded from upstream responses
+const BLOCKED_UPSTREAM_HEADERS = new Set([
+  'set-cookie', 'authorization', 'x-api-key', 'cookie',
+  'transfer-encoding', 'connection', 'keep-alive',
+]);
+
+function setFilteredHeaders(res: Response, headers: Record<string, string>): void {
+  for (const [key, value] of Object.entries(headers)) {
+    if (!BLOCKED_UPSTREAM_HEADERS.has(key.toLowerCase())) {
+      res.set(key, value);
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
@@ -67,11 +81,9 @@ capabilityRouter.post('/:capability', requireAuth, async (req: Request, res: Res
   res.set('X-Saturn-Capability', capability);
   res.set('X-Saturn-Provider', serviceSlug);
 
-  // Forward any upstream headers
+  // Forward safe upstream headers
   if (result.headers) {
-    for (const [key, value] of Object.entries(result.headers)) {
-      res.set(key, value);
-    }
+    setFilteredHeaders(res, result.headers);
   }
 
   // Normalize response for capability endpoints
@@ -113,11 +125,9 @@ proxyRouter.post('/:serviceSlug', requireAuth, async (req: Request, res: Respons
   res.set('X-Saturn-Charged-Sats', String(result.metadata.chargedSats));
   res.set('X-Saturn-Balance-After', String(result.metadata.balanceAfter));
 
-  // Forward any upstream headers
+  // Forward safe upstream headers
   if (result.headers) {
-    for (const [key, value] of Object.entries(result.headers)) {
-      res.set(key, value);
-    }
+    setFilteredHeaders(res, result.headers);
   }
 
   res.status(result.status).json(result.data);

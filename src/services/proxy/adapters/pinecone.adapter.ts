@@ -22,6 +22,14 @@ export class PineconeAdapter extends BaseAdapter {
       [k: string]: unknown;
     };
 
+    // Validate index name to prevent SSRF via hostname injection
+    if (!/^[a-z0-9][a-z0-9-]{0,44}$/.test(index)) {
+      throw new Error('Invalid Pinecone index name');
+    }
+    if (!['upsert', 'query'].includes(operation)) {
+      throw new Error('Invalid Pinecone operation');
+    }
+
     const url = `https://${index}-${environment}.svc.pinecone.io/${operation}`;
 
     const res = await fetch(url, {

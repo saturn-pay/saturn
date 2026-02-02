@@ -350,9 +350,10 @@ adminRouter.get('/rates', async (_req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 
 adminRouter.get('/registry/submissions', async (req: Request, res: Response) => {
+  const accountId = req.account!.id;
   const status = req.query.status as string | undefined;
 
-  const conditions = [];
+  const conditions = [eq(serviceSubmissions.accountId, accountId)];
   if (status) {
     conditions.push(eq(serviceSubmissions.status, status as any));
   }
@@ -360,7 +361,7 @@ adminRouter.get('/registry/submissions', async (req: Request, res: Response) => 
   const rows = await db
     .select()
     .from(serviceSubmissions)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(desc(serviceSubmissions.createdAt));
 
   res.json(rows);
@@ -371,12 +372,13 @@ adminRouter.get('/registry/submissions', async (req: Request, res: Response) => 
 // ---------------------------------------------------------------------------
 
 adminRouter.get('/registry/submissions/:id', async (req: Request, res: Response) => {
+  const accountId = req.account!.id;
   const submissionId = paramString(req.params.id);
 
   const [submission] = await db
     .select()
     .from(serviceSubmissions)
-    .where(eq(serviceSubmissions.id, submissionId));
+    .where(and(eq(serviceSubmissions.id, submissionId), eq(serviceSubmissions.accountId, accountId)));
 
   if (!submission) {
     throw new NotFoundError('Submission', submissionId);
@@ -390,11 +392,22 @@ adminRouter.get('/registry/submissions/:id', async (req: Request, res: Response)
 // ---------------------------------------------------------------------------
 
 adminRouter.patch('/registry/submissions/:id', async (req: Request, res: Response) => {
+  const accountId = req.account!.id;
   const submissionId = paramString(req.params.id);
   const { status, reviewerNotes } = req.body;
 
   if (!status || !['approved', 'rejected'].includes(status)) {
     throw new ValidationError('status must be "approved" or "rejected"');
+  }
+
+  // Verify ownership before approving/rejecting
+  const [submission] = await db
+    .select()
+    .from(serviceSubmissions)
+    .where(and(eq(serviceSubmissions.id, submissionId), eq(serviceSubmissions.accountId, accountId)));
+
+  if (!submission) {
+    throw new NotFoundError('Submission', submissionId);
   }
 
   if (status === 'approved') {

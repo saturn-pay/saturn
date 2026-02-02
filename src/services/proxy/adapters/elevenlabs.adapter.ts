@@ -21,6 +21,11 @@ export class ElevenLabsAdapter extends BaseAdapter {
 
     const voiceId = voice_id || 'default';
 
+    // Validate voice_id to prevent path traversal
+    if (!/^[a-zA-Z0-9_-]+$/.test(voiceId)) {
+      throw new Error('Invalid voice_id');
+    }
+
     const res = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
       {

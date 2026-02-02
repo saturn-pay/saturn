@@ -90,27 +90,22 @@ export async function hold(
   walletId: string,
   amountSats: number,
 ): Promise<HoldResult> {
-  const result = await db.execute(
+  const result = await db.execute<typeof schema.wallets.$inferSelect>(
     sql`UPDATE wallets
         SET balance_sats = balance_sats - ${amountSats},
             held_sats = held_sats + ${amountSats},
             updated_at = NOW()
         WHERE id = ${walletId}
-          AND balance_sats >= ${amountSats}`,
+          AND balance_sats >= ${amountSats}
+        RETURNING *`,
   );
 
-  const rowCount = (result as { rowCount?: number }).rowCount ?? 0;
-
-  if (rowCount === 0) {
+  const rows = result.rows ?? [];
+  if (rows.length === 0) {
     return { success: false, wallet: null };
   }
 
-  const [wallet] = await db
-    .select()
-    .from(schema.wallets)
-    .where(eq(schema.wallets.id, walletId));
-
-  return { success: true, wallet };
+  return { success: true, wallet: rows[0] as unknown as Wallet };
 }
 
 /**
@@ -168,19 +163,35 @@ export async function release(
   walletId: string,
   heldAmount: number,
 ): Promise<Wallet> {
-  const [wallet] = await db
-    .update(schema.wallets)
-    .set({
-      heldSats: sql`${schema.wallets.heldSats} - ${heldAmount}`,
-      balanceSats: sql`${schema.wallets.balanceSats} + ${heldAmount}`,
-      updatedAt: new Date(),
-    })
-    .where(eq(schema.wallets.id, walletId))
-    .returning();
+  return await db.transaction(async (tx) => {
+    const [wallet] = await tx
+      .update(schema.wallets)
+      .set({
+        heldSats: sql`${schema.wallets.heldSats} - ${heldAmount}`,
+        balanceSats: sql`${schema.wallets.balanceSats} + ${heldAmount}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.wallets.id, walletId))
+      .returning();
 
-  if (!wallet) {
-    throw new NotFoundError('Wallet', walletId);
-  }
+    if (!wallet) {
+      throw new NotFoundError('Wallet', walletId);
+    }
 
-  return wallet;
+    await tx
+      .insert(schema.transactions)
+      .values({
+        id: generateId(ID_PREFIXES.transaction),
+        walletId,
+        type: 'refund',
+        amountSats: heldAmount,
+        balanceAfter: wallet.balanceSats,
+        referenceType: 'hold_release',
+        referenceId: null,
+        description: `Hold released: ${heldAmount} sats returned`,
+        createdAt: new Date(),
+      });
+
+    return wallet;
+  });
 }

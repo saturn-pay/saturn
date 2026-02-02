@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
@@ -12,6 +13,14 @@ import { ValidationError } from '../lib/errors.js';
 
 const BCRYPT_SALT_ROUNDS = 10;
 
+const signupLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 signups per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many signup attempts, please try again later' },
+});
+
 const signupSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255),
   email: z.string().email('Invalid email address').optional(),
@@ -20,7 +29,7 @@ const signupSchema = z.object({
 export const signupRouter = Router();
 
 // POST /signup — open registration, creates account + primary agent
-signupRouter.post('/', async (req: Request, res: Response) => {
+signupRouter.post('/', signupLimiter, async (req: Request, res: Response) => {
   const parsed = signupSchema.safeParse(req.body);
   if (!parsed.success) {
     throw new ValidationError('Invalid request body', parsed.error.flatten());
@@ -42,6 +51,7 @@ signupRouter.post('/', async (req: Request, res: Response) => {
 
   const rawApiKey = API_KEY_PREFIXES.agent + crypto.randomBytes(32).toString('hex');
   const apiKeyHash = await bcrypt.hash(rawApiKey, BCRYPT_SALT_ROUNDS);
+  const apiKeyPrefix = crypto.createHash('sha256').update(rawApiKey).digest('hex').slice(0, 16);
 
   const accountId = generateId(ID_PREFIXES.account);
   const agentId = generateId(ID_PREFIXES.agent);
@@ -63,6 +73,7 @@ signupRouter.post('/', async (req: Request, res: Response) => {
       accountId,
       name: `${name} (primary)`,
       apiKeyHash,
+      apiKeyPrefix,
       email: email ?? null,
       role: 'primary',
       status: 'active',

@@ -4,6 +4,7 @@
 import type { Agent, Wallet, Policy } from '../../types/index.js';
 import { getAdapter } from './adapter-registry.js';
 import * as policyService from '../policy.service.js';
+import { invalidateDailySpendCache } from '../policy.service.js';
 import * as walletService from '../wallet.service.js';
 import * as auditService from '../audit.service.js';
 import {
@@ -92,7 +93,38 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
     const response = await adapter.execute(requestBody);
     upstreamLatencyMs = Date.now() - startMs;
 
-    // 6. Success path: finalize, settle, audit
+    // 6. If upstream returned an error status, release hold instead of charging
+    if (response.status >= 400) {
+      await walletService.release(wallet.id, quotedSats);
+
+      const auditId = await auditService.logProxyCall({
+        agentId: agent.id,
+        serviceSlug,
+        capability,
+        operation,
+        requestBody,
+        policyResult: 'allowed',
+        quotedSats,
+        chargedSats: 0,
+        upstreamStatus: response.status,
+        upstreamLatencyMs,
+        error: `Upstream returned ${response.status}`,
+      });
+
+      return {
+        status: response.status,
+        data: response.data,
+        headers: response.headers,
+        metadata: {
+          auditId,
+          quotedSats,
+          chargedSats: 0,
+          balanceAfter: (await walletService.getBalance(agent.id)).balanceSats,
+        },
+      };
+    }
+
+    // 7. Success path: finalize, settle, audit
     const { finalSats } = await adapter.finalize(response, quotedSats);
 
     const { wallet: settledWallet } = await walletService.settle(
@@ -100,6 +132,9 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
       quotedSats,
       finalSats,
     );
+
+    // Invalidate daily spend cache so limit checks are accurate
+    invalidateDailySpendCache(agent.id);
 
     const auditId = await auditService.logProxyCall({
       agentId: agent.id,
@@ -128,8 +163,24 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
   } catch (err) {
     upstreamLatencyMs = Date.now() - startMs;
 
-    // 7. Failure path: release hold, audit, re-throw
-    await walletService.release(wallet.id, quotedSats);
+    // 8. Failure path: release hold, audit, re-throw
+    try {
+      await walletService.release(wallet.id, quotedSats);
+    } catch (releaseErr) {
+      // Log but don't swallow the original error
+      const releaseMsg = releaseErr instanceof Error ? releaseErr.message : String(releaseErr);
+      await auditService.logProxyCall({
+        agentId: agent.id,
+        serviceSlug,
+        capability,
+        operation,
+        requestBody,
+        policyResult: 'allowed',
+        quotedSats,
+        upstreamLatencyMs,
+        error: `Release failed: ${releaseMsg}`,
+      });
+    }
 
     const errorMessage = err instanceof Error ? err.message : String(err);
 

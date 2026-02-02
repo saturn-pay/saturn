@@ -41,6 +41,7 @@ async function main() {
 
   const rawApiKey = API_KEY_PREFIXES.agent + crypto.randomBytes(32).toString('hex');
   const apiKeyHash = await bcrypt.hash(rawApiKey, BCRYPT_SALT_ROUNDS);
+  const apiKeyPrefix = crypto.createHash('sha256').update(rawApiKey).digest('hex').slice(0, 16);
 
   const accountId = generateId(ID_PREFIXES.account);
   const agentId = generateId(ID_PREFIXES.agent);
@@ -62,6 +63,7 @@ async function main() {
       accountId,
       name: `${name} (primary)`,
       apiKeyHash,
+      apiKeyPrefix,
       email,
       role: 'primary',
       status: 'active',

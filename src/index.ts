@@ -13,6 +13,7 @@ import { initCapabilities } from './services/proxy/capability-registry.js';
 import { loadApprovedServices } from './services/registry.service.js';
 import { runRateUpdate, startRateUpdater } from './jobs/rate-updater.js';
 import { startInvoiceWatcher } from './jobs/invoice-watcher.js';
+import { startInvoiceExpiryJob } from './jobs/invoice-expiry.js';
 
 const app = express();
 
@@ -41,7 +42,11 @@ const proxyLimiter = rateLimit({
 // ---------------------------------------------------------------------------
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: env.CORS_ORIGIN || true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(requestLogger);
 app.use(defaultLimiter);
@@ -88,12 +93,14 @@ async function start(): Promise<void> {
     startRateUpdater();
     logger.info('Rate updater started');
 
-    try {
-      startInvoiceWatcher();
-      logger.info('Invoice watcher started');
-    } catch (err) {
-      logger.warn({ err }, 'Invoice watcher failed to start (LND may not be available)');
-    }
+    const { verifyLndConnection } = await import('./lib/lnd-client.js');
+    await verifyLndConnection();
+
+    startInvoiceWatcher();
+    logger.info('Invoice watcher started');
+
+    startInvoiceExpiryJob();
+    logger.info('Invoice expiry job started');
 
     app.listen(env.PORT, () => {
       logger.info(`Saturn listening on port ${env.PORT}`);

@@ -1,4 +1,4 @@
-import { pgTable, text, bigint, integer, timestamp, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, bigint, integer, timestamp, jsonb, index } from 'drizzle-orm/pg-core';
 import { agents } from './agents.js';
 
 export const auditLogs = pgTable('audit_logs', {
@@ -17,4 +17,6 @@ export const auditLogs = pgTable('audit_logs', {
   responseMeta: jsonb('response_meta'),
   error: text('error'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => [
+  index('audit_agent_created_idx').on(table.agentId, table.createdAt),
+]);

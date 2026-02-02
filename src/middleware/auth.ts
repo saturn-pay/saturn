@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/client.js';
@@ -16,6 +17,7 @@ function extractBearerToken(req: Request): string | null {
 
 /**
  * Authenticates any `sk_agt_` key.
+ * Uses a SHA-256 prefix for fast DB lookup, then bcrypt-verifies the single match.
  * Loads agent + parent account + wallet + policy onto the request.
  * Rejects if agent is suspended or killed.
  */
@@ -34,14 +36,15 @@ export async function requireAuth(
       throw new AuthError();
     }
 
-    // Find matching agent by bcrypt comparison
-    const rows = await db
+    // Fast lookup by SHA-256 prefix, then verify with bcrypt
+    const prefix = crypto.createHash('sha256').update(token).digest('hex').slice(0, 16);
+    const candidates = await db
       .select()
       .from(schema.agents)
-      .execute();
+      .where(eq(schema.agents.apiKeyPrefix, prefix));
 
     let matchedAgent = null;
-    for (const agent of rows) {
+    for (const agent of candidates) {
       const match = await bcrypt.compare(token, agent.apiKeyHash);
       if (match) {
         matchedAgent = agent;

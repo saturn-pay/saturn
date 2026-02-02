@@ -3,7 +3,7 @@ import { agents } from './agents.js';
 
 export const policies = pgTable('policies', {
   id: text('id').primaryKey(),
-  agentId: text('agent_id').notNull().references(() => agents.id),
+  agentId: text('agent_id').notNull().unique().references(() => agents.id),
   maxPerCallSats: bigint('max_per_call_sats', { mode: 'number' }),
   maxPerDaySats: bigint('max_per_day_sats', { mode: 'number' }),
   allowedServices: text('allowed_services').array(),
