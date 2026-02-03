@@ -1,4 +1,6 @@
-import { authenticatedLndGrpc, getWalletInfo } from 'ln-service';
+import { authenticatedLndGrpc } from 'ln-service';
+// getInvoices exists at runtime but is missing from type definitions
+const { getInvoices } = await import('ln-service') as any;
 import { logger } from '../lib/logger.js';
 
 const LND_TLS_CERT = process.env.LND_TLS_CERT ?? '';
@@ -22,25 +24,18 @@ if (LND_MACAROON) {
 }
 
 /**
- * Verify LND connectivity by calling GetInfo.
- * Call during startup to fail fast if creds are wrong.
+ * Verify LND connectivity using an invoice-permission call.
+ * Uses getInvoices (invoices:read) instead of getWalletInfo (info:read)
+ * so we can run with a restricted Invoice macaroon.
  */
 export async function verifyLndConnection(): Promise<void> {
   if (!lnd) {
-    throw new Error('LND client not initialised — check LND_TLS_CERT and LND_MACAROON');
+    throw new Error('LND client not initialised — check LND_MACAROON');
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const info: any = await getWalletInfo({ lnd });
-    logger.info(
-      { alias: info.alias, publicKey: info.public_key, synced: info.is_synced_to_chain },
-      'LND connection verified',
-    );
-
-    if (!info.is_synced_to_chain) {
-      logger.warn('LND node is not synced to chain — invoices may not work reliably');
-    }
+    await getInvoices({ lnd, limit: 1 });
+    logger.info({ socket: LND_SOCKET }, 'LND connection verified');
   } catch (err: unknown) {
     const details = err instanceof Array ? JSON.stringify(err) : (err instanceof Error ? err.message : JSON.stringify(err));
     logger.error({ err, socket: LND_SOCKET, details }, 'LND connection failed');
