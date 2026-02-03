@@ -1,5 +1,5 @@
--- Initial schema: all base tables for Saturn
--- This migration creates the complete database schema from scratch.
+-- Complete initial schema for Saturn.
+-- Single migration representing the full database state.
 
 CREATE TABLE IF NOT EXISTS "accounts" (
   "id" text PRIMARY KEY NOT NULL,
@@ -14,11 +14,16 @@ CREATE TABLE IF NOT EXISTS "agents" (
   "account_id" text NOT NULL REFERENCES "accounts"("id"),
   "name" text NOT NULL,
   "api_key_hash" text NOT NULL,
+  "api_key_prefix" text,
+  "email" text,
+  "role" text NOT NULL DEFAULT 'worker',
   "status" text NOT NULL DEFAULT 'active',
   "metadata" jsonb,
   "created_at" timestamp with time zone DEFAULT now() NOT NULL,
   "updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "agents_key_prefix_idx" ON "agents" ("api_key_prefix");
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "wallets" (
   "id" text PRIMARY KEY NOT NULL,
@@ -40,10 +45,13 @@ CREATE TABLE IF NOT EXISTS "policies" (
   "max_per_day_sats" bigint,
   "allowed_services" text[],
   "denied_services" text[],
+  "allowed_capabilities" text[],
+  "denied_capabilities" text[],
   "kill_switch" boolean NOT NULL DEFAULT false,
   "max_balance_sats" bigint,
   "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-  "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+  "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+  CONSTRAINT "policies_agent_id_unique" UNIQUE ("agent_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "services" (
@@ -84,6 +92,10 @@ CREATE TABLE IF NOT EXISTS "invoices" (
   "created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "invoices_wallet_idx" ON "invoices" ("wallet_id");
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "invoices_status_expires_idx" ON "invoices" ("status", "expires_at");
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "transactions" (
   "id" text PRIMARY KEY NOT NULL,
   "wallet_id" text NOT NULL REFERENCES "wallets"("id"),
@@ -93,13 +105,17 @@ CREATE TABLE IF NOT EXISTS "transactions" (
   "reference_type" text,
   "reference_id" text,
   "description" text,
-  "created_at" timestamp with time zone DEFAULT now() NOT NULL
+  "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+  CONSTRAINT "tx_reference_unique" UNIQUE ("reference_type", "reference_id")
 );
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "tx_wallet_created_idx" ON "transactions" ("wallet_id", "created_at");
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "audit_logs" (
   "id" text PRIMARY KEY NOT NULL,
   "agent_id" text NOT NULL REFERENCES "agents"("id"),
   "service_slug" text NOT NULL,
+  "capability" text,
   "operation" text,
   "request_body" jsonb,
   "policy_result" text NOT NULL,
@@ -113,9 +129,34 @@ CREATE TABLE IF NOT EXISTS "audit_logs" (
   "created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "audit_agent_created_idx" ON "audit_logs" ("agent_id", "created_at");
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "rate_snapshots" (
   "id" text PRIMARY KEY NOT NULL,
   "btc_usd" numeric(16, 2) NOT NULL,
   "source" text NOT NULL,
   "fetched_at" timestamp with time zone NOT NULL
 );
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "service_submissions" (
+  "id" text PRIMARY KEY NOT NULL,
+  "account_id" text NOT NULL REFERENCES "accounts"("id"),
+  "service_name" text NOT NULL,
+  "service_slug" text NOT NULL,
+  "description" text,
+  "base_url" text NOT NULL,
+  "auth_type" text NOT NULL,
+  "auth_credential_env" text NOT NULL,
+  "capability" text NOT NULL,
+  "proposed_pricing" jsonb,
+  "notes" text,
+  "status" text NOT NULL DEFAULT 'pending',
+  "reviewer_notes" text,
+  "reviewed_at" timestamp with time zone,
+  "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+  "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "service_submissions_status_idx" ON "service_submissions" ("status");
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "service_submissions_account_idx" ON "service_submissions" ("account_id");
