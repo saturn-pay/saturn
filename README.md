@@ -226,11 +226,13 @@ src/
     proxy/         Adapter registry, capability routing, executor
   types/           Internal TypeScript types
 sdk/               @saturn-pay/sdk TypeScript SDK
-web/               Next.js admin dashboard
+web/               Next.js admin dashboard (humans only)
 drizzle/           SQL migration files
 ```
 
-For deeper technical details, see [docs/tech-spec.md](docs/tech-spec.md) (capability routing specification).
+Agents never interact with the dashboard. Humans use it to fund accounts, set policies, and inspect receipts.
+
+For deeper technical details, see [docs/tech-spec.md](docs/tech-spec.md) (capability routing specification) and [docs/provider-eligibility.md](docs/provider-eligibility.md) (provider requirements).
 
 ## Security and Trust
 

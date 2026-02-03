@@ -848,7 +848,7 @@
           <li><span class="stepIcon">4</span> Agents call it. You get paid per call.</li>
         </ol>
         <a href="#faq" class="btnBlack">Submit a service</a>
-        <a href="#faq" class="btnGhost" style="margin-left:8px;">Eligibility requirements &rarr;</a>
+        <a href="https://github.com/saturn-pay/saturn/blob/main/docs/provider-eligibility.md" class="btnGhost" style="margin-left:8px;">Eligibility requirements &rarr;</a>
       </div>
     </div>
   </section>
@@ -867,7 +867,7 @@
       </div>
       <div class="faqItem">
         <div class="faqQ">Can I submit my own API?</div>
-        <p class="faqA">Yes. Submit your service for review. If approved, Saturn operates it — handles execution, pricing, enforcement, and payments. You get paid per call. <a href="#faq" style="color:#000; font-weight:500; text-decoration:underline; text-underline-offset:2px;">See eligibility requirements &rarr;</a></p>
+        <p class="faqA">Yes. Submit your service for review. If approved, Saturn operates it — handles execution, pricing, enforcement, and payments. You get paid per call. <a href="https://github.com/saturn-pay/saturn/blob/main/docs/provider-eligibility.md" style="color:#000; font-weight:500; text-decoration:underline; text-underline-offset:2px;">See eligibility requirements &rarr;</a></p>
       </div>
       <div class="faqItem">
         <div class="faqQ">Who controls execution?</div>
@@ -880,6 +880,14 @@
       <div class="faqItem">
         <div class="faqQ">Is Saturn a wallet?</div>
         <p class="faqA">No. Saturn maintains an internal ledger. You deposit sats, agents spend them, every deduction produces a receipt. It's a spend balance, not a wallet.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">Does Saturn custody funds?</div>
+        <p class="faqA">Saturn maintains an internal ledger backed by Lightning invoices. Funds are only spendable through Saturn's policy engine. Agents cannot withdraw funds.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">Can I run Saturn myself?</div>
+        <p class="faqA">Yes. Saturn is source-available under the Business Source License. Running your own instance requires operating LND and managing Lightning liquidity. See the <a href="https://github.com/saturn-pay/saturn" style="color:#000; font-weight:500; text-decoration:underline; text-underline-offset:2px;">GitHub repo</a> for setup instructions.</p>
       </div>
     </div>
   </section>
