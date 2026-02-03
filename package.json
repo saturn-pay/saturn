@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc",
-    "start": "drizzle-kit migrate && node dist/index.js",
+    "start": "node dist/db/migrate.js && node dist/index.js",
     "seed": "tsx src/db/seed.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
