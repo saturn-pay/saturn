@@ -125,7 +125,11 @@ async function start(): Promise<void> {
       logger.info(`Saturn listening on port ${env.PORT}`);
     });
   } catch (err) {
-    logger.fatal({ err }, 'Failed to start server');
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    logger.fatal({ err, message, stack }, 'Failed to start server');
+    console.error('FATAL: Failed to start server:', message);
+    if (stack) console.error(stack);
     process.exit(1);
   }
 }
