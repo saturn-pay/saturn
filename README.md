@@ -1,16 +1,23 @@
+![CI](https://github.com/saturn-pay/saturn/actions/workflows/ci.yml/badge.svg)
+
 # Saturn
 
-Lightning-powered API proxy for AI agents. Every agent gets a wallet, a set of capabilities, and a policy — priced per use, paid in Bitcoin.
+Your agents need APIs. They shouldn't need your keys.
 
-## What It Does
+Saturn is the execution layer for AI agents. It sits between your agent and the APIs it calls — handling auth, routing, budget enforcement, and per-call receipts. Fund a wallet with sats over Lightning, give your agent a Saturn key, and deploy. No provider credentials in your runtime. No surprise bills. Every call audited.
 
-Saturn sits between your AI agent and the APIs it needs. Instead of handing agents raw API keys, you fund a wallet with sats over Lightning. The agent calls capabilities (`reason`, `search`, `execute`, etc.), Saturn routes to the best provider, charges the wallet, and logs everything.
+## What Saturn Is
 
-- **10 capabilities**: reason, search, read, scrape, execute, email, sms, imagine, speak, transcribe
-- **15+ upstream providers**: OpenAI, Anthropic, Serper, Firecrawl, E2B, Jina, Brave, Resend, Twilio, Replicate, ElevenLabs, Deepgram, and more
-- **Per-agent policies**: max per call, daily budgets, allowed/denied capabilities, kill switch
-- **Full audit trail**: every call logged with sats charged, latency, and policy result
-- **Lightning payments**: instant micropayments, no minimums, no chargebacks
+- A proxy that routes agent requests to 15+ upstream providers (OpenAI, Anthropic, Serper, Firecrawl, E2B, and more)
+- A billing layer that charges per call in Bitcoin satoshis via Lightning Network
+- A policy engine with per-agent budgets, rate limits, and capability allowlists
+- A full audit trail — every call logged with cost, provider, latency, and policy result
+
+## What Saturn Is Not
+
+- Not an API aggregator or reseller — Saturn sells capabilities (verbs), not vendor access
+- Not a wallet — Saturn maintains an internal ledger with receipts, not a custodial wallet
+- Not a marketplace — every provider integration is vetted and curated
 
 ## Quick Start
 
@@ -25,10 +32,7 @@ npm install
 ### 2. Set up the database
 
 ```bash
-# Start Postgres (or use docker-compose)
 docker compose up -d postgres
-
-# Run migrations
 npm run db:migrate
 ```
 
@@ -103,6 +107,23 @@ console.log('Pay:', invoice.paymentRequest);
 
 See [sdk/README.md](sdk/README.md) for full SDK documentation.
 
+## Capabilities
+
+Saturn exposes 10 capability verbs. Each routes to the best available provider.
+
+| Capability | What the agent gets | Backed by |
+|------------|-------------------|-----------|
+| `reason` | LLM inference — completions, summarization, extraction | OpenAI, Anthropic |
+| `search` | Web search — query to ranked results | Serper, Brave |
+| `read` | URL to clean text — articles, docs, pages | Jina, Firecrawl |
+| `scrape` | URL to structured HTML — raw extraction | Firecrawl, ScraperAPI |
+| `execute` | Sandboxed code execution — Python, JS, shell | E2B |
+| `email` | Transactional email | Resend |
+| `sms` | SMS messages | Twilio |
+| `imagine` | Text to image generation | Replicate |
+| `speak` | Text to speech | ElevenLabs |
+| `transcribe` | Speech to text | Deepgram |
+
 ## API Reference
 
 All endpoints are under `/v1`. Authentication is via `Authorization: Bearer <api_key>` header.
@@ -120,7 +141,7 @@ All endpoints are under `/v1`. Authentication is via `Authorization: Bearer <api
 |--------|------|-------------|
 | GET | `/v1/capabilities` | List all capabilities with providers and pricing |
 | GET | `/v1/capabilities/:capability` | Get capability details |
-| POST | `/v1/capabilities/:capability` | Execute a capability (reason, search, etc.) |
+| POST | `/v1/capabilities/:capability` | Execute a capability |
 
 ### Proxy (Direct Service Access)
 
@@ -178,15 +199,11 @@ All endpoints are under `/v1`. Authentication is via `Authorization: Bearer <api
 ## Architecture
 
 ```
-┌──────────────┐     ┌────────────────┐     ┌───────────────┐
-│   AI Agent   │────▶│     Saturn     │────▶│   Upstream    │
-│  (SDK call)  │◀────│  (proxy/bill)  │◀────│   Provider    │
-└──────────────┘     └────────────────┘     └───────────────┘
-                            │
-                     ┌──────┼──────┐
-                     │      │      │
-                     ▼      ▼      ▼
-                   [PG]  [LND]  [Sentry]
+Agent (SDK)  ──>  Saturn (proxy/bill/enforce)  ──>  Upstream Provider
+                         |
+                   ------+------
+                   |     |     |
+                  [PG] [LND] [Sentry]
 ```
 
 - **Express + TypeScript** backend
@@ -199,19 +216,34 @@ All endpoints are under `/v1`. Authentication is via `Authorization: Bearer <api
 
 ```
 src/
-├── config/          # Environment and constants
-├── db/              # Drizzle schema, client, seed
-├── jobs/            # Background jobs (invoice watcher, rate updater, expiry)
-├── lib/             # Utilities (logger, LND client, errors)
-├── middleware/       # Auth, error handler, request logger
-├── routes/          # Express route handlers
-├── services/        # Business logic
-│   └── proxy/       # Adapter registry, capability routing, executor
-└── types/           # Internal TypeScript types
-sdk/                 # @saturn-pay/sdk TypeScript SDK
-web/                 # Next.js admin dashboard
-drizzle/             # SQL migration files
+  config/          Environment and constants
+  db/              Drizzle schema, client, seed
+  jobs/            Background jobs (invoice watcher, rate updater, expiry)
+  lib/             Utilities (logger, LND client, errors)
+  middleware/      Auth, error handler, request logger
+  routes/          Express route handlers
+  services/        Business logic
+    proxy/         Adapter registry, capability routing, executor
+  types/           Internal TypeScript types
+sdk/               @saturn-pay/sdk TypeScript SDK
+web/               Next.js admin dashboard
+drizzle/           SQL migration files
 ```
+
+For deeper technical details, see [docs/ecosystem.md](docs/ecosystem.md) (architecture) and [docs/tech-spec.md](docs/tech-spec.md) (capability routing specification).
+
+## Security and Trust
+
+Saturn handles financial transactions. Security is not optional.
+
+- **No provider keys in your runtime** — agents authenticate with Saturn; Saturn authenticates with upstream providers
+- **Per-call receipts** — every call returns charged amount, provider, audit ID, and remaining balance
+- **Hard budget enforcement** — over-budget calls are rejected before touching upstream
+- **Policy engine** — per-agent kill switch, spend caps, rate limits, capability allowlists
+- **Atomic billing** — funds are held before execution, settled or released after
+- **Full audit trail** — every call logged to PostgreSQL with cost, latency, and policy result
+
+To report a security vulnerability, see [SECURITY.md](SECURITY.md).
 
 ## Deployment
 
@@ -233,24 +265,7 @@ docker compose -f docker-compose.prod.yml up -d
 
 # Subsequent deploys
 ./scripts/deploy.sh
-
-# With seed data
-./scripts/deploy.sh --migrate --seed
 ```
-
-### Voltage (LND Setup)
-
-1. Create a Voltage node at [voltage.cloud](https://voltage.cloud)
-2. Download the TLS certificate and base64-encode it:
-   ```bash
-   base64 -i tls.cert | tr -d '\n'
-   ```
-3. Bake a restricted macaroon:
-   ```bash
-   lncli bakemacaroon invoices:read invoices:write info:read --save_to=saturn.macaroon
-   base64 -i saturn.macaroon | tr -d '\n'
-   ```
-4. Set `LND_SOCKET`, `LND_TLS_CERT`, and `LND_MACAROON` in your `.env`
 
 ### Environment Variables
 
@@ -259,27 +274,16 @@ See [.env.example](.env.example) for all available configuration options.
 ## Development
 
 ```bash
-# Run in dev mode (hot reload)
-npm run dev
-
-# Type check
-npx tsc --noEmit
-
-# Run tests
-npm test
-
-# Watch tests
-npm run test:watch
-
-# Generate migration
-npm run db:generate
-
-# Run migration
-npm run db:migrate
-
-# Seed database
-npm run seed
+npm run dev          # Dev mode (hot reload)
+npx tsc --noEmit     # Type check
+npm test             # Run tests
+npm run test:watch   # Watch tests
+npm run db:generate  # Generate migration
+npm run db:migrate   # Run migration
+npm run seed         # Seed database
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines and PR process.
 
 ## Testing
 
@@ -299,4 +303,6 @@ npm test
 
 ## License
 
-ISC
+Business Source License 1.1 — see [LICENSE](LICENSE).
+
+The SDK (`sdk/`) is licensed under MIT — see [sdk/README.md](sdk/README.md).

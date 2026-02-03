@@ -15,7 +15,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "BUSL-1.1",
   "description": "Lightning-powered API proxy for AI agents",
   "dependencies": {
     "@grpc/grpc-js": "^1.14.3",

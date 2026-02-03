@@ -58,7 +58,7 @@ const proxyLimiter = rateLimit({
 
 app.use(helmet());
 app.use(cors({
-  origin: env.CORS_ORIGIN || true,
+  origin: env.CORS_ORIGIN || false,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
