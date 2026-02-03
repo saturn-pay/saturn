@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/node';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { env } from './config/env.js';
 import { testConnection } from './db/client.js';
 import { logger } from './lib/logger.js';
@@ -39,7 +39,7 @@ const app = express();
 const defaultLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 100,
-  keyGenerator: (req) => (req.headers.authorization as string) || req.ip || 'unknown',
+  keyGenerator: (req) => (req.headers.authorization as string) || ipKeyGenerator(req.ip ?? 'unknown'),
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -47,7 +47,7 @@ const defaultLimiter = rateLimit({
 const proxyLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 60,
-  keyGenerator: (req) => (req.headers.authorization as string) || req.ip || 'unknown',
+  keyGenerator: (req) => (req.headers.authorization as string) || ipKeyGenerator(req.ip ?? 'unknown'),
   standardHeaders: true,
   legacyHeaders: false,
 });
