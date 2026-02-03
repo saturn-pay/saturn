@@ -7,13 +7,16 @@ const LND_SOCKET = process.env.LND_SOCKET ?? 'localhost:10009';
 
 let lnd: ReturnType<typeof authenticatedLndGrpc>['lnd'] | null = null;
 
-if (LND_TLS_CERT && LND_MACAROON) {
+if (LND_MACAROON) {
+  // When LND_TLS_CERT is empty, ln-service falls through to createSsl(undefined)
+  // which uses the system CA store — correct for hosted providers like Voltage
+  // that use Let's Encrypt. Self-hosted LND with self-signed certs needs the cert.
   ({ lnd } = authenticatedLndGrpc({
-    cert: LND_TLS_CERT,
+    cert: LND_TLS_CERT || undefined as unknown as string,
     macaroon: LND_MACAROON,
     socket: LND_SOCKET,
   }));
-  logger.info({ socket: LND_SOCKET }, 'LND gRPC client initialised');
+  logger.info({ socket: LND_SOCKET, customCert: !!LND_TLS_CERT }, 'LND gRPC client initialised');
 } else {
   logger.warn('LND credentials not configured — Lightning features disabled');
 }
