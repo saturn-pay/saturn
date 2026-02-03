@@ -230,7 +230,7 @@ web/               Next.js admin dashboard
 drizzle/           SQL migration files
 ```
 
-For deeper technical details, see [docs/ecosystem.md](docs/ecosystem.md) (architecture) and [docs/tech-spec.md](docs/tech-spec.md) (capability routing specification).
+For deeper technical details, see [docs/tech-spec.md](docs/tech-spec.md) (capability routing specification).
 
 ## Security and Trust
 
