@@ -113,13 +113,15 @@ async function start(): Promise<void> {
     logger.info('Rate updater started');
 
     const { verifyLndConnection } = await import('./lib/lnd-client.js');
-    await verifyLndConnection();
-
-    startInvoiceWatcher();
-    logger.info('Invoice watcher started');
-
-    startInvoiceExpiryJob();
-    logger.info('Invoice expiry job started');
+    try {
+      await verifyLndConnection();
+      startInvoiceWatcher();
+      logger.info('Invoice watcher started');
+      startInvoiceExpiryJob();
+      logger.info('Invoice expiry job started');
+    } catch (err) {
+      logger.warn({ err }, 'LND connection failed — Lightning features disabled until node is reachable');
+    }
 
     server = app.listen(env.PORT, () => {
       logger.info(`Saturn listening on port ${env.PORT}`);
