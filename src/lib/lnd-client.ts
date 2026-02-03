@@ -27,15 +27,21 @@ export async function verifyLndConnection(): Promise<void> {
     throw new Error('LND client not initialised — check LND_TLS_CERT and LND_MACAROON');
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const info: any = await getWalletInfo({ lnd });
-  logger.info(
-    { alias: info.alias, publicKey: info.public_key, synced: info.is_synced_to_chain },
-    'LND connection verified',
-  );
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const info: any = await getWalletInfo({ lnd });
+    logger.info(
+      { alias: info.alias, publicKey: info.public_key, synced: info.is_synced_to_chain },
+      'LND connection verified',
+    );
 
-  if (!info.is_synced_to_chain) {
-    logger.warn('LND node is not synced to chain — invoices may not work reliably');
+    if (!info.is_synced_to_chain) {
+      logger.warn('LND node is not synced to chain — invoices may not work reliably');
+    }
+  } catch (err: unknown) {
+    const details = err instanceof Array ? JSON.stringify(err) : (err instanceof Error ? err.message : JSON.stringify(err));
+    logger.error({ err, socket: LND_SOCKET, details }, 'LND connection failed');
+    throw new Error(`LND connection failed (${LND_SOCKET}): ${details}`);
   }
 }
 
