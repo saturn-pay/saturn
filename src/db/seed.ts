@@ -160,9 +160,15 @@ async function seed(): Promise<void> {
 // Standalone execution
 // ---------------------------------------------------------------------------
 
+import { getPool } from '../db/client.js';
+
 seed()
-  .then(() => process.exit(0))
-  .catch((err) => {
+  .then(async () => {
+    await getPool().end();
+    process.exit(0);
+  })
+  .catch(async (err) => {
     console.error('Seed failed:', err);
+    try { await getPool().end(); } catch { /* ignore */ }
     process.exit(1);
   });
