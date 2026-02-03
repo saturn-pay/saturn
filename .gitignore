@@ -4,7 +4,5 @@ dist/
 .env.*
 !.env.example
 *.log
-drizzle/meta/
-drizzle/_journal.json
 coverage/
 .DS_Store
