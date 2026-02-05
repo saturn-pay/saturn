@@ -3,13 +3,14 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { eq, and, desc } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { wallets, invoices, transactions, policies, agents } from '../db/schema/index.js';
+import { wallets, invoices, transactions, agents } from '../db/schema/index.js';
 import { requirePrimary, requireAuth } from '../middleware/auth.js';
 import { generateId } from '../lib/id.js';
 import { ID_PREFIXES, FUNDING } from '../config/constants.js';
 import { NotFoundError, ValidationError } from '../lib/errors.js';
 import * as walletService from '../services/wallet.service.js';
 import * as lightningService from '../services/lightning.service.js';
+import { handleFundCard } from './stripe.router.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -45,14 +46,14 @@ async function verifyAgentOwnership(agentId: string, accountId: string) {
   return agent;
 }
 
-async function getWalletForAgent(agentId: string) {
+async function getWalletForAccount(accountId: string) {
   const [wallet] = await db
     .select()
     .from(wallets)
-    .where(eq(wallets.agentId, agentId));
+    .where(eq(wallets.accountId, accountId));
 
   if (!wallet) {
-    throw new NotFoundError('Wallet for agent', agentId);
+    throw new NotFoundError('Wallet for account', accountId);
   }
 
   return wallet;
@@ -81,7 +82,7 @@ async function handleGetBalance(walletId: string, res: Response): Promise<void> 
 
 async function handleFund(
   walletId: string,
-  agentId: string,
+  accountId: string,
   req: Request,
   res: Response,
 ): Promise<void> {
@@ -90,27 +91,12 @@ async function handleFund(
     throw new ValidationError('Invalid fund request', parsed.error.issues);
   }
 
-  let { amountSats } = parsed.data;
-
-  // Check policy max_balance_sats cap
-  const [policy] = await db
-    .select()
-    .from(policies)
-    .where(eq(policies.agentId, agentId));
-
-  if (policy?.maxBalanceSats) {
-    const maxAllowed = Math.min(amountSats, policy.maxBalanceSats);
-    if (amountSats > maxAllowed) {
-      throw new ValidationError(
-        `Amount exceeds policy max_balance_sats of ${policy.maxBalanceSats}`,
-      );
-    }
-  }
+  const { amountSats } = parsed.data;
 
   // Create LND invoice
   const lnInvoice = await lightningService.createLightningInvoice(
     amountSats,
-    `Saturn fund: agent ${agentId}`,
+    `Saturn fund: account ${accountId}`,
     FUNDING.invoiceExpirySecs,
   );
 
@@ -206,7 +192,7 @@ walletsRouter.get('/', async (req: Request, res: Response) => {
   const account = req.account!;
   const agentId = paramString(req.params.agentId);
   await verifyAgentOwnership(agentId, account.id);
-  const wallet = await getWalletForAgent(agentId);
+  const wallet = await getWalletForAccount(account.id);
 
   await handleGetBalance(wallet.id, res);
 });
@@ -216,9 +202,19 @@ walletsRouter.post('/fund', async (req: Request, res: Response) => {
   const account = req.account!;
   const agentId = paramString(req.params.agentId);
   await verifyAgentOwnership(agentId, account.id);
-  const wallet = await getWalletForAgent(agentId);
+  const wallet = await getWalletForAccount(account.id);
 
-  await handleFund(wallet.id, agentId, req, res);
+  await handleFund(wallet.id, account.id, req, res);
+});
+
+// POST /agents/:agentId/wallet/fund-card
+walletsRouter.post('/fund-card', async (req: Request, res: Response) => {
+  const account = req.account!;
+  const agentId = paramString(req.params.agentId);
+  await verifyAgentOwnership(agentId, account.id);
+  const wallet = await getWalletForAccount(account.id);
+
+  await handleFundCard(wallet.id, account.id, req, res);
 });
 
 // GET /agents/:agentId/wallet/invoices
@@ -226,7 +222,7 @@ walletsRouter.get('/invoices', async (req: Request, res: Response) => {
   const account = req.account!;
   const agentId = paramString(req.params.agentId);
   await verifyAgentOwnership(agentId, account.id);
-  const wallet = await getWalletForAgent(agentId);
+  const wallet = await getWalletForAccount(account.id);
 
   await handleGetInvoices(wallet.id, req, res);
 });
@@ -236,7 +232,7 @@ walletsRouter.get('/transactions', async (req: Request, res: Response) => {
   const account = req.account!;
   const agentId = paramString(req.params.agentId);
   await verifyAgentOwnership(agentId, account.id);
-  const wallet = await getWalletForAgent(agentId);
+  const wallet = await getWalletForAccount(account.id);
 
   await handleGetTransactions(wallet.id, req, res);
 });
@@ -261,13 +257,24 @@ agentWalletsRouter.get('/', async (req: Request, res: Response) => {
 
 // POST /wallet/fund
 agentWalletsRouter.post('/fund', async (req: Request, res: Response) => {
-  const agent = req.agent!;
+  const account = req.account!;
   const wallet = req.wallet;
   if (!wallet) {
     throw new NotFoundError('Wallet');
   }
 
-  await handleFund(wallet.id, agent.id, req, res);
+  await handleFund(wallet.id, account.id, req, res);
+});
+
+// POST /wallet/fund-card
+agentWalletsRouter.post('/fund-card', async (req: Request, res: Response) => {
+  const account = req.account!;
+  const wallet = req.wallet;
+  if (!wallet) {
+    throw new NotFoundError('Wallet');
+  }
+
+  await handleFundCard(wallet.id, account.id, req, res);
 });
 
 // GET /wallet/invoices

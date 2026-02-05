@@ -1,10 +1,10 @@
 import { pgTable, text, bigint, timestamp, check } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { agents } from './agents.js';
+import { accounts } from './accounts.js';
 
 export const wallets = pgTable('wallets', {
   id: text('id').primaryKey(),
-  agentId: text('agent_id').notNull().unique().references(() => agents.id),
+  accountId: text('account_id').notNull().unique().references(() => accounts.id),
   balanceSats: bigint('balance_sats', { mode: 'number' }).notNull().default(0),
   heldSats: bigint('held_sats', { mode: 'number' }).notNull().default(0),
   lifetimeIn: bigint('lifetime_in', { mode: 'number' }).notNull().default(0),

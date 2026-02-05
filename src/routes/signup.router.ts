@@ -83,7 +83,7 @@ signupRouter.post('/', signupLimiter, async (req: Request, res: Response) => {
 
     await tx.insert(wallets).values({
       id: walletId,
-      agentId,
+      accountId,
       balanceSats: 0,
       heldSats: 0,
       lifetimeIn: 0,

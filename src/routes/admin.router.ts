@@ -32,15 +32,14 @@ adminRouter.use(requirePrimary);
 adminRouter.get('/stats', async (req: Request, res: Response) => {
   const accountId = req.account!.id;
 
-  // Total volume from wallets belonging to this account's agents
+  // Total volume from wallets belonging to this account
   const [volumeRow] = await db
     .select({
       satsIn: sum(wallets.lifetimeIn),
       satsOut: sum(wallets.lifetimeOut),
     })
     .from(wallets)
-    .innerJoin(agents, eq(wallets.agentId, agents.id))
-    .where(eq(agents.accountId, accountId));
+    .where(eq(wallets.accountId, accountId));
 
   // Active agents count
   const [agentCountRow] = await db
@@ -53,8 +52,7 @@ adminRouter.get('/stats', async (req: Request, res: Response) => {
     .select({ count: count() })
     .from(transactions)
     .innerJoin(wallets, eq(transactions.walletId, wallets.id))
-    .innerJoin(agents, eq(wallets.agentId, agents.id))
-    .where(eq(agents.accountId, accountId));
+    .where(eq(wallets.accountId, accountId));
 
   // Revenue estimate: sum of charged_sats from audit_logs for this account's agents
   const [revenueRow] = await db
@@ -82,6 +80,11 @@ adminRouter.get('/agents', async (req: Request, res: Response) => {
   const todayStart = new Date();
   todayStart.setUTCHours(0, 0, 0, 0);
 
+  const [accountWallet] = await db
+    .select()
+    .from(wallets)
+    .where(eq(wallets.accountId, accountId));
+
   const agentRows = await db
     .select({
       id: agents.id,
@@ -90,13 +93,8 @@ adminRouter.get('/agents', async (req: Request, res: Response) => {
       metadata: agents.metadata,
       createdAt: agents.createdAt,
       updatedAt: agents.updatedAt,
-      balanceSats: wallets.balanceSats,
-      heldSats: wallets.heldSats,
-      lifetimeIn: wallets.lifetimeIn,
-      lifetimeOut: wallets.lifetimeOut,
     })
     .from(agents)
-    .leftJoin(wallets, eq(wallets.agentId, agents.id))
     .where(eq(agents.accountId, accountId))
     .orderBy(desc(agents.createdAt));
 
@@ -122,10 +120,10 @@ adminRouter.get('/agents', async (req: Request, res: Response) => {
 
   const result = agentRows.map((row) => ({
     ...row,
-    balanceSats: row.balanceSats ?? 0,
-    heldSats: row.heldSats ?? 0,
-    lifetimeIn: row.lifetimeIn ?? 0,
-    lifetimeOut: row.lifetimeOut ?? 0,
+    balanceSats: accountWallet?.balanceSats ?? 0,
+    heldSats: accountWallet?.heldSats ?? 0,
+    lifetimeIn: accountWallet?.lifetimeIn ?? 0,
+    lifetimeOut: accountWallet?.lifetimeOut ?? 0,
     todaySpendSats: spendMap.get(row.id) ?? 0,
   }));
 
@@ -145,10 +143,10 @@ adminRouter.get('/transactions', async (req: Request, res: Response) => {
   const from = req.query.from as string | undefined;
   const to = req.query.to as string | undefined;
 
-  const conditions = [eq(agents.accountId, accountId)];
+  const conditions = [eq(wallets.accountId, accountId)];
 
   if (agentId) {
-    conditions.push(eq(wallets.agentId, agentId));
+    conditions.push(eq(transactions.agentId, agentId));
   }
   if (type) {
     conditions.push(eq(transactions.type, type as any));
@@ -164,7 +162,7 @@ adminRouter.get('/transactions', async (req: Request, res: Response) => {
     .select({
       id: transactions.id,
       walletId: transactions.walletId,
-      agentId: wallets.agentId,
+      agentId: transactions.agentId,
       type: transactions.type,
       amountSats: transactions.amountSats,
       balanceAfter: transactions.balanceAfter,
@@ -175,7 +173,6 @@ adminRouter.get('/transactions', async (req: Request, res: Response) => {
     })
     .from(transactions)
     .innerJoin(wallets, eq(transactions.walletId, wallets.id))
-    .innerJoin(agents, eq(wallets.agentId, agents.id))
     .where(and(...conditions))
     .orderBy(desc(transactions.createdAt))
     .limit(limit)
@@ -185,7 +182,6 @@ adminRouter.get('/transactions', async (req: Request, res: Response) => {
     .select({ count: count() })
     .from(transactions)
     .innerJoin(wallets, eq(transactions.walletId, wallets.id))
-    .innerJoin(agents, eq(wallets.agentId, agents.id))
     .where(and(...conditions));
 
   res.json({

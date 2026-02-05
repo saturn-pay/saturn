@@ -4,7 +4,8 @@ import { wallets } from './wallets.js';
 export const transactions = pgTable('transactions', {
   id: text('id').primaryKey(),
   walletId: text('wallet_id').notNull().references(() => wallets.id),
-  type: text('type', { enum: ['credit_lightning', 'debit_proxy_call', 'refund', 'withdrawal'] }).notNull(),
+  agentId: text('agent_id'),
+  type: text('type', { enum: ['credit_lightning', 'credit_stripe', 'debit_proxy_call', 'refund', 'withdrawal'] }).notNull(),
   amountSats: bigint('amount_sats', { mode: 'number' }).notNull(),
   balanceAfter: bigint('balance_after', { mode: 'number' }).notNull(),
   referenceType: text('reference_type'),

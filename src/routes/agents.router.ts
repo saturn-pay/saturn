@@ -83,7 +83,6 @@ agentsRouter.post('/', async (req: Request, res: Response) => {
   const apiKeyPrefix = crypto.createHash('sha256').update(rawApiKey).digest('hex').slice(0, 16);
 
   const agentId = generateId(ID_PREFIXES.agent);
-  const walletId = generateId(ID_PREFIXES.wallet);
   const policyId = generateId(ID_PREFIXES.policy);
   const now = new Date();
 
@@ -99,20 +98,6 @@ agentsRouter.post('/', async (req: Request, res: Response) => {
         role: 'worker',
         status: 'active',
         metadata: metadata ?? null,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
-
-    const [wallet] = await tx
-      .insert(wallets)
-      .values({
-        id: walletId,
-        agentId: agentId,
-        balanceSats: 0,
-        heldSats: 0,
-        lifetimeIn: 0,
-        lifetimeOut: 0,
         createdAt: now,
         updatedAt: now,
       })
@@ -136,13 +121,12 @@ agentsRouter.post('/', async (req: Request, res: Response) => {
       })
       .returning();
 
-    return { agent, wallet, policy };
+    return { agent, policy };
   });
 
   res.status(201).json({
     ...sanitizeAgent(result.agent),
     apiKey: rawApiKey,
-    wallet: result.wallet,
     policy: result.policy,
   });
 });
@@ -151,18 +135,19 @@ agentsRouter.post('/', async (req: Request, res: Response) => {
 agentsRouter.get('/', async (req: Request, res: Response) => {
   const account = req.account!;
 
+  const [accountWallet] = await db
+    .select()
+    .from(wallets)
+    .where(eq(wallets.accountId, account.id));
+
   const rows = await db
-    .select({
-      agent: agents,
-      balanceSats: wallets.balanceSats,
-    })
+    .select()
     .from(agents)
-    .leftJoin(wallets, eq(wallets.agentId, agents.id))
     .where(eq(agents.accountId, account.id));
 
   const result = rows.map((row) => ({
-    ...sanitizeAgent(row.agent),
-    balanceSats: row.balanceSats ?? 0,
+    ...sanitizeAgent(row),
+    balanceSats: accountWallet?.balanceSats ?? 0,
   }));
 
   res.json(result);
@@ -176,7 +161,7 @@ agentsRouter.get('/:agentId', async (req: Request, res: Response) => {
   const [wallet] = await db
     .select()
     .from(wallets)
-    .where(eq(wallets.agentId, agent.id));
+    .where(eq(wallets.accountId, account.id));
 
   res.json({
     ...sanitizeAgent(agent),

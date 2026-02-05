@@ -95,7 +95,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
 
     // 6. If upstream returned an error status, release hold instead of charging
     if (response.status >= 400) {
-      await walletService.release(wallet.id, quotedSats);
+      await walletService.release(wallet.id, quotedSats, agent.id);
 
       const auditId = await auditService.logProxyCall({
         agentId: agent.id,
@@ -119,7 +119,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
           auditId,
           quotedSats,
           chargedSats: 0,
-          balanceAfter: (await walletService.getBalance(agent.id)).balanceSats,
+          balanceAfter: (await walletService.getBalance(agent.accountId)).balanceSats,
         },
       };
     }
@@ -131,6 +131,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
       wallet.id,
       quotedSats,
       finalSats,
+      agent.id,
     );
 
     // Invalidate daily spend cache so limit checks are accurate
@@ -165,7 +166,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
 
     // 8. Failure path: release hold, audit, re-throw
     try {
-      await walletService.release(wallet.id, quotedSats);
+      await walletService.release(wallet.id, quotedSats, agent.id);
     } catch (releaseErr) {
       // Log but don't swallow the original error
       const releaseMsg = releaseErr instanceof Error ? releaseErr.message : String(releaseErr);

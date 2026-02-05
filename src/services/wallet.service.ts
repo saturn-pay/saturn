@@ -22,16 +22,16 @@ export interface HoldResult {
 // ---------------------------------------------------------------------------
 
 /**
- * Get the wallet belonging to the given agent.
+ * Get the wallet belonging to the given account.
  */
-export async function getBalance(agentId: string): Promise<Wallet> {
+export async function getBalance(accountId: string): Promise<Wallet> {
   const [wallet] = await db
     .select()
     .from(schema.wallets)
-    .where(eq(schema.wallets.agentId, agentId));
+    .where(eq(schema.wallets.accountId, accountId));
 
   if (!wallet) {
-    throw new NotFoundError('Wallet for agent', agentId);
+    throw new NotFoundError('Wallet for account', accountId);
   }
 
   return wallet;
@@ -82,6 +82,49 @@ export async function creditFromInvoice(
 }
 
 /**
+ * Credit a wallet from a completed Stripe checkout session.
+ * Same pattern as creditFromInvoice but with credit_stripe type.
+ */
+export async function creditFromCheckout(
+  walletId: string,
+  amountSats: number,
+  checkoutSessionId: string,
+): Promise<{ wallet: Wallet; transaction: Transaction }> {
+  return await db.transaction(async (tx) => {
+    const [wallet] = await tx
+      .update(schema.wallets)
+      .set({
+        balanceSats: sql`${schema.wallets.balanceSats} + ${amountSats}`,
+        lifetimeIn: sql`${schema.wallets.lifetimeIn} + ${amountSats}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.wallets.id, walletId))
+      .returning();
+
+    if (!wallet) {
+      throw new NotFoundError('Wallet', walletId);
+    }
+
+    const [transaction] = await tx
+      .insert(schema.transactions)
+      .values({
+        id: generateId(ID_PREFIXES.transaction),
+        walletId,
+        type: 'credit_stripe',
+        amountSats,
+        balanceAfter: wallet.balanceSats,
+        referenceType: 'checkout_session',
+        referenceId: checkoutSessionId,
+        description: `Card deposit of ${amountSats} sats`,
+        createdAt: new Date(),
+      })
+      .returning();
+
+    return { wallet, transaction };
+  });
+}
+
+/**
  * Atomically hold sats for an upcoming proxy call.
  * Moves sats from balance_sats to held_sats using a WHERE guard so the
  * operation fails gracefully when the balance is insufficient.
@@ -117,6 +160,7 @@ export async function settle(
   walletId: string,
   heldAmount: number,
   finalAmount: number,
+  agentId?: string | null,
 ): Promise<{ wallet: Wallet; transaction: Transaction }> {
   const refund = heldAmount - finalAmount;
 
@@ -141,6 +185,7 @@ export async function settle(
       .values({
         id: generateId(ID_PREFIXES.transaction),
         walletId,
+        agentId: agentId ?? null,
         type: 'debit_proxy_call',
         amountSats: finalAmount,
         balanceAfter: wallet.balanceSats,
@@ -162,6 +207,7 @@ export async function settle(
 export async function release(
   walletId: string,
   heldAmount: number,
+  agentId?: string | null,
 ): Promise<Wallet> {
   return await db.transaction(async (tx) => {
     const [wallet] = await tx
@@ -183,6 +229,7 @@ export async function release(
       .values({
         id: generateId(ID_PREFIXES.transaction),
         walletId,
+        agentId: agentId ?? null,
         type: 'refund',
         amountSats: heldAmount,
         balanceAfter: wallet.balanceSats,

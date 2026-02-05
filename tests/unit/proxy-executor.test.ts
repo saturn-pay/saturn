@@ -63,7 +63,7 @@ function makeParams(overrides: Record<string, unknown> = {}) {
     },
     wallet: {
       id: 'wal_01',
-      agentId: 'agt_01',
+      accountId: 'acc_01',
       balanceSats: 5000,
       heldSats: 0,
       lifetimeIn: 10000,
@@ -123,7 +123,7 @@ describe('executeProxyCall', () => {
     expect(result.metadata.chargedSats).toBe(80);
     expect(result.metadata.quotedSats).toBe(100);
     expect(mockHold).toHaveBeenCalledWith('wal_01', 100);
-    expect(mockSettle).toHaveBeenCalledWith('wal_01', 100, 80);
+    expect(mockSettle).toHaveBeenCalledWith('wal_01', 100, 80, 'agt_01');
     expect(mockInvalidateCache).toHaveBeenCalledWith('agt_01');
   });
 
@@ -138,7 +138,7 @@ describe('executeProxyCall', () => {
 
     expect(result.status).toBe(429);
     expect(result.metadata.chargedSats).toBe(0);
-    expect(mockRelease).toHaveBeenCalledWith('wal_01', 100);
+    expect(mockRelease).toHaveBeenCalledWith('wal_01', 100, 'agt_01');
     expect(mockSettle).not.toHaveBeenCalled();
   });
 
@@ -153,7 +153,7 @@ describe('executeProxyCall', () => {
 
     expect(result.status).toBe(502);
     expect(result.metadata.chargedSats).toBe(0);
-    expect(mockRelease).toHaveBeenCalledWith('wal_01', 100);
+    expect(mockRelease).toHaveBeenCalledWith('wal_01', 100, 'agt_01');
   });
 
   it('releases hold when upstream throws', async () => {
@@ -161,7 +161,7 @@ describe('executeProxyCall', () => {
 
     await expect(executeProxyCall(makeParams())).rejects.toThrow('connection reset');
 
-    expect(mockRelease).toHaveBeenCalledWith('wal_01', 100);
+    expect(mockRelease).toHaveBeenCalledWith('wal_01', 100, 'agt_01');
   });
 
   it('still throws original error when release fails', async () => {

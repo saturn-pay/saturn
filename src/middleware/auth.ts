@@ -79,7 +79,7 @@ export async function requireAuth(
       db
         .select()
         .from(schema.wallets)
-        .where(eq(schema.wallets.agentId, matchedAgent.id)),
+        .where(eq(schema.wallets.accountId, matchedAgent.accountId)),
       db
         .select()
         .from(schema.policies)

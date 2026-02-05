@@ -80,7 +80,6 @@ export interface CreateAgentRequest {
 
 export interface CreateAgentResponse extends Agent {
   apiKey: string;
-  wallet: Wallet;
   policy: Policy;
 }
 
@@ -133,7 +132,7 @@ export interface UpdatePolicyRequest {
 
 export interface Wallet {
   id: string;
-  agentId: string;
+  accountId: string;
   balanceSats: number;
   heldSats: number;
   lifetimeIn: number;
@@ -153,6 +152,19 @@ export interface FundWalletResponse {
   expiresAt: string;
 }
 
+export interface FundCardRequest {
+  amountUsdCents: number;
+}
+
+export interface FundCardResponse {
+  checkoutSessionId: string;
+  checkoutUrl: string;
+  amountUsdCents: number;
+  amountSats: number;
+  btcUsdRate: number;
+  expiresAt: string;
+}
+
 export interface Invoice {
   id: string;
   walletId: string;
@@ -168,10 +180,11 @@ export interface Invoice {
 export interface Transaction {
   id: string;
   walletId: string;
-  type: 'credit_lightning' | 'debit_proxy_call' | 'refund' | 'withdrawal';
+  agentId: string | null;
+  type: 'credit_lightning' | 'credit_stripe' | 'debit_proxy_call' | 'refund' | 'withdrawal';
   amountSats: number;
   balanceAfter: number;
-  referenceType: 'invoice' | 'proxy_call' | null;
+  referenceType: 'invoice' | 'proxy_call' | 'checkout_session' | 'hold_release' | null;
   referenceId: string | null;
   description: string;
   createdAt: string;
