@@ -33,6 +33,15 @@ if (env.SENTRY_DSN) {
 const app = express();
 
 // ---------------------------------------------------------------------------
+// Stripe webhook (needs raw body, must be before express.json())
+// ---------------------------------------------------------------------------
+
+if (env.STRIPE_WEBHOOK_SECRET) {
+  const { stripeWebhookRouter } = await import('./routes/stripe.router.js');
+  app.use('/webhooks/stripe', express.raw({ type: 'application/json' }), stripeWebhookRouter);
+}
+
+// ---------------------------------------------------------------------------
 // Rate limiters
 // ---------------------------------------------------------------------------
 

@@ -3,6 +3,8 @@ import type {
   Wallet,
   FundWalletRequest,
   FundWalletResponse,
+  FundCardRequest,
+  FundCardResponse,
   Invoice,
   Transaction,
   Paginated,
@@ -22,6 +24,10 @@ export class WalletsResource {
     return this.client.post<FundWalletResponse>(`/v1/agents/${agentId}/wallet/fund`, params, opts);
   }
 
+  async fundCard(agentId: string, params: FundCardRequest, opts?: RequestOptions): Promise<FundCardResponse> {
+    return this.client.post<FundCardResponse>(`/v1/agents/${agentId}/wallet/fund-card`, params, opts);
+  }
+
   async invoices(agentId: string, params?: { status?: string }, opts?: RequestOptions): Promise<Invoice[]> {
     return this.client.get<Invoice[]>(`/v1/agents/${agentId}/wallet/invoices`, params as Record<string, unknown>, opts);
   }
@@ -38,6 +44,10 @@ export class WalletsResource {
 
   async fundSelf(params: FundWalletRequest, opts?: RequestOptions): Promise<FundWalletResponse> {
     return this.client.post<FundWalletResponse>('/v1/wallet/fund', params, opts);
+  }
+
+  async fundCardSelf(params: FundCardRequest, opts?: RequestOptions): Promise<FundCardResponse> {
+    return this.client.post<FundCardResponse>('/v1/wallet/fund-card', params, opts);
   }
 
   async invoicesSelf(params?: { status?: string }, opts?: RequestOptions): Promise<Invoice[]> {

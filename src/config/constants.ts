@@ -15,6 +15,12 @@ export const FUNDING = {
   invoiceExpirySecs: 3600,
 } as const;
 
+export const STRIPE_FUNDING = {
+  minAmountUsdCents: 500,
+  maxAmountUsdCents: 50_000,
+  sessionExpirySecs: 1800,
+} as const;
+
 export const RATE_UPDATE_INTERVAL_CRON = '*/5 * * * *'; // every 5 minutes
 
 export const API_KEY_PREFIXES = {
@@ -33,6 +39,7 @@ export const ID_PREFIXES = {
   auditLog: 'aud',
   rateSnapshot: 'rts',
   submission: 'sub',
+  checkoutSession: 'cks',
 } as const;
 
 export const DAILY_SPEND_CACHE_TTL_MS = 60_000;

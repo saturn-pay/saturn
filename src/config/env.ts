@@ -32,6 +32,9 @@ const envSchema = z.object({
   PINECONE_API_KEY: z.string().optional(),
   PINECONE_ENVIRONMENT: z.string().optional(),
 
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+
   CORS_ORIGIN: z.string().optional(),
 
   SENTRY_DSN: z.string().url().optional(),

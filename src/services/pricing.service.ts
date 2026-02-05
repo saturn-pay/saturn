@@ -26,6 +26,14 @@ export function usdMicrosToSats(usdMicros: number, btcUsd: number): number {
   return Math.ceil((usdMicros * 100) / btcUsd);
 }
 
+/**
+ * Convert a price in USD cents to satoshis at the given BTC/USD rate.
+ * Floors to be conservative (never over-credit).
+ */
+export function usdCentsToSats(usdCents: number, btcUsd: number): number {
+  return Math.floor(usdCents * 1_000_000 / btcUsd);
+}
+
 // ---------------------------------------------------------------------------
 // Rate cache accessors
 // ---------------------------------------------------------------------------

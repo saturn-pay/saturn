@@ -8,3 +8,4 @@ export { transactions } from './transactions.js';
 export { auditLogs } from './audit-logs.js';
 export { rateSnapshots } from './rate-snapshots.js';
 export { serviceSubmissions } from './service-submissions.js';
+export { checkoutSessions } from './checkout-sessions.js';
