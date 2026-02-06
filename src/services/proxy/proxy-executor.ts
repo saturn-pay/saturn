@@ -1,12 +1,14 @@
 // Core orchestrator for proxy calls.
 // Handles the full lifecycle: quote -> policy -> hold -> execute -> finalize -> settle/release.
 
-import type { Agent, Wallet, Policy } from '../../types/index.js';
+import type { Account, Agent, Wallet, Policy } from '../../types/index.js';
 import { getAdapter } from './adapter-registry.js';
 import * as policyService from '../policy.service.js';
 import { invalidateDailySpendCache } from '../policy.service.js';
 import * as walletService from '../wallet.service.js';
+import type { Currency } from '../wallet.service.js';
 import * as auditService from '../audit.service.js';
+import * as pricing from '../pricing.service.js';
 import {
   NotFoundError,
   PolicyDeniedError,
@@ -19,6 +21,7 @@ import {
 // ---------------------------------------------------------------------------
 
 export interface ProxyCallParams {
+  account: Account;
   agent: Agent;
   wallet: Wallet;
   policy: Policy;
@@ -44,7 +47,7 @@ export interface ProxyCallResult {
 // ---------------------------------------------------------------------------
 
 export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCallResult> {
-  const { agent, wallet, policy, serviceSlug, requestBody, capability } = params;
+  const { account, agent, wallet, policy, serviceSlug, requestBody, capability } = params;
 
   // 1. Resolve adapter
   const adapter = getAdapter(serviceSlug);
@@ -79,11 +82,24 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
     throw new PolicyDeniedError(policyResult.reason ?? 'policy_denied');
   }
 
-  // 4. Hold funds
-  const holdResult = await walletService.hold(wallet.id, quotedSats);
+  // 4. Hold funds (dual-currency: try default currency first, fall back to other)
+  const { btcUsd } = pricing.getCurrentRate();
+  const quotedUsdCents = pricing.satsToUsdCents(quotedSats, btcUsd);
+  const defaultCurrency = account.defaultCurrency as Currency;
+
+  const holdResult = await walletService.hold(wallet.id, defaultCurrency, quotedUsdCents, quotedSats);
   if (!holdResult.success) {
-    throw new InsufficientBalanceError(quotedSats, wallet.balanceSats);
+    // Report in the user's preferred currency
+    const availableBalance = defaultCurrency === 'usd_cents'
+      ? wallet.balanceUsdCents
+      : wallet.balanceSats;
+    const requiredAmount = defaultCurrency === 'usd_cents' ? quotedUsdCents : quotedSats;
+    throw new InsufficientBalanceError(requiredAmount, availableBalance);
   }
+
+  // Track which currency was actually held (may differ from default if fallback occurred)
+  const heldCurrency = holdResult.currency;
+  const heldAmount = heldCurrency === 'usd_cents' ? quotedUsdCents : quotedSats;
 
   // 5. Execute upstream call
   const startMs = Date.now();
@@ -95,7 +111,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
 
     // 6. If upstream returned an error status, release hold instead of charging
     if (response.status >= 400) {
-      await walletService.release(wallet.id, quotedSats, agent.id);
+      await walletService.release(wallet.id, heldCurrency, heldAmount, agent.id);
 
       const auditId = await auditService.logProxyCall({
         agentId: agent.id,
@@ -111,6 +127,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
         error: `Upstream returned ${response.status}`,
       });
 
+      const refreshedWallet = await walletService.getBalance(agent.accountId);
       return {
         status: response.status,
         data: response.data,
@@ -119,7 +136,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
           auditId,
           quotedSats,
           chargedSats: 0,
-          balanceAfter: (await walletService.getBalance(agent.accountId)).balanceSats,
+          balanceAfter: refreshedWallet.balanceSats,
         },
       };
     }
@@ -127,10 +144,16 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
     // 7. Success path: finalize, settle, audit
     const { finalSats } = await adapter.finalize(response, quotedSats);
 
+    // Convert final amount to the currency that was held
+    const finalAmount = heldCurrency === 'usd_cents'
+      ? pricing.satsToUsdCents(finalSats, btcUsd)
+      : finalSats;
+
     const { wallet: settledWallet } = await walletService.settle(
       wallet.id,
-      quotedSats,
-      finalSats,
+      heldCurrency,
+      heldAmount,
+      finalAmount,
       agent.id,
     );
 
@@ -166,7 +189,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
 
     // 8. Failure path: release hold, audit, re-throw
     try {
-      await walletService.release(wallet.id, quotedSats, agent.id);
+      await walletService.release(wallet.id, heldCurrency, heldAmount, agent.id);
     } catch (releaseErr) {
       // Log but don't swallow the original error
       const releaseMsg = releaseErr instanceof Error ? releaseErr.message : String(releaseErr);

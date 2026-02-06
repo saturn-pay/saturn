@@ -43,6 +43,7 @@ export const capabilityRouter = Router();
 
 capabilityRouter.post('/:capability', requireAuth, async (req: Request, res: Response) => {
   const capability = paramString(req.params.capability);
+  const account = req.account!;
   const agent = req.agent!;
   const wallet = req.wallet;
   const policy = req.policy;
@@ -65,6 +66,7 @@ capabilityRouter.post('/:capability', requireAuth, async (req: Request, res: Res
   }
 
   const result = await executeProxyCall({
+    account,
     agent,
     wallet,
     policy,
@@ -99,6 +101,7 @@ capabilityRouter.post('/:capability', requireAuth, async (req: Request, res: Res
 // POST /proxy/:serviceSlug — execute a proxied API call on behalf of an agent
 proxyRouter.post('/:serviceSlug', requireAuth, async (req: Request, res: Response) => {
   const serviceSlug = paramString(req.params.serviceSlug);
+  const account = req.account!;
   const agent = req.agent!;
   const wallet = req.wallet;
   const policy = req.policy;
@@ -112,6 +115,7 @@ proxyRouter.post('/:serviceSlug', requireAuth, async (req: Request, res: Respons
   }
 
   const result = await executeProxyCall({
+    account,
     agent,
     wallet,
     policy,

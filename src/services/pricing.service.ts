@@ -34,6 +34,14 @@ export function usdCentsToSats(usdCents: number, btcUsd: number): number {
   return Math.floor(usdCents * 1_000_000 / btcUsd);
 }
 
+/**
+ * Convert satoshis to USD cents at the given BTC/USD rate.
+ * Ceils to ensure we hold enough USD to cover the cost.
+ */
+export function satsToUsdCents(sats: number, btcUsd: number): number {
+  return Math.ceil((sats * btcUsd) / 1_000_000);
+}
+
 // ---------------------------------------------------------------------------
 // Rate cache accessors
 // ---------------------------------------------------------------------------

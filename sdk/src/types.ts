@@ -38,6 +38,7 @@ export interface Account {
   id: string;
   name: string;
   email: string;
+  defaultCurrency: 'sats' | 'usd_cents';
   createdAt: string;
   updatedAt: string;
 }
@@ -133,10 +134,16 @@ export interface UpdatePolicyRequest {
 export interface Wallet {
   id: string;
   accountId: string;
+  // Sats balance (Lightning funding)
   balanceSats: number;
   heldSats: number;
   lifetimeIn: number;
   lifetimeOut: number;
+  // USD balance (Stripe funding)
+  balanceUsdCents: number;
+  heldUsdCents: number;
+  lifetimeInUsdCents: number;
+  lifetimeOutUsdCents: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -182,8 +189,13 @@ export interface Transaction {
   walletId: string;
   agentId: string | null;
   type: 'credit_lightning' | 'credit_stripe' | 'debit_proxy_call' | 'refund' | 'withdrawal';
+  currency: 'sats' | 'usd_cents';
+  // Sats amounts
   amountSats: number;
   balanceAfter: number;
+  // USD amounts (for Stripe transactions)
+  amountUsdCents: number | null;
+  balanceAfterUsdCents: number | null;
   referenceType: 'invoice' | 'proxy_call' | 'checkout_session' | 'hold_release' | null;
   referenceId: string | null;
   description: string;
@@ -246,10 +258,16 @@ export interface AdminAgent {
   metadata: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
+  // Sats balance
   balanceSats: number;
   heldSats: number;
   lifetimeIn: number;
   lifetimeOut: number;
+  // USD balance
+  balanceUsdCents: number;
+  heldUsdCents: number;
+  lifetimeInUsdCents: number;
+  lifetimeOutUsdCents: number;
   todaySpendSats: number;
 }
 

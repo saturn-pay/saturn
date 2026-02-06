@@ -12,13 +12,16 @@ import { NotFoundError } from '../lib/errors.js';
 type Wallet = typeof schema.wallets.$inferSelect;
 type Transaction = typeof schema.transactions.$inferSelect;
 
+export type Currency = 'sats' | 'usd_cents';
+
 export interface HoldResult {
   success: boolean;
   wallet: Wallet | null;
+  currency: Currency;
 }
 
 // ---------------------------------------------------------------------------
-// Service functions
+// Balance queries
 // ---------------------------------------------------------------------------
 
 /**
@@ -37,10 +40,12 @@ export async function getBalance(accountId: string): Promise<Wallet> {
   return wallet;
 }
 
+// ---------------------------------------------------------------------------
+// Lightning (sats) operations
+// ---------------------------------------------------------------------------
+
 /**
- * Credit a wallet from a settled Lightning invoice.
- * Runs inside a DB transaction: updates wallet balance + lifetime_in,
- * then inserts a credit transaction record.
+ * Credit a wallet from a settled Lightning invoice (sats).
  */
 export async function creditFromInvoice(
   walletId: string,
@@ -68,6 +73,7 @@ export async function creditFromInvoice(
         id: generateId(ID_PREFIXES.transaction),
         walletId,
         type: 'credit_lightning',
+        currency: 'sats',
         amountSats,
         balanceAfter: wallet.balanceSats,
         referenceType: 'invoice',
@@ -82,54 +88,9 @@ export async function creditFromInvoice(
 }
 
 /**
- * Credit a wallet from a completed Stripe checkout session.
- * Same pattern as creditFromInvoice but with credit_stripe type.
- */
-export async function creditFromCheckout(
-  walletId: string,
-  amountSats: number,
-  checkoutSessionId: string,
-): Promise<{ wallet: Wallet; transaction: Transaction }> {
-  return await db.transaction(async (tx) => {
-    const [wallet] = await tx
-      .update(schema.wallets)
-      .set({
-        balanceSats: sql`${schema.wallets.balanceSats} + ${amountSats}`,
-        lifetimeIn: sql`${schema.wallets.lifetimeIn} + ${amountSats}`,
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.wallets.id, walletId))
-      .returning();
-
-    if (!wallet) {
-      throw new NotFoundError('Wallet', walletId);
-    }
-
-    const [transaction] = await tx
-      .insert(schema.transactions)
-      .values({
-        id: generateId(ID_PREFIXES.transaction),
-        walletId,
-        type: 'credit_stripe',
-        amountSats,
-        balanceAfter: wallet.balanceSats,
-        referenceType: 'checkout_session',
-        referenceId: checkoutSessionId,
-        description: `Card deposit of ${amountSats} sats`,
-        createdAt: new Date(),
-      })
-      .returning();
-
-    return { wallet, transaction };
-  });
-}
-
-/**
  * Atomically hold sats for an upcoming proxy call.
- * Moves sats from balance_sats to held_sats using a WHERE guard so the
- * operation fails gracefully when the balance is insufficient.
  */
-export async function hold(
+export async function holdSats(
   walletId: string,
   amountSats: number,
 ): Promise<HoldResult> {
@@ -145,18 +106,16 @@ export async function hold(
 
   const rows = result.rows ?? [];
   if (rows.length === 0) {
-    return { success: false, wallet: null };
+    return { success: false, wallet: null, currency: 'sats' };
   }
 
-  return { success: true, wallet: rows[0] as unknown as Wallet };
+  return { success: true, wallet: rows[0] as unknown as Wallet, currency: 'sats' };
 }
 
 /**
- * Settle a held amount after a successful proxy call.
- * If the final cost is less than the held amount, the overage is refunded
- * back to the balance. Updates lifetime_out and inserts a debit transaction.
+ * Settle a held sats amount after a successful proxy call.
  */
-export async function settle(
+export async function settleSats(
   walletId: string,
   heldAmount: number,
   finalAmount: number,
@@ -187,6 +146,7 @@ export async function settle(
         walletId,
         agentId: agentId ?? null,
         type: 'debit_proxy_call',
+        currency: 'sats',
         amountSats: finalAmount,
         balanceAfter: wallet.balanceSats,
         referenceType: 'proxy_call',
@@ -201,10 +161,9 @@ export async function settle(
 }
 
 /**
- * Release a hold — moves sats from held back to balance.
- * Used when an upstream call fails and the hold should be reversed.
+ * Release a sats hold — moves sats from held back to balance.
  */
-export async function release(
+export async function releaseSats(
   walletId: string,
   heldAmount: number,
   agentId?: string | null,
@@ -231,6 +190,7 @@ export async function release(
         walletId,
         agentId: agentId ?? null,
         type: 'refund',
+        currency: 'sats',
         amountSats: heldAmount,
         balanceAfter: wallet.balanceSats,
         referenceType: 'hold_release',
@@ -241,4 +201,238 @@ export async function release(
 
     return wallet;
   });
+}
+
+// ---------------------------------------------------------------------------
+// Stripe (USD) operations
+// ---------------------------------------------------------------------------
+
+/**
+ * Credit a wallet from a completed Stripe checkout session (USD).
+ * Credits USD balance, not sats — no currency conversion.
+ */
+export async function creditFromCheckout(
+  walletId: string,
+  amountUsdCents: number,
+  checkoutSessionId: string,
+): Promise<{ wallet: Wallet; transaction: Transaction }> {
+  return await db.transaction(async (tx) => {
+    const [wallet] = await tx
+      .update(schema.wallets)
+      .set({
+        balanceUsdCents: sql`${schema.wallets.balanceUsdCents} + ${amountUsdCents}`,
+        lifetimeInUsdCents: sql`${schema.wallets.lifetimeInUsdCents} + ${amountUsdCents}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.wallets.id, walletId))
+      .returning();
+
+    if (!wallet) {
+      throw new NotFoundError('Wallet', walletId);
+    }
+
+    const [transaction] = await tx
+      .insert(schema.transactions)
+      .values({
+        id: generateId(ID_PREFIXES.transaction),
+        walletId,
+        type: 'credit_stripe',
+        currency: 'usd_cents',
+        amountSats: 0, // No sats for USD transactions
+        amountUsdCents,
+        balanceAfter: 0, // Sats balance unchanged
+        balanceAfterUsdCents: wallet.balanceUsdCents,
+        referenceType: 'checkout_session',
+        referenceId: checkoutSessionId,
+        description: `Card deposit of $${(amountUsdCents / 100).toFixed(2)}`,
+        createdAt: new Date(),
+      })
+      .returning();
+
+    return { wallet, transaction };
+  });
+}
+
+/**
+ * Atomically hold USD cents for an upcoming proxy call.
+ */
+export async function holdUsd(
+  walletId: string,
+  amountUsdCents: number,
+): Promise<HoldResult> {
+  const result = await db.execute<typeof schema.wallets.$inferSelect>(
+    sql`UPDATE wallets
+        SET balance_usd_cents = balance_usd_cents - ${amountUsdCents},
+            held_usd_cents = held_usd_cents + ${amountUsdCents},
+            updated_at = NOW()
+        WHERE id = ${walletId}
+          AND balance_usd_cents >= ${amountUsdCents}
+        RETURNING *`,
+  );
+
+  const rows = result.rows ?? [];
+  if (rows.length === 0) {
+    return { success: false, wallet: null, currency: 'usd_cents' };
+  }
+
+  return { success: true, wallet: rows[0] as unknown as Wallet, currency: 'usd_cents' };
+}
+
+/**
+ * Settle a held USD amount after a successful proxy call.
+ */
+export async function settleUsd(
+  walletId: string,
+  heldAmount: number,
+  finalAmount: number,
+  agentId?: string | null,
+): Promise<{ wallet: Wallet; transaction: Transaction }> {
+  const refund = heldAmount - finalAmount;
+
+  return await db.transaction(async (tx) => {
+    const [wallet] = await tx
+      .update(schema.wallets)
+      .set({
+        heldUsdCents: sql`${schema.wallets.heldUsdCents} - ${heldAmount}`,
+        balanceUsdCents: sql`${schema.wallets.balanceUsdCents} + ${refund}`,
+        lifetimeOutUsdCents: sql`${schema.wallets.lifetimeOutUsdCents} + ${finalAmount}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.wallets.id, walletId))
+      .returning();
+
+    if (!wallet) {
+      throw new NotFoundError('Wallet', walletId);
+    }
+
+    const [transaction] = await tx
+      .insert(schema.transactions)
+      .values({
+        id: generateId(ID_PREFIXES.transaction),
+        walletId,
+        agentId: agentId ?? null,
+        type: 'debit_proxy_call',
+        currency: 'usd_cents',
+        amountSats: 0,
+        amountUsdCents: finalAmount,
+        balanceAfter: 0,
+        balanceAfterUsdCents: wallet.balanceUsdCents,
+        referenceType: 'proxy_call',
+        referenceId: null,
+        description: `Proxy call: $${(finalAmount / 100).toFixed(2)} (held $${(heldAmount / 100).toFixed(2)}, refunded $${(refund / 100).toFixed(2)})`,
+        createdAt: new Date(),
+      })
+      .returning();
+
+    return { wallet, transaction };
+  });
+}
+
+/**
+ * Release a USD hold — moves USD from held back to balance.
+ */
+export async function releaseUsd(
+  walletId: string,
+  heldAmount: number,
+  agentId?: string | null,
+): Promise<Wallet> {
+  return await db.transaction(async (tx) => {
+    const [wallet] = await tx
+      .update(schema.wallets)
+      .set({
+        heldUsdCents: sql`${schema.wallets.heldUsdCents} - ${heldAmount}`,
+        balanceUsdCents: sql`${schema.wallets.balanceUsdCents} + ${heldAmount}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.wallets.id, walletId))
+      .returning();
+
+    if (!wallet) {
+      throw new NotFoundError('Wallet', walletId);
+    }
+
+    await tx
+      .insert(schema.transactions)
+      .values({
+        id: generateId(ID_PREFIXES.transaction),
+        walletId,
+        agentId: agentId ?? null,
+        type: 'refund',
+        currency: 'usd_cents',
+        amountSats: 0,
+        amountUsdCents: heldAmount,
+        balanceAfter: 0,
+        balanceAfterUsdCents: wallet.balanceUsdCents,
+        referenceType: 'hold_release',
+        referenceId: null,
+        description: `Hold released: $${(heldAmount / 100).toFixed(2)} returned`,
+        createdAt: new Date(),
+      });
+
+    return wallet;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Dual-currency hold/settle/release (default-currency-first logic)
+// ---------------------------------------------------------------------------
+
+/**
+ * Hold funds using default-currency-first logic.
+ * Tries account's default currency first, falls back to the other.
+ */
+export async function hold(
+  walletId: string,
+  defaultCurrency: Currency,
+  costUsdCents: number,
+  costSats: number,
+): Promise<HoldResult> {
+  if (defaultCurrency === 'usd_cents') {
+    // Try USD first
+    const usdResult = await holdUsd(walletId, costUsdCents);
+    if (usdResult.success) return usdResult;
+
+    // Fall back to sats
+    return await holdSats(walletId, costSats);
+  } else {
+    // Try sats first
+    const satsResult = await holdSats(walletId, costSats);
+    if (satsResult.success) return satsResult;
+
+    // Fall back to USD
+    return await holdUsd(walletId, costUsdCents);
+  }
+}
+
+/**
+ * Settle funds in the specified currency.
+ */
+export async function settle(
+  walletId: string,
+  currency: Currency,
+  heldAmount: number,
+  finalAmount: number,
+  agentId?: string | null,
+): Promise<{ wallet: Wallet; transaction: Transaction }> {
+  if (currency === 'usd_cents') {
+    return await settleUsd(walletId, heldAmount, finalAmount, agentId);
+  } else {
+    return await settleSats(walletId, heldAmount, finalAmount, agentId);
+  }
+}
+
+/**
+ * Release a hold in the specified currency.
+ */
+export async function release(
+  walletId: string,
+  currency: Currency,
+  heldAmount: number,
+  agentId?: string | null,
+): Promise<Wallet> {
+  if (currency === 'usd_cents') {
+    return await releaseUsd(walletId, heldAmount, agentId);
+  } else {
+    return await releaseSats(walletId, heldAmount, agentId);
+  }
 }

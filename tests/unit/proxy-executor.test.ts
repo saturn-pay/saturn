@@ -36,6 +36,11 @@ vi.mock('../../src/services/proxy/adapter-registry.js', () => ({
   getAdapter: (...args: unknown[]) => mockGetAdapter(...args),
 }));
 
+vi.mock('../../src/services/pricing.service.js', () => ({
+  getCurrentRate: () => ({ btcUsd: 100000, fetchedAt: new Date() }),
+  satsToUsdCents: (sats: number) => Math.ceil((sats * 100000) / 1_000_000), // At $100k/BTC, 100 sats = 1 cent
+}));
+
 vi.mock('../../src/lib/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
@@ -48,6 +53,14 @@ import { executeProxyCall } from '../../src/services/proxy/proxy-executor.js';
 
 function makeParams(overrides: Record<string, unknown> = {}) {
   return {
+    account: {
+      id: 'acc_01',
+      name: 'Test Account',
+      email: 'test@example.com',
+      defaultCurrency: 'sats' as const,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
     agent: {
       id: 'agt_01',
       accountId: 'acc_01',
@@ -68,6 +81,10 @@ function makeParams(overrides: Record<string, unknown> = {}) {
       heldSats: 0,
       lifetimeIn: 10000,
       lifetimeOut: 5000,
+      balanceUsdCents: 0,
+      heldUsdCents: 0,
+      lifetimeInUsdCents: 0,
+      lifetimeOutUsdCents: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -108,7 +125,7 @@ describe('executeProxyCall', () => {
 
     mockGetAdapter.mockReturnValue(fakeAdapter);
     mockEvaluate.mockResolvedValue({ allowed: true });
-    mockHold.mockResolvedValue({ success: true, wallet: { balanceSats: 4900 } });
+    mockHold.mockResolvedValue({ success: true, wallet: { balanceSats: 4900 }, currency: 'sats' });
     mockSettle.mockResolvedValue({
       wallet: { balanceSats: 4920 },
       transaction: { id: 'txn_01' },
@@ -122,8 +139,10 @@ describe('executeProxyCall', () => {
     expect(result.status).toBe(200);
     expect(result.metadata.chargedSats).toBe(80);
     expect(result.metadata.quotedSats).toBe(100);
-    expect(mockHold).toHaveBeenCalledWith('wal_01', 100);
-    expect(mockSettle).toHaveBeenCalledWith('wal_01', 100, 80, 'agt_01');
+    // hold(walletId, defaultCurrency, costUsdCents, costSats) - 100 sats at $100k/BTC = 10 cents
+    expect(mockHold).toHaveBeenCalledWith('wal_01', 'sats', 10, 100);
+    // settle(walletId, currency, heldAmount, finalAmount, agentId) - settled in sats
+    expect(mockSettle).toHaveBeenCalledWith('wal_01', 'sats', 100, 80, 'agt_01');
     expect(mockInvalidateCache).toHaveBeenCalledWith('agt_01');
   });
 
@@ -138,7 +157,8 @@ describe('executeProxyCall', () => {
 
     expect(result.status).toBe(429);
     expect(result.metadata.chargedSats).toBe(0);
-    expect(mockRelease).toHaveBeenCalledWith('wal_01', 100, 'agt_01');
+    // release(walletId, currency, heldAmount, agentId) - released sats hold
+    expect(mockRelease).toHaveBeenCalledWith('wal_01', 'sats', 100, 'agt_01');
     expect(mockSettle).not.toHaveBeenCalled();
   });
 
@@ -153,7 +173,8 @@ describe('executeProxyCall', () => {
 
     expect(result.status).toBe(502);
     expect(result.metadata.chargedSats).toBe(0);
-    expect(mockRelease).toHaveBeenCalledWith('wal_01', 100, 'agt_01');
+    // release(walletId, currency, heldAmount, agentId) - released sats hold
+    expect(mockRelease).toHaveBeenCalledWith('wal_01', 'sats', 100, 'agt_01');
   });
 
   it('releases hold when upstream throws', async () => {
@@ -161,7 +182,8 @@ describe('executeProxyCall', () => {
 
     await expect(executeProxyCall(makeParams())).rejects.toThrow('connection reset');
 
-    expect(mockRelease).toHaveBeenCalledWith('wal_01', 100, 'agt_01');
+    // release(walletId, currency, heldAmount, agentId) - released sats hold
+    expect(mockRelease).toHaveBeenCalledWith('wal_01', 'sats', 100, 'agt_01');
   });
 
   it('still throws original error when release fails', async () => {

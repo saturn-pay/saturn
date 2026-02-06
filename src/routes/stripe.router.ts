@@ -66,14 +66,19 @@ stripeWebhookRouter.post('/', async (req: Request, res: Response) => {
           .returning();
 
         if (updated) {
+          // Credit USD balance (not sats — no currency conversion)
           await walletService.creditFromCheckout(
             updated.walletId,
-            updated.amountSats,
+            updated.amountUsdCents,
             updated.id,
           );
+
+          // Note: defaultCurrency stays at 'usd_cents' (the DB default) for Stripe users
+          // Lightning funding will change it to 'sats' if it happens first
+
           logger.info(
-            { checkoutSessionId, walletId: updated.walletId, amountSats: updated.amountSats },
-            'Wallet credited from Stripe checkout',
+            { checkoutSessionId, walletId: updated.walletId, amountUsdCents: updated.amountUsdCents },
+            'Wallet credited from Stripe checkout (USD)',
           );
         } else {
           logger.info({ checkoutSessionId }, 'Checkout session already processed or not found');
