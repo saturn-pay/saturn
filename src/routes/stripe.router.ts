@@ -161,7 +161,7 @@ export async function handleFundCard(
           currency: 'usd',
           product_data: {
             name: 'Saturn Wallet Funding',
-            description: `${amountSats.toLocaleString()} sats at $${(btcUsd).toLocaleString()}/BTC`,
+            description: `Add $${(amountUsdCents / 100).toFixed(2)} to your wallet`,
           },
           unit_amount: amountUsdCents,
         },
