@@ -11,7 +11,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "./scripts/e2e-test.sh",
+    "test:e2e:sdk": "tsx scripts/e2e-test-sdk.ts"
   },
   "keywords": [],
   "author": "",
