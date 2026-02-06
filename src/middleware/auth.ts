@@ -1,11 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
-import { eq } from 'drizzle-orm';
+import jwt from 'jsonwebtoken';
+import { eq, and } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import * as schema from '../db/schema/index.js';
 import { AuthError, PolicyDeniedError } from '../lib/errors.js';
 import { API_KEY_PREFIXES } from '../config/constants.js';
+import { env } from '../config/env.js';
 
 function extractBearerToken(req: Request): string | null {
   const header = req.headers.authorization;
@@ -16,8 +18,61 @@ function extractBearerToken(req: Request): string | null {
 }
 
 /**
- * Authenticates any `sk_agt_` key.
- * Uses a SHA-256 prefix for fast DB lookup, then bcrypt-verifies the single match.
+ * Tries to authenticate with API key (sk_agt_*).
+ * Returns the matched agent or null if not an API key or invalid.
+ */
+async function tryApiKeyAuth(token: string): Promise<typeof schema.agents.$inferSelect | null> {
+  if (!token.startsWith(API_KEY_PREFIXES.agent)) {
+    return null;
+  }
+
+  // Fast lookup by SHA-256 prefix, then verify with bcrypt
+  const prefix = crypto.createHash('sha256').update(token).digest('hex').slice(0, 16);
+  const candidates = await db
+    .select()
+    .from(schema.agents)
+    .where(eq(schema.agents.apiKeyPrefix, prefix));
+
+  for (const agent of candidates) {
+    const match = await bcrypt.compare(token, agent.apiKeyHash);
+    if (match) {
+      return agent;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Tries to authenticate with JWT token (for dashboard sessions).
+ * Returns the primary agent for the account or null if invalid.
+ */
+async function tryJwtAuth(token: string): Promise<typeof schema.agents.$inferSelect | null> {
+  try {
+    const payload = jwt.verify(token, env.JWT_SECRET) as {
+      accountId: string;
+      agentId: string;
+    };
+
+    // Get the primary agent for this account
+    const [agent] = await db
+      .select()
+      .from(schema.agents)
+      .where(
+        and(
+          eq(schema.agents.id, payload.agentId),
+          eq(schema.agents.accountId, payload.accountId),
+        ),
+      );
+
+    return agent || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Authenticates via API key (sk_agt_*) or JWT session token.
  * Loads agent + parent account + wallet + policy onto the request.
  * Rejects if agent is suspended or killed.
  */
@@ -32,24 +87,10 @@ export async function requireAuth(
       throw new AuthError();
     }
 
-    if (!token.startsWith(API_KEY_PREFIXES.agent)) {
-      throw new AuthError();
-    }
-
-    // Fast lookup by SHA-256 prefix, then verify with bcrypt
-    const prefix = crypto.createHash('sha256').update(token).digest('hex').slice(0, 16);
-    const candidates = await db
-      .select()
-      .from(schema.agents)
-      .where(eq(schema.agents.apiKeyPrefix, prefix));
-
-    let matchedAgent = null;
-    for (const agent of candidates) {
-      const match = await bcrypt.compare(token, agent.apiKeyHash);
-      if (match) {
-        matchedAgent = agent;
-        break;
-      }
+    // Try API key first, then JWT
+    let matchedAgent = await tryApiKeyAuth(token);
+    if (!matchedAgent) {
+      matchedAgent = await tryJwtAuth(token);
     }
 
     if (!matchedAgent) {

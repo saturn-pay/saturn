@@ -8,11 +8,13 @@ import { proxyRouter, capabilityRouter } from './proxy.router.js';
 import { adminRouter } from './admin.router.js';
 import { registryRouter } from './registry.router.js';
 import { signupRouter } from './signup.router.js';
+import { authRouter } from './auth.router.js';
 
 export const router = Router();
 
 // Unauthenticated
 router.use('/signup', signupRouter);
+router.use('/auth', authRouter);
 
 // Authenticated
 router.use('/accounts', accountsRouter);

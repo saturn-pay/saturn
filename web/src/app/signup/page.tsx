@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { ApiKeyDisplay } from '@/components/api-key-display';
 import type { SignupResponse } from '@/lib/types';
@@ -11,6 +12,7 @@ export default function SignupPage() {
   const [step, setStep] = useState<'form' | 'key'>('form');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -21,12 +23,9 @@ export default function SignupPage() {
     setSubmitting(true);
 
     try {
-      const body: { name: string; email?: string } = { name };
-      if (email) body.email = email;
-
       const data = await apiFetch<SignupResponse>('/v1/signup', {
         method: 'POST',
-        body,
+        body: { name, email, password },
       });
 
       setApiKey(data.apiKey);
@@ -38,9 +37,20 @@ export default function SignupPage() {
     }
   };
 
-  const goToDashboard = () => {
-    login(apiKey);
-    window.location.href = '/';
+  const goToDashboard = async () => {
+    // Login with email/password to get JWT token
+    try {
+      const data = await apiFetch<{ token: string }>('/v1/auth/login', {
+        method: 'POST',
+        body: { email, password },
+      });
+      login(data.token);
+      window.location.href = '/';
+    } catch {
+      // Fallback to API key if login fails
+      login(apiKey);
+      window.location.href = '/';
+    }
   };
 
   return (
@@ -56,10 +66,10 @@ export default function SignupPage() {
         {step === 'form' ? (
           <>
             <h1 className="text-2xl font-bold tracking-tight mb-2">
-              Create your first agent
+              Create your account
             </h1>
             <p className="text-sm text-gray-500 mb-8">
-              One agent, one key. Fund with card or Lightning, start calling.
+              Fund with card or Lightning, start calling APIs.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -78,14 +88,28 @@ export default function SignupPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">
-                  Email{' '}
-                  <span className="text-gray-400 font-normal">(optional)</span>
+                  Email
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
+                  required
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm outline-none focus:border-gray-400 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  required
+                  minLength={8}
                   className="w-full px-3 py-2 border border-border rounded-lg text-sm outline-none focus:border-gray-400 transition-colors"
                 />
               </div>
@@ -102,14 +126,21 @@ export default function SignupPage() {
                 {submitting ? 'Creating...' : 'Create account'}
               </button>
             </form>
+
+            <p className="mt-6 text-center text-sm text-gray-500">
+              Already have an account?{' '}
+              <Link href="/signin" className="text-black font-medium hover:underline">
+                Sign in
+              </Link>
+            </p>
           </>
         ) : (
           <>
             <h1 className="text-2xl font-bold tracking-tight mb-2">
-              Your agent key
+              Your API key
             </h1>
             <p className="text-sm text-gray-500 mb-6">
-              This key is for one agent. Treat it like prod credentials.
+              Use this key for programmatic API access.
             </p>
 
             <ApiKeyDisplay apiKey={apiKey} />

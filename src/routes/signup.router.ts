@@ -23,7 +23,8 @@ const signupLimiter = rateLimit({
 
 const signupSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255),
-  email: z.string().email('Invalid email address').optional(),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 export const signupRouter = Router();
@@ -35,19 +36,20 @@ signupRouter.post('/', signupLimiter, async (req: Request, res: Response) => {
     throw new ValidationError('Invalid request body', parsed.error.flatten());
   }
 
-  const { name, email } = parsed.data;
+  const { name, email, password } = parsed.data;
 
-  // If email provided, check uniqueness
-  if (email) {
-    const [existing] = await db
-      .select({ id: accounts.id })
-      .from(accounts)
-      .where(eq(accounts.email, email));
+  // Check email uniqueness
+  const [existing] = await db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(eq(accounts.email, email));
 
-    if (existing) {
-      throw new ValidationError('An account with this email already exists');
-    }
+  if (existing) {
+    throw new ValidationError('An account with this email already exists');
   }
+
+  // Hash the password
+  const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 
   const rawApiKey = API_KEY_PREFIXES.agent + crypto.randomBytes(32).toString('hex');
   const apiKeyHash = await bcrypt.hash(rawApiKey, BCRYPT_SALT_ROUNDS);
@@ -63,7 +65,8 @@ signupRouter.post('/', signupLimiter, async (req: Request, res: Response) => {
     await tx.insert(accounts).values({
       id: accountId,
       name,
-      email: email ?? null,
+      email,
+      passwordHash,
       createdAt: now,
       updatedAt: now,
     });
@@ -74,7 +77,7 @@ signupRouter.post('/', signupLimiter, async (req: Request, res: Response) => {
       name: `${name} (primary)`,
       apiKeyHash,
       apiKeyPrefix,
-      email: email ?? null,
+      email,
       role: 'primary',
       status: 'active',
       createdAt: now,

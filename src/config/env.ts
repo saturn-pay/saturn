@@ -35,6 +35,8 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
 
+  JWT_SECRET: z.string().default('change-me-in-production'),
+
   CORS_ORIGIN: z.string().optional(),
 
   SENTRY_DSN: z.string().url().optional(),

@@ -79,13 +79,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const validate = useCallback(
-    async (key: string) => {
+    async (token: string) => {
       try {
-        const data = await apiFetch<Account>('/v1/accounts/me', {
-          apiKey: key,
-        });
+        // Try JWT auth first (/v1/auth/me), fall back to API key auth (/v1/accounts/me)
+        let data: Account;
+        try {
+          data = await apiFetch<Account>('/v1/auth/me', { apiKey: token });
+        } catch {
+          // Fallback for API key auth (backwards compatibility)
+          data = await apiFetch<Account>('/v1/accounts/me', { apiKey: token });
+        }
         setAccount(data);
-        setApiKey(key);
+        setApiKey(token);
       } catch {
         logout();
       } finally {
@@ -140,7 +145,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 
   if (!apiKey) {
     if (typeof window !== 'undefined') {
-      window.location.href = '/signup';
+      window.location.href = '/signin';
     }
     return null;
   }
