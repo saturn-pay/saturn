@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
-import { formatSats, formatDateTime } from '@/lib/format';
+import { formatSats, formatUsdCents, formatDateTime } from '@/lib/format';
 import { StatCard } from '@/components/stat-card';
 import type { AdminStats, AdminTransaction, Paginated, RateInfo } from '@/lib/types';
 
@@ -52,6 +52,11 @@ export default function DashboardHome() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard label="Sats In" value={formatSats(stats?.satsIn ?? 0)} />
         <StatCard label="Sats Out" value={formatSats(stats?.satsOut ?? 0)} />
+        <StatCard label="USD In" value={formatUsdCents(stats?.usdCentsIn ?? 0)} />
+        <StatCard label="USD Out" value={formatUsdCents(stats?.usdCentsOut ?? 0)} />
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
           label="Active Agents"
           value={String(stats?.activeAgents ?? 0)}
@@ -120,7 +125,9 @@ export default function DashboardHome() {
                       <TypeBadge type={tx.type} />
                     </td>
                     <td className="px-4 py-3 font-mono text-xs">
-                      {formatSats(tx.amountSats)} sats
+                      {tx.currency === 'usd_cents' && tx.amountUsdCents
+                        ? formatUsdCents(tx.amountUsdCents)
+                        : `${formatSats(tx.amountSats)} sats`}
                     </td>
                     <td className="px-4 py-3 text-gray-600 truncate max-w-[200px]">
                       {tx.description}
@@ -142,16 +149,25 @@ export default function DashboardHome() {
 function TypeBadge({ type }: { type: string }) {
   const colors: Record<string, string> = {
     credit_lightning: 'bg-green-50 text-green-700',
+    credit_stripe: 'bg-emerald-50 text-emerald-700',
     debit_proxy_call: 'bg-gray-100 text-gray-700',
     refund: 'bg-blue-50 text-blue-700',
     withdrawal: 'bg-orange-50 text-orange-700',
+  };
+
+  const labels: Record<string, string> = {
+    credit_lightning: 'lightning',
+    credit_stripe: 'card',
+    debit_proxy_call: 'proxy call',
+    refund: 'refund',
+    withdrawal: 'withdrawal',
   };
 
   return (
     <span
       className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${colors[type] || 'bg-gray-100 text-gray-700'}`}
     >
-      {type.replace(/_/g, ' ')}
+      {labels[type] || type.replace(/_/g, ' ')}
     </span>
   );
 }

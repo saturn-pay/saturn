@@ -4,12 +4,12 @@
 
 Your agents need APIs. They shouldn't need your keys.
 
-Saturn is the execution layer for AI agents. It sits between your agent and the APIs it calls — handling auth, routing, budget enforcement, and per-call receipts. Fund a wallet with sats over Lightning, give your agent a Saturn key, and deploy. No provider credentials in your runtime. No surprise bills. Every call audited.
+Saturn is the execution layer for AI agents. It sits between your agent and the APIs it calls — handling auth, routing, budget enforcement, and per-call receipts. Fund a wallet with card or Lightning, give your agent a Saturn key, and deploy. No provider credentials in your runtime. No surprise bills. Every call audited.
 
 ## What Saturn Is
 
 - A proxy that routes agent requests to 15+ upstream providers (OpenAI, Anthropic, Serper, Firecrawl, E2B, and more)
-- A billing layer that charges per call in Bitcoin satoshis via Lightning Network
+- A billing layer with dual-currency wallets — fund with card (USD) or Lightning (sats), spend in your preferred currency
 - A policy engine with per-agent budgets, rate limits, and capability allowlists
 - A full audit trail — every call logged with cost, provider, latency, and policy result
 
@@ -100,7 +100,11 @@ const result = await saturn.reason({
 console.log(result.data.content);
 console.log(`Cost: ${result.metadata.chargedSats} sats`);
 
-// Fund the wallet
+// Fund with card (USD)
+const checkout = await saturn.wallet.fundCard({ amountUsdCents: 1000 }); // $10
+console.log('Pay:', checkout.checkoutUrl);
+
+// Or fund with Lightning (sats)
 const invoice = await saturn.wallet.fund({ amountSats: 10000 });
 console.log('Pay:', invoice.paymentRequest);
 ```
@@ -173,7 +177,8 @@ All endpoints are under `/v1`. Authentication is via `Authorization: Bearer <api
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/v1/wallet` | Get current agent's wallet |
-| POST | `/v1/wallet/fund` | Create Lightning invoice to fund wallet |
+| POST | `/v1/wallet/fund` | Create Lightning invoice to fund wallet (sats) |
+| POST | `/v1/wallet/fund-card` | Create Stripe checkout to fund wallet (USD) |
 | GET | `/v1/wallet/invoices` | List invoices |
 | GET | `/v1/wallet/transactions` | List transactions |
 | GET | `/v1/agents/:id/wallet` | Get agent's wallet (account owner) |

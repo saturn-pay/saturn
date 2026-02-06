@@ -1,6 +1,6 @@
 # @saturn-pay/sdk
 
-TypeScript SDK for the Saturn API — Lightning-powered payments for AI agents.
+TypeScript SDK for the Saturn API — card and Lightning payments for AI agents.
 
 ## Install
 
@@ -19,7 +19,11 @@ const { saturn, apiKey } = await Saturn.signup({
   baseUrl: 'https://api.saturn-pay.com',
 });
 
-// Fund the agent wallet (returns a Lightning invoice)
+// Fund with card (USD) — returns a Stripe checkout URL
+const checkout = await saturn.wallet.fundCard({ amountUsdCents: 1000 }); // $10
+console.log('Pay here:', checkout.checkoutUrl);
+
+// Or fund with Lightning (sats) — returns a Lightning invoice
 const invoice = await saturn.wallet.fund({ amountSats: 10000 });
 console.log('Pay this invoice:', invoice.paymentRequest);
 
@@ -113,7 +117,7 @@ try {
   if (err instanceof SaturnPolicyDeniedError) {
     console.log('Policy blocked this call:', err.message);
   } else if (err instanceof SaturnInsufficientBalanceError) {
-    console.log('Need more sats — fund the wallet');
+    console.log('Insufficient balance — fund with card or Lightning');
   }
 }
 ```

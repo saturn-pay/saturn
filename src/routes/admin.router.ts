@@ -37,6 +37,8 @@ adminRouter.get('/stats', async (req: Request, res: Response) => {
     .select({
       satsIn: sum(wallets.lifetimeIn),
       satsOut: sum(wallets.lifetimeOut),
+      usdCentsIn: sum(wallets.lifetimeInUsdCents),
+      usdCentsOut: sum(wallets.lifetimeOutUsdCents),
     })
     .from(wallets)
     .where(eq(wallets.accountId, accountId));
@@ -64,6 +66,8 @@ adminRouter.get('/stats', async (req: Request, res: Response) => {
   res.json({
     satsIn: Number(volumeRow?.satsIn ?? 0),
     satsOut: Number(volumeRow?.satsOut ?? 0),
+    usdCentsIn: Number(volumeRow?.usdCentsIn ?? 0),
+    usdCentsOut: Number(volumeRow?.usdCentsOut ?? 0),
     activeAgents: agentCountRow?.count ?? 0,
     totalTransactions: txCountRow?.count ?? 0,
     revenueEstimateSats: Number(revenueRow?.revenue ?? 0),
@@ -120,10 +124,16 @@ adminRouter.get('/agents', async (req: Request, res: Response) => {
 
   const result = agentRows.map((row) => ({
     ...row,
+    // Sats balance
     balanceSats: accountWallet?.balanceSats ?? 0,
     heldSats: accountWallet?.heldSats ?? 0,
     lifetimeIn: accountWallet?.lifetimeIn ?? 0,
     lifetimeOut: accountWallet?.lifetimeOut ?? 0,
+    // USD balance
+    balanceUsdCents: accountWallet?.balanceUsdCents ?? 0,
+    heldUsdCents: accountWallet?.heldUsdCents ?? 0,
+    lifetimeInUsdCents: accountWallet?.lifetimeInUsdCents ?? 0,
+    lifetimeOutUsdCents: accountWallet?.lifetimeOutUsdCents ?? 0,
     todaySpendSats: spendMap.get(row.id) ?? 0,
   }));
 

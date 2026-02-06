@@ -2,6 +2,13 @@ export function formatSats(sats: number): string {
   return sats.toLocaleString('en-US');
 }
 
+export function formatUsdCents(cents: number): string {
+  return (cents / 100).toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  });
+}
+
 function safeDate(iso: string): Date | null {
   const d = new Date(iso);
   return isNaN(d.getTime()) ? null : d;

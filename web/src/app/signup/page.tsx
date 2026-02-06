@@ -59,7 +59,7 @@ export default function SignupPage() {
               Create your first agent
             </h1>
             <p className="text-sm text-gray-500 mb-8">
-              One agent, one key. Fund with Lightning, start calling.
+              One agent, one key. Fund with card or Lightning, start calling.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
