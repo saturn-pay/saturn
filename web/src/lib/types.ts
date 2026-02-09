@@ -51,6 +51,7 @@ export interface AdminStats {
 export interface AdminAgent {
   id: string;
   name: string;
+  role: 'primary' | 'worker';
   status: 'active' | 'suspended' | 'killed';
   metadata: Record<string, unknown> | null;
   createdAt: string;

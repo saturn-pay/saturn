@@ -4,7 +4,19 @@ import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
 import { formatSats, formatUsdCents, formatDateTime } from '@/lib/format';
-import type { AdminStats, AdminTransaction, AdminAgent, Paginated, Wallet } from '@/lib/types';
+import { DataTable } from '@/components/data-table';
+import type { AdminStats, AdminTransaction, AdminAgent, Paginated, Wallet, AuditLog } from '@/lib/types';
+
+const CHART_COLORS = [
+  '#22c55e', // green
+  '#3b82f6', // blue
+  '#f59e0b', // amber
+  '#ef4444', // red
+  '#8b5cf6', // violet
+  '#ec4899', // pink
+  '#06b6d4', // cyan
+  '#84cc16', // lime
+];
 
 export default function DashboardHome() {
   const { apiKey } = useAuth();
@@ -12,8 +24,13 @@ export default function DashboardHome() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [recentTx, setRecentTx] = useState<AdminTransaction[]>([]);
   const [agents, setAgents] = useState<AdminAgent[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [auditTotal, setAuditTotal] = useState(0);
+  const [auditOffset, setAuditOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const AUDIT_LIMIT = 10;
 
   // Map agentId to agent name
   const agentMap = useMemo(() => {
@@ -22,11 +39,59 @@ export default function DashboardHome() {
     return map;
   }, [agents]);
 
-  // Check if user is new (no transactions yet)
+  // Calculate service breakdown
+  const serviceBreakdown = useMemo(() => {
+    const breakdown: Record<string, number> = {};
+    auditLogs.forEach((log) => {
+      const key = log.serviceSlug || 'unknown';
+      breakdown[key] = (breakdown[key] || 0) + 1;
+    });
+    return Object.entries(breakdown)
+      .map(([service, count]) => ({ service, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [auditLogs]);
+
+  // Calculate agent breakdown
+  const agentBreakdown = useMemo(() => {
+    const breakdown: Record<string, number> = {};
+    auditLogs.forEach((log) => {
+      const key = log.agentId;
+      breakdown[key] = (breakdown[key] || 0) + 1;
+    });
+    return Object.entries(breakdown)
+      .map(([agentId, count]) => ({
+        agentId,
+        name: agentMap[agentId] || agentId.slice(-8),
+        count
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [auditLogs, agentMap]);
+
+  const totalForChart = serviceBreakdown.reduce((acc, s) => acc + s.count, 0);
+
+  // Color maps for consistent colors across charts and table
+  const serviceColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    serviceBreakdown.forEach((item, index) => {
+      map[item.service] = CHART_COLORS[index % CHART_COLORS.length];
+    });
+    return map;
+  }, [serviceBreakdown]);
+
+  const agentColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    agentBreakdown.forEach((item, index) => {
+      map[item.agentId] = CHART_COLORS[(index + 4) % CHART_COLORS.length];
+    });
+    return map;
+  }, [agentBreakdown]);
+
+  // Check if user is new
   const isNewUser = recentTx.length === 0 && !loading;
   const hasBalance = (wallet?.balanceUsdCents ?? 0) > 0 || (wallet?.balanceSats ?? 0) > 0;
   const hasApiCalls = (stats?.totalTransactions ?? 0) > 0;
 
+  // Initial data fetch
   useEffect(() => {
     if (!apiKey) return;
 
@@ -50,6 +115,21 @@ export default function DashboardHome() {
       })
       .finally(() => setLoading(false));
   }, [apiKey]);
+
+  // Paginated audit logs fetch
+  useEffect(() => {
+    if (!apiKey) return;
+
+    apiFetch<Paginated<AuditLog>>('/v1/admin/audit-logs', {
+      apiKey,
+      params: { limit: AUDIT_LIMIT, offset: auditOffset },
+    })
+      .then((logs) => {
+        setAuditLogs(logs.data);
+        setAuditTotal(logs.total ?? 0);
+      })
+      .catch(() => {});
+  }, [apiKey, auditOffset]);
 
   if (loading) {
     return <div className="text-sm text-gray-500">Loading...</div>;
@@ -83,7 +163,7 @@ export default function DashboardHome() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="border border-border rounded-xl p-5 bg-surface">
           <div className="text-xs text-muted uppercase tracking-wider mb-2">Today&apos;s Spend</div>
           <div className="text-2xl font-bold font-mono">
@@ -97,13 +177,19 @@ export default function DashboardHome() {
           </div>
         </div>
         <div className="border border-border rounded-xl p-5 bg-surface">
+          <div className="text-xs text-muted uppercase tracking-wider mb-2">Services Used</div>
+          <div className="text-2xl font-bold font-mono text-amber-400">
+            {serviceBreakdown.length}
+          </div>
+        </div>
+        <div className="border border-border rounded-xl p-5 bg-surface">
           <div className="text-xs text-muted uppercase tracking-wider mb-2">Active Agents</div>
           <div className="flex items-center justify-between">
             <div className="text-2xl font-bold font-mono text-blue-400">
               {agents.length}
             </div>
-            <a href="/keys" className="btn-primary px-4 py-2 rounded-lg text-sm">
-              Create agent
+            <a href="/keys" className="btn-primary px-3 py-1.5 rounded-lg text-xs">
+              + New
             </a>
           </div>
         </div>
@@ -122,75 +208,180 @@ export default function DashboardHome() {
         </div>
       )}
 
-      {/* Recent Transactions */}
+      {/* Usage Breakdown - only show if there's data */}
+      {totalForChart > 0 && (
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          {/* Service Breakdown */}
+          <div className="border border-border rounded-xl p-5 bg-surface">
+            <div className="text-xs text-muted uppercase tracking-wider mb-4">Usage by Service</div>
+            <div className="flex items-center gap-6">
+              <div className="relative">
+                <svg viewBox="0 0 36 36" className="w-24 h-24 -rotate-90">
+                  {serviceBreakdown.reduce((acc, item, index) => {
+                    const percentage = (item.count / totalForChart) * 100;
+                    const dashArray = `${percentage} ${100 - percentage}`;
+                    const dashOffset = -acc.offset;
+                    acc.elements.push(
+                      <circle
+                        key={item.service}
+                        r="16"
+                        cx="18"
+                        cy="18"
+                        fill="transparent"
+                        stroke={CHART_COLORS[index % CHART_COLORS.length]}
+                        strokeWidth="3"
+                        strokeDasharray={dashArray}
+                        strokeDashoffset={dashOffset}
+                        className="transition-all duration-200"
+                      >
+                        <title>{item.service}: {item.count} ({percentage.toFixed(0)}%)</title>
+                      </circle>
+                    );
+                    acc.offset += percentage;
+                    return acc;
+                  }, { elements: [] as React.ReactNode[], offset: 0 }).elements}
+                  <circle cx="18" cy="18" r="12" className="fill-background" />
+                </svg>
+              </div>
+              <div className="flex-1 space-y-2">
+                {serviceBreakdown.slice(0, 4).map((item, index) => (
+                  <div key={item.service} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
+                      />
+                      <span className="text-muted">{item.service}</span>
+                    </div>
+                    <span className="font-mono">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Agent Breakdown */}
+          <div className="border border-border rounded-xl p-5 bg-surface">
+            <div className="text-xs text-muted uppercase tracking-wider mb-4">Usage by Agent</div>
+            <div className="flex items-center gap-6">
+              <div className="relative">
+                <svg viewBox="0 0 36 36" className="w-24 h-24 -rotate-90">
+                  {agentBreakdown.reduce((acc, item, index) => {
+                    const percentage = (item.count / totalForChart) * 100;
+                    const dashArray = `${percentage} ${100 - percentage}`;
+                    const dashOffset = -acc.offset;
+                    acc.elements.push(
+                      <circle
+                        key={item.agentId}
+                        r="16"
+                        cx="18"
+                        cy="18"
+                        fill="transparent"
+                        stroke={CHART_COLORS[(index + 4) % CHART_COLORS.length]}
+                        strokeWidth="3"
+                        strokeDasharray={dashArray}
+                        strokeDashoffset={dashOffset}
+                        className="transition-all duration-200"
+                      >
+                        <title>{item.name}: {item.count} ({percentage.toFixed(0)}%)</title>
+                      </circle>
+                    );
+                    acc.offset += percentage;
+                    return acc;
+                  }, { elements: [] as React.ReactNode[], offset: 0 }).elements}
+                  <circle cx="18" cy="18" r="12" className="fill-background" />
+                </svg>
+              </div>
+              <div className="flex-1 space-y-2">
+                {agentBreakdown.slice(0, 4).map((item, index) => (
+                  <div key={item.agentId} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: CHART_COLORS[(index + 4) % CHART_COLORS.length] }}
+                      />
+                      <span className="text-muted truncate max-w-[120px]">{item.name}</span>
+                    </div>
+                    <span className="font-mono">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* API Usage Log */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold">Recent Activity</h2>
-          <a
-            href="/wallet"
-            className="text-xs text-muted hover:text-accent transition-colors"
-          >
-            View all
-          </a>
+          <h2 className="text-sm font-semibold">API Usage</h2>
         </div>
 
-        <div className="border border-border rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-surface border-b border-border">
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
-                  Agent
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
-                  Description
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
-                  Date
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentTx.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted">
-                    No transactions yet. <a href="/wallet" className="text-accent hover:text-green-400 transition-colors">Add funds</a> to get started.
-                  </td>
-                </tr>
-              ) : (
-                recentTx.map((tx) => (
-                  <tr
-                    key={tx.id}
-                    className="border-b border-border last:border-b-0 hover:bg-surface/50 transition-colors"
-                  >
-                    <td className="px-4 py-3">
-                      <TypeBadge type={tx.type} />
-                    </td>
-                    <td className="px-4 py-3 text-xs">
-                      {tx.agentId ? agentMap[tx.agentId] || tx.agentId.slice(-8) : '—'}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs">
-                      {tx.currency === 'usd_cents' && tx.amountUsdCents
-                        ? formatUsdCents(tx.amountUsdCents)
-                        : `${formatSats(tx.amountSats)} sats`}
-                    </td>
-                    <td className="px-4 py-3 text-muted truncate max-w-[200px]">
-                      {tx.description}
-                    </td>
-                    <td className="px-4 py-3 text-muted text-xs">
-                      {formatDateTime(tx.createdAt)}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={[
+            {
+              key: 'time',
+              header: 'Time',
+              render: (log: AuditLog) => (
+                <span className="text-muted text-xs">{formatDateTime(log.createdAt)}</span>
+              ),
+            },
+            {
+              key: 'agent',
+              header: 'Agent',
+              render: (log: AuditLog) => (
+                <span className="text-xs flex items-center gap-2">
+                  <span
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: agentColorMap[log.agentId] || '#6b7280' }}
+                  />
+                  {agentMap[log.agentId] || log.agentId.slice(-8)}
+                </span>
+              ),
+            },
+            {
+              key: 'service',
+              header: 'Service',
+              render: (log: AuditLog) => (
+                <span className="font-mono text-xs flex items-center gap-2">
+                  <span
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: serviceColorMap[log.serviceSlug] || '#6b7280' }}
+                  />
+                  {log.serviceSlug}
+                </span>
+              ),
+            },
+            {
+              key: 'operation',
+              header: 'Operation',
+              render: (log: AuditLog) => (
+                <span className="text-xs text-muted">{log.capability || log.operation || '—'}</span>
+              ),
+            },
+            {
+              key: 'status',
+              header: 'Status',
+              render: (log: AuditLog) => <PolicyBadge result={log.policyResult} />,
+            },
+            {
+              key: 'cost',
+              header: 'Cost',
+              render: (log: AuditLog) => (
+                <span className="font-mono text-xs">
+                  {log.chargedSats !== null ? `${formatSats(log.chargedSats)} sats` : '—'}
+                </span>
+              ),
+            },
+          ]}
+          data={auditLogs}
+          total={auditTotal}
+          offset={auditOffset}
+          limit={AUDIT_LIMIT}
+          onPageChange={setAuditOffset}
+          rowKey={(log) => log.id}
+          emptyMessage="No API calls yet. Check out the quickstart guide to make your first call."
+        />
       </div>
     </div>
   );
@@ -223,28 +414,17 @@ function ChecklistItem({ done, label, href }: { done: boolean; label: string; hr
   return <div className="px-2 py-1 -mx-2">{content}</div>;
 }
 
-function TypeBadge({ type }: { type: string }) {
+function PolicyBadge({ result }: { result: string }) {
   const colors: Record<string, string> = {
-    credit_lightning: 'bg-green-500/20 text-green-400',
-    credit_stripe: 'bg-emerald-500/20 text-emerald-400',
-    debit_proxy_call: 'bg-gray-500/20 text-gray-400',
-    refund: 'bg-blue-500/20 text-blue-400',
-    withdrawal: 'bg-orange-500/20 text-orange-400',
-  };
-
-  const labels: Record<string, string> = {
-    credit_lightning: 'lightning',
-    credit_stripe: 'card',
-    debit_proxy_call: 'api call',
-    refund: 'refund',
-    withdrawal: 'withdrawal',
+    allowed: 'bg-green-500/20 text-green-400',
+    denied: 'bg-red-500/20 text-red-400',
   };
 
   return (
     <span
-      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${colors[type] || 'bg-gray-500/20 text-gray-400'}`}
+      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${colors[result] || 'bg-gray-500/20 text-gray-400'}`}
     >
-      {labels[type] || type.replace(/_/g, ' ')}
+      {result === 'allowed' ? 'success' : result}
     </span>
   );
 }
