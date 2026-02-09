@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
-import { ApiKeyDisplay } from '@/components/api-key-display';
 import type { SignupResponse } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 
@@ -16,6 +15,7 @@ export default function SignupPage() {
   const [apiKey, setApiKey] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,8 +37,13 @@ export default function SignupPage() {
     }
   };
 
+  const copyKey = async () => {
+    await navigator.clipboard.writeText(apiKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const goToDashboard = async () => {
-    // Login with email/password to get JWT token
     try {
       const data = await apiFetch<{ token: string }>('/v1/auth/login', {
         method: 'POST',
@@ -47,47 +52,51 @@ export default function SignupPage() {
       login(data.token);
       window.location.href = '/';
     } catch {
-      // Fallback to API key if login fails
       login(apiKey);
       window.location.href = '/';
     }
   };
 
+  const isValid = name && email && password && password.length >= 8;
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="flex items-center gap-2 mb-8">
-          <div className="w-5 h-5 rounded-full bg-black" />
-          <span className="font-extrabold text-[15px] tracking-tight">
-            Saturn
-          </span>
+      <div className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 mb-12">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+            <div className="w-3 h-3 rounded-full bg-background" />
+          </div>
+          <span className="text-xl font-bold tracking-tight">Saturn</span>
         </div>
 
         {step === 'form' ? (
           <>
-            <h1 className="text-2xl font-bold tracking-tight mb-2">
-              Create your account
+            {/* Header */}
+            <h1 className="text-3xl font-bold tracking-tight mb-2">
+              Create account
             </h1>
-            <p className="text-sm text-gray-500 mb-8">
-              Fund with card or Lightning, start calling APIs.
+            <p className="text-muted mb-8">
+              Start building with pay-per-use AI APIs
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium mb-1.5">
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
                   Name
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name or team name"
+                  placeholder="Your name or team"
                   required
-                  className="w-full px-3 py-2 border border-border rounded-lg text-sm outline-none focus:border-gray-400 transition-colors"
+                  className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-sm outline-none focus:border-accent transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
                   Email
                 </label>
                 <input
@@ -96,11 +105,11 @@ export default function SignupPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
-                  className="w-full px-3 py-2 border border-border rounded-lg text-sm outline-none focus:border-gray-400 transition-colors"
+                  className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-sm outline-none focus:border-accent transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
                   Password
                 </label>
                 <input
@@ -110,61 +119,82 @@ export default function SignupPage() {
                   placeholder="At least 8 characters"
                   required
                   minLength={8}
-                  className="w-full px-3 py-2 border border-border rounded-lg text-sm outline-none focus:border-gray-400 transition-colors"
+                  className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-sm outline-none focus:border-accent transition-all"
                 />
               </div>
 
               {error && (
-                <div className="text-sm text-red-600">{error}</div>
+                <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
+                  {error}
+                </div>
               )}
 
               <button
                 type="submit"
-                disabled={submitting}
-                className="w-full bg-black text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50"
+                disabled={submitting || !isValid}
+                className="btn-primary w-full py-3 rounded-lg text-sm"
               >
-                {submitting ? 'Creating...' : 'Create account'}
+                {submitting ? 'Creating account...' : 'Create account'}
               </button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-gray-500">
+            {/* Footer */}
+            <p className="mt-8 text-center text-sm text-muted">
               Already have an account?{' '}
-              <Link href="/signin" className="text-black font-medium hover:underline">
+              <Link href="/signin" className="text-accent hover:text-green-400 font-medium transition-colors">
                 Sign in
               </Link>
             </p>
           </>
         ) : (
           <>
-            <h1 className="text-2xl font-bold tracking-tight mb-2">
-              Your API key
-            </h1>
-            <p className="text-sm text-gray-500 mb-6">
-              Use this key for programmatic API access.
-            </p>
-
-            <ApiKeyDisplay apiKey={apiKey} />
-
-            <div className="mt-4 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-800">
-              Save this key now — it won&apos;t be shown again.
+            {/* Success Header */}
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center mb-6">
+              <svg className="w-6 h-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
 
-            <div className="mt-6 p-4 border border-border rounded-lg bg-surface">
-              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                Quickstart
-              </div>
-              <pre className="font-mono text-xs leading-relaxed text-gray-700 overflow-x-auto">
-{`npm install @saturn-pay/sdk
+            <h1 className="text-3xl font-bold tracking-tight mb-2">
+              You&apos;re all set
+            </h1>
+            <p className="text-muted mb-8">
+              Save your API key — you won&apos;t see it again
+            </p>
 
-import { Saturn } from '@saturn-pay/sdk'
-const saturn = new Saturn({ apiKey: process.env.SATURN_KEY })
-const result = await saturn.reason({ prompt: 'Hello' })`}
+            {/* API Key Display */}
+            <div className="bg-surface border border-border rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between gap-3">
+                <code className="font-mono text-sm text-zinc-300 truncate flex-1">
+                  {apiKey}
+                </code>
+                <button
+                  onClick={copyKey}
+                  className="btn-secondary px-3 py-1.5 rounded text-xs shrink-0"
+                >
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+            </div>
+
+            {/* Quickstart */}
+            <div className="bg-surface border border-border rounded-lg p-4 mb-6">
+              <div className="text-xs font-medium text-muted uppercase tracking-wider mb-3">
+                Quick start
+              </div>
+              <pre className="font-mono text-xs text-zinc-400 overflow-x-auto">
+{`npm i @saturn-pay/sdk
+
+const saturn = new Saturn({
+  apiKey: '${apiKey.slice(0, 20)}...'
+})
+await saturn.reason({ prompt: 'Hi' })`}
               </pre>
             </div>
 
             <button
               onClick={goToDashboard}
-              className="w-full mt-6 bg-black text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-800 transition-colors"
+              className="btn-primary w-full py-3 rounded-lg text-sm"
             >
               Go to dashboard
             </button>

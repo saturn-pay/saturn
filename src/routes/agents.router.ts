@@ -205,10 +205,40 @@ agentsRouter.patch('/:agentId', async (req: Request, res: Response) => {
   res.json(sanitizeAgent(updated));
 });
 
+// POST /agents/:agentId/regenerate — regenerate API key (invalidates old one)
+agentsRouter.post('/:agentId/regenerate', async (req: Request, res: Response) => {
+  const account = req.account!;
+  const agent = await findAgentOrThrow(paramString(req.params.agentId), account.id);
+
+  if (agent.status === 'killed') {
+    throw new ValidationError('Cannot regenerate key for a revoked agent');
+  }
+
+  const rawApiKey = generateApiKey();
+  const apiKeyHash = await bcrypt.hash(rawApiKey, BCRYPT_SALT_ROUNDS);
+  const apiKeyPrefix = crypto.createHash('sha256').update(rawApiKey).digest('hex').slice(0, 16);
+
+  const [updated] = await db
+    .update(agents)
+    .set({ apiKeyHash, apiKeyPrefix, updatedAt: new Date() })
+    .where(eq(agents.id, agent.id))
+    .returning();
+
+  res.json({
+    ...sanitizeAgent(updated),
+    apiKey: rawApiKey,
+  });
+});
+
 // DELETE /agents/:agentId — soft delete (status=killed, policy kill_switch=true)
 agentsRouter.delete('/:agentId', async (req: Request, res: Response) => {
   const account = req.account!;
   const agent = await findAgentOrThrow(paramString(req.params.agentId), account.id);
+
+  if (agent.role === 'primary') {
+    throw new ValidationError('Cannot revoke primary agent');
+  }
+
   const now = new Date();
 
   await db.transaction(async (tx) => {

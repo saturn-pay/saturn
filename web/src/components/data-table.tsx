@@ -12,6 +12,7 @@ interface DataTableProps<T> {
   limit: number;
   onPageChange: (offset: number) => void;
   rowKey?: (row: T, index: number) => string;
+  emptyMessage?: string;
 }
 
 export function DataTable<T>({
@@ -22,20 +23,21 @@ export function DataTable<T>({
   limit,
   onPageChange,
   rowKey,
+  emptyMessage = 'No data',
 }: DataTableProps<T>) {
   const hasNext = total !== undefined ? offset + limit < total : data.length === limit;
   const hasPrev = offset > 0;
 
   return (
     <div>
-      <div className="border border-border rounded-lg overflow-hidden">
+      <div className="border border-border rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-surface border-b border-border">
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                  className="text-left px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider"
                 >
                   {col.header}
                 </th>
@@ -47,16 +49,16 @@ export function DataTable<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-8 text-center text-gray-400"
+                  className="px-4 py-8 text-center text-muted"
                 >
-                  No data
+                  {emptyMessage}
                 </td>
               </tr>
             ) : (
               data.map((row, i) => (
                 <tr
                   key={rowKey ? rowKey(row, i) : i}
-                  className="border-b border-border last:border-b-0 hover:bg-surface transition-colors"
+                  className="border-b border-border last:border-b-0 hover:bg-surface/50 transition-colors"
                 >
                   {columns.map((col) => (
                     <td key={col.key} className="px-4 py-3">
@@ -75,19 +77,19 @@ export function DataTable<T>({
           <button
             onClick={() => onPageChange(Math.max(0, offset - limit))}
             disabled={!hasPrev}
-            className="px-3 py-1.5 text-sm border border-border rounded-md disabled:opacity-30 hover:bg-surface transition-colors"
+            className="btn-secondary px-4 py-2 text-sm rounded-lg disabled:opacity-30"
           >
             Previous
           </button>
           {total !== undefined && (
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-muted">
               {offset + 1}–{Math.min(offset + limit, total)} of {total}
             </span>
           )}
           <button
             onClick={() => onPageChange(offset + limit)}
             disabled={!hasNext}
-            className="px-3 py-1.5 text-sm border border-border rounded-md disabled:opacity-30 hover:bg-surface transition-colors"
+            className="btn-secondary px-4 py-2 text-sm rounded-lg disabled:opacity-30"
           >
             Next
           </button>

@@ -44,7 +44,7 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({ message: res.statusText }));
-    throw new ApiError(res.status, data.message || res.statusText);
+    throw new ApiError(res.status, data.error?.message || data.message || res.statusText);
   }
 
   return res.json();

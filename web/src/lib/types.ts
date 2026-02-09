@@ -118,3 +118,64 @@ export interface RateInfo {
     fetchedAt: string;
   }>;
 }
+
+export interface Wallet {
+  id: string;
+  accountId: string;
+  balanceSats: number;
+  heldSats: number;
+  balanceUsdCents: number;
+  heldUsdCents: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ServicePricing {
+  operation: string;
+  priceUsdMicros: number;
+  priceSats: number;
+  unit: string;
+}
+
+export interface Service {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  tier: string;
+  status: 'active' | 'inactive' | 'maintenance';
+  baseUrl: string;
+  authType: string;
+  pricing: ServicePricing[];
+}
+
+export interface CapabilityProvider {
+  slug: string;
+  priority: number;
+  active: boolean;
+}
+
+export interface Capability {
+  capability: string;
+  description: string;
+  providers: CapabilityProvider[];
+  defaultProvider: string;
+  pricing: ServicePricing[];
+}
+
+export interface FundCardResponse {
+  checkoutUrl: string;
+  sessionId: string;
+}
+
+export interface FundLightningResponse {
+  invoice: string;
+  amountSats: number;
+  expiresAt: string;
+}
+
+export interface CreateAgentResponse {
+  id: string;
+  apiKey: string;
+  name: string;
+}

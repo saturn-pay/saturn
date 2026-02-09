@@ -9,8 +9,15 @@ const config: Config = {
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       colors: {
-        border: '#eaeaea',
-        surface: '#fafafa',
+        border: '#27272a',
+        surface: '#18181b',
+        background: '#09090b',
+        muted: '#71717a',
+        accent: '#22c55e',
+      },
+      boxShadow: {
+        'glow': '0 0 20px rgba(34, 197, 94, 0.15)',
+        'glow-lg': '0 0 40px rgba(34, 197, 94, 0.2)',
       },
     },
   },

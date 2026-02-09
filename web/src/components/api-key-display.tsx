@@ -16,7 +16,7 @@ export function ApiKeyDisplay({ apiKey }: { apiKey: string }) {
       <div className="font-mono text-sm break-all select-all">{apiKey}</div>
       <button
         onClick={copy}
-        className="mt-3 px-3 py-1.5 text-xs font-medium border border-border rounded-md hover:bg-white transition-colors"
+        className="mt-3 px-3 py-1.5 text-xs font-medium border border-border rounded-md hover:bg-background transition-colors"
       >
         {copied ? 'Copied' : 'Copy to clipboard'}
       </button>
