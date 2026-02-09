@@ -77,11 +77,7 @@ const EXAMPLES = {
   reason: {
     title: 'AI Reasoning',
     description: 'Use LLMs (GPT-4, Claude) for text generation, analysis, and code.',
-    code: `import { Saturn } from '@saturn-pay/sdk';
-
-const saturn = new Saturn({ apiKey: 'YOUR_API_KEY' });
-
-const result = await saturn.reason({
+    code: `const result = await saturn.reason({
   prompt: 'Explain quantum computing in one sentence',
 });
 
@@ -95,11 +91,7 @@ console.log(\`Cost: \${result.metadata.chargedSats} sats\`);`,
   search: {
     title: 'Web Search',
     description: 'Get real-time search results from the web.',
-    code: `import { Saturn } from '@saturn-pay/sdk';
-
-const saturn = new Saturn({ apiKey: 'YOUR_API_KEY' });
-
-const result = await saturn.search({
+    code: `const result = await saturn.search({
   query: 'latest AI news today',
 });
 
@@ -110,11 +102,7 @@ result.data.results.forEach(item => {
   read: {
     title: 'Read URLs',
     description: 'Extract clean text content from any URL.',
-    code: `import { Saturn } from '@saturn-pay/sdk';
-
-const saturn = new Saturn({ apiKey: 'YOUR_API_KEY' });
-
-const result = await saturn.read({
+    code: `const result = await saturn.read({
   url: 'https://example.com/article',
 });
 
@@ -124,11 +112,7 @@ console.log(result.data.title);`,
   email: {
     title: 'Send Email',
     description: 'Send transactional emails programmatically.',
-    code: `import { Saturn } from '@saturn-pay/sdk';
-
-const saturn = new Saturn({ apiKey: 'YOUR_API_KEY' });
-
-await saturn.email({
+    code: `await saturn.email({
   to: 'user@example.com',
   subject: 'Your report is ready',
   html: '<h1>Report</h1><p>Your weekly report is attached.</p>',
@@ -137,11 +121,7 @@ await saturn.email({
   execute: {
     title: 'Run Code',
     description: 'Execute code in a sandboxed environment.',
-    code: `import { Saturn } from '@saturn-pay/sdk';
-
-const saturn = new Saturn({ apiKey: 'YOUR_API_KEY' });
-
-const result = await saturn.execute({
+    code: `const result = await saturn.execute({
   code: \`
     import pandas as pd
     df = pd.DataFrame({'x': [1,2,3], 'y': [4,5,6]})
@@ -162,8 +142,7 @@ export default function QuickstartPage() {
   const [selectedExample, setSelectedExample] = useState<ExampleKey>('reason');
 
   const copyCode = async (code: string) => {
-    const codeWithKey = code.replace('YOUR_API_KEY', apiKey || 'YOUR_API_KEY');
-    await navigator.clipboard.writeText(codeWithKey);
+    await navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -172,9 +151,8 @@ export default function QuickstartPage() {
 
   // Memoize highlighted code
   const highlightedCode = useMemo(() => {
-    const codeWithKey = example.code.replace('YOUR_API_KEY', apiKey || 'YOUR_API_KEY');
-    return highlightCode(codeWithKey);
-  }, [example.code, apiKey]);
+    return highlightCode(example.code);
+  }, [example.code]);
 
   return (
     <div>
