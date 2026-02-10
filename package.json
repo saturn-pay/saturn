@@ -13,7 +13,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "./scripts/e2e-test.sh",
-    "test:e2e:sdk": "tsx scripts/e2e-test-sdk.ts"
+    "test:e2e:sdk": "tsx scripts/e2e-test-sdk.ts",
+    "pricing:update": "tsx scripts/update-pricing.ts",
+    "pricing:preview": "tsx scripts/update-pricing.ts --dry-run"
   },
   "keywords": [],
   "author": "",
