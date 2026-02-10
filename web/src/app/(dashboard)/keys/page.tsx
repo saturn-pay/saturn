@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
 import { formatDate } from '@/lib/format';
+import { LoadingPage } from '@/components/loading';
 import type { AdminAgent, CreateAgentResponse } from '@/lib/types';
 
 export default function KeysPage() {
@@ -118,7 +119,7 @@ export default function KeysPage() {
   };
 
   if (loading) {
-    return <div className="text-sm text-gray-500">Loading...</div>;
+    return <LoadingPage />;
   }
 
   if (error) {
@@ -128,12 +129,12 @@ export default function KeysPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">API Keys</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Agents</h1>
         <button
           onClick={() => setShowCreateModal(true)}
           className="btn-primary px-4 py-2.5 rounded-lg text-sm"
         >
-          Create agent
+          + New Agent
         </button>
       </div>
 
@@ -211,7 +212,9 @@ export default function KeysPage() {
                   className="border-b border-border last:border-b-0 hover:bg-surface/50 transition-colors"
                 >
                   <td className="px-4 py-3">
-                    <span className="font-medium">{agent.name}</span>
+                    <a href={`/keys/${agent.id}`} className="font-medium hover:text-accent transition-colors">
+                      {agent.name}
+                    </a>
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={agent.status} />

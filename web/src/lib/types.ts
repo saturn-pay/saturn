@@ -101,6 +101,8 @@ export interface AuditLog {
   policyReason: string | null;
   quotedSats: number;
   chargedSats: number | null;
+  quotedUsdCents: number | null;
+  chargedUsdCents: number | null;
   upstreamStatus: number | null;
   upstreamLatencyMs: number | null;
   error: string | null;
@@ -154,6 +156,7 @@ export interface CapabilityProvider {
   slug: string;
   priority: number;
   active: boolean;
+  models?: string[];
 }
 
 export interface Capability {
@@ -179,4 +182,34 @@ export interface CreateAgentResponse {
   id: string;
   apiKey: string;
   name: string;
+}
+
+export interface Policy {
+  id: string;
+  agentId: string;
+  maxPerCallUsdCents: number | null;
+  maxPerDayUsdCents: number | null;
+  allowedServices: string[] | null;
+  deniedServices: string[] | null;
+  allowedCapabilities: string[] | null;
+  deniedCapabilities: string[] | null;
+  killSwitch: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdatePolicyRequest {
+  maxPerCallUsdCents?: number | null;
+  maxPerDayUsdCents?: number | null;
+  allowedServices?: string[] | null;
+  deniedServices?: string[] | null;
+  allowedCapabilities?: string[] | null;
+  deniedCapabilities?: string[] | null;
+  killSwitch?: boolean;
+}
+
+export interface AgentStats {
+  totalCalls: number;
+  todaySpendUsdCents: number;
+  lifetimeSpendUsdCents: number;
 }

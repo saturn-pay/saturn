@@ -1,11 +1,20 @@
-export function formatSats(sats: number): string {
-  return sats.toLocaleString('en-US');
+export function formatNumber(num: number): string {
+  return num.toLocaleString('en-US');
 }
 
 export function formatUsdCents(cents: number): string {
   return (cents / 100).toLocaleString('en-US', {
     style: 'currency',
     currency: 'USD',
+  });
+}
+
+export function formatUsdMicros(micros: number): string {
+  return (micros / 1000000).toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 4,
+    maximumFractionDigits: 4,
   });
 }
 

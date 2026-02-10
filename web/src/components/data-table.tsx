@@ -11,6 +11,7 @@ interface DataTableProps<T> {
   offset: number;
   limit: number;
   onPageChange: (offset: number) => void;
+  onRowClick?: (row: T) => void;
   rowKey?: (row: T, index: number) => string;
   emptyMessage?: string;
 }
@@ -22,6 +23,7 @@ export function DataTable<T>({
   offset,
   limit,
   onPageChange,
+  onRowClick,
   rowKey,
   emptyMessage = 'No data',
 }: DataTableProps<T>) {
@@ -58,7 +60,8 @@ export function DataTable<T>({
               data.map((row, i) => (
                 <tr
                   key={rowKey ? rowKey(row, i) : i}
-                  className="border-b border-border last:border-b-0 hover:bg-surface/50 transition-colors"
+                  onClick={() => onRowClick?.(row)}
+                  className={`border-b border-border last:border-b-0 hover:bg-surface/50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
                 >
                   {columns.map((col) => (
                     <td key={col.key} className="px-4 py-3">

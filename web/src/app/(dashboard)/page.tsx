@@ -3,7 +3,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
-import { formatSats, formatUsdCents, formatDateTime } from '@/lib/format';
+import { formatNumber, formatUsdCents, formatDateTime } from '@/lib/format';
+import { LoadingPage } from '@/components/loading';
 import { DataTable } from '@/components/data-table';
 import type { AdminStats, AdminTransaction, AdminAgent, Paginated, Wallet, AuditLog } from '@/lib/types';
 
@@ -25,10 +26,12 @@ export default function DashboardHome() {
   const [recentTx, setRecentTx] = useState<AdminTransaction[]>([]);
   const [agents, setAgents] = useState<AdminAgent[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [allAuditLogs, setAllAuditLogs] = useState<AuditLog[]>([]); // For charts - all data
   const [auditTotal, setAuditTotal] = useState(0);
   const [auditOffset, setAuditOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
   const AUDIT_LIMIT = 10;
 
@@ -39,22 +42,22 @@ export default function DashboardHome() {
     return map;
   }, [agents]);
 
-  // Calculate service breakdown
+  // Calculate service breakdown from ALL audit logs
   const serviceBreakdown = useMemo(() => {
     const breakdown: Record<string, number> = {};
-    auditLogs.forEach((log) => {
+    allAuditLogs.forEach((log) => {
       const key = log.serviceSlug || 'unknown';
       breakdown[key] = (breakdown[key] || 0) + 1;
     });
     return Object.entries(breakdown)
       .map(([service, count]) => ({ service, count }))
       .sort((a, b) => b.count - a.count);
-  }, [auditLogs]);
+  }, [allAuditLogs]);
 
-  // Calculate agent breakdown
+  // Calculate agent breakdown from ALL audit logs
   const agentBreakdown = useMemo(() => {
     const breakdown: Record<string, number> = {};
-    auditLogs.forEach((log) => {
+    allAuditLogs.forEach((log) => {
       const key = log.agentId;
       breakdown[key] = (breakdown[key] || 0) + 1;
     });
@@ -65,7 +68,7 @@ export default function DashboardHome() {
         count
       }))
       .sort((a, b) => b.count - a.count);
-  }, [auditLogs, agentMap]);
+  }, [allAuditLogs, agentMap]);
 
   const totalForChart = serviceBreakdown.reduce((acc, s) => acc + s.count, 0);
 
@@ -88,7 +91,7 @@ export default function DashboardHome() {
 
   // Check if user is new
   const isNewUser = recentTx.length === 0 && !loading;
-  const hasBalance = (wallet?.balanceUsdCents ?? 0) > 0 || (wallet?.balanceSats ?? 0) > 0;
+  const hasBalance = (wallet?.balanceUsdCents ?? 0) > 0;
   const hasApiCalls = (stats?.totalTransactions ?? 0) > 0;
 
   // Initial data fetch
@@ -103,12 +106,18 @@ export default function DashboardHome() {
         params: { limit: 5 },
       }),
       apiFetch<AdminAgent[]>('/v1/admin/agents', { apiKey }),
+      // Fetch all audit logs for charts (up to 1000)
+      apiFetch<Paginated<AuditLog>>('/v1/admin/audit-logs', {
+        apiKey,
+        params: { limit: 1000 },
+      }),
     ])
-      .then(([w, s, tx, ag]) => {
+      .then(([w, s, tx, ag, allLogs]) => {
         setWallet(w);
         setStats(s);
         setRecentTx(tx.data);
         setAgents(ag);
+        setAllAuditLogs(allLogs.data);
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
@@ -132,7 +141,7 @@ export default function DashboardHome() {
   }, [apiKey, auditOffset]);
 
   if (loading) {
-    return <div className="text-sm text-gray-500">Loading...</div>;
+    return <LoadingPage />;
   }
 
   if (error) {
@@ -148,9 +157,6 @@ export default function DashboardHome() {
             <div className="text-sm text-muted mb-1">Available Balance</div>
             <div className="text-4xl font-bold text-accent font-mono tracking-tight">
               {formatUsdCents(wallet?.balanceUsdCents ?? 0)}
-            </div>
-            <div className="text-sm text-muted font-mono mt-1">
-              {formatSats(wallet?.balanceSats ?? 0)} sats
             </div>
           </div>
           <a
@@ -173,7 +179,7 @@ export default function DashboardHome() {
         <div className="border border-border rounded-xl p-5 bg-surface">
           <div className="text-xs text-muted uppercase tracking-wider mb-2">Total API Calls</div>
           <div className="text-2xl font-bold font-mono">
-            {formatSats(stats?.totalTransactions ?? 0)}
+            {formatNumber(stats?.totalTransactions ?? 0)}
           </div>
         </div>
         <div className="border border-border rounded-xl p-5 bg-surface">
@@ -369,7 +375,7 @@ export default function DashboardHome() {
               header: 'Cost',
               render: (log: AuditLog) => (
                 <span className="font-mono text-xs">
-                  {log.chargedSats !== null ? `${formatSats(log.chargedSats)} sats` : '—'}
+                  {formatCharge(log)}
                 </span>
               ),
             },
@@ -379,9 +385,19 @@ export default function DashboardHome() {
           offset={auditOffset}
           limit={AUDIT_LIMIT}
           onPageChange={setAuditOffset}
+          onRowClick={(log) => setSelectedLog(log)}
           rowKey={(log) => log.id}
           emptyMessage="No API calls yet. Check out the quickstart guide to make your first call."
         />
+
+        {/* Receipt Modal */}
+        {selectedLog && (
+          <ReceiptModal
+            log={selectedLog}
+            agentName={agentMap[selectedLog.agentId] || selectedLog.agentId.slice(-8)}
+            onClose={() => setSelectedLog(null)}
+          />
+        )}
       </div>
     </div>
   );
@@ -414,6 +430,18 @@ function ChecklistItem({ done, label, href }: { done: boolean; label: string; hr
   return <div className="px-2 py-1 -mx-2">{content}</div>;
 }
 
+function formatCharge(log: AuditLog): string {
+  if (log.chargedUsdCents !== null && log.chargedUsdCents !== undefined) {
+    return formatUsdCents(log.chargedUsdCents);
+  }
+  if (log.chargedSats !== null && log.chargedSats !== undefined) {
+    // Convert sats to approximate USD (rough estimate: 1 sat ≈ $0.0004 at ~$40k BTC)
+    // For now just show as cents equivalent
+    return formatUsdCents(Math.round(log.chargedSats * 0.04));
+  }
+  return '—';
+}
+
 function PolicyBadge({ result }: { result: string }) {
   const colors: Record<string, string> = {
     allowed: 'bg-green-500/20 text-green-400',
@@ -426,5 +454,91 @@ function PolicyBadge({ result }: { result: string }) {
     >
       {result === 'allowed' ? 'success' : result}
     </span>
+  );
+}
+
+function ReceiptModal({ log, agentName, onClose }: { log: AuditLog; agentName: string; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative bg-surface border border-border rounded-xl w-full max-w-md mx-4 shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-2 px-5 py-3 border-b border-border bg-background">
+          <div className="flex gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-zinc-600" />
+            <span className="w-3 h-3 rounded-full bg-zinc-600" />
+            <span className="w-3 h-3 rounded-full bg-zinc-600" />
+          </div>
+          <span className="text-sm text-muted ml-2">receipt</span>
+          <button
+            onClick={onClose}
+            className="ml-auto text-muted hover:text-white transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-5">
+          <div className="text-xs text-muted uppercase tracking-wider mb-4">
+            API Call Receipt
+          </div>
+
+          <div className="space-y-3">
+            <ReceiptRow label="capability" value={log.capability || log.operation || '—'} />
+            <ReceiptRow label="service" value={log.serviceSlug} />
+            <ReceiptRow label="agent" value={agentName} />
+            <ReceiptRow
+              label="charged"
+              value={formatCharge(log)}
+              highlight
+            />
+            <ReceiptRow
+              label="status"
+              value={
+                <span className={log.policyResult === 'allowed' ? 'text-green-400' : 'text-red-400'}>
+                  {log.policyResult === 'allowed' ? 'success' : log.policyResult}
+                </span>
+              }
+            />
+            {log.policyReason && (
+              <ReceiptRow label="policy_reason" value={log.policyReason} />
+            )}
+            <ReceiptRow
+              label="latency"
+              value={log.upstreamLatencyMs ? `${log.upstreamLatencyMs}ms` : '—'}
+            />
+            <ReceiptRow label="audit_id" value={log.id.slice(0, 8) + '...' + log.id.slice(-4)} mono />
+            <ReceiptRow label="timestamp" value={formatDateTime(log.createdAt)} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReceiptRow({
+  label,
+  value,
+  highlight,
+  mono,
+}: {
+  label: string;
+  value: React.ReactNode;
+  highlight?: boolean;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-border last:border-b-0">
+      <span className="text-sm text-muted">{label}</span>
+      <span className={`text-sm ${highlight ? 'text-white font-semibold' : ''} ${mono ? 'font-mono text-xs' : ''}`}>
+        {value}
+      </span>
+    </div>
   );
 }

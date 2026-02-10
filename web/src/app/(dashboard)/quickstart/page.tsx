@@ -16,7 +16,7 @@ function highlightCode(code: string): React.ReactNode[] {
     { regex: /\b(true|false|null|undefined|this)\b/g, className: 'text-orange-400' }, // literals
     { regex: /\b(\d+\.?\d*)\b/g, className: 'text-orange-400' }, // numbers
     { regex: /\b(console|Saturn|result|saturn|item|df|pd)\b/g, className: 'text-blue-400' }, // special identifiers
-    { regex: /\.(log|reason|search|read|email|execute|data|content|title|url|results|forEach|metadata|chargedSats|stdout|describe|DataFrame)\b/g, className: 'text-yellow-400' }, // methods
+    { regex: /\.(log|reason|search|read|email|execute|data|content|title|url|results|forEach|metadata|cost|stdout|describe|DataFrame)\b/g, className: 'text-yellow-400' }, // methods
   ];
 
   // Split code into lines and process each
@@ -86,7 +86,7 @@ console.log(result.data.content);
 // simultaneously to perform calculations exponentially faster than
 // classical computers for certain problems."
 
-console.log(\`Cost: \${result.metadata.chargedSats} sats\`);`,
+console.log(\`Cost: $\${result.metadata.cost}\`);`,
   },
   search: {
     title: 'Web Search',

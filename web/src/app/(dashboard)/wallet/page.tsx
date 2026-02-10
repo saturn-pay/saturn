@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
-import { formatSats, formatUsdCents, formatDateTime } from '@/lib/format';
+import { formatUsdCents, formatDateTime } from '@/lib/format';
+import { LoadingPage } from '@/components/loading';
 import { DataTable } from '@/components/data-table';
 import type { Wallet, Transaction, Paginated, FundCardResponse, FundLightningResponse } from '@/lib/types';
 
@@ -39,24 +40,25 @@ export default function WalletPage() {
 
     Promise.all([
       apiFetch<Wallet>('/v1/wallet', { apiKey }),
+      // Fetch more to account for filtering (API usage is shown on home page)
       apiFetch<Paginated<Transaction>>('/v1/wallet/transactions', {
         apiKey,
-        params: { limit: LIMIT, offset },
+        params: { limit: 100, offset: 0 },
       }),
     ])
       .then(([w, tx]) => {
         setWallet(w);
-        // Filter to only show funding transactions (not API call debits)
-        const fundingTypes = ['credit_lightning', 'credit_stripe', 'withdrawal', 'refund'];
-        const fundingTx = tx.data.filter((t) => fundingTypes.includes(t.type));
-        setTransactions(fundingTx);
-        setTotal(fundingTx.length);
+        // Only show billing transactions (credits & refunds), not API call debits
+        const billingTypes = ['credit_lightning', 'credit_stripe', 'refund'];
+        const billingTx = tx.data.filter((t) => billingTypes.includes(t.type));
+        setTransactions(billingTx);
+        setTotal(billingTx.length);
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : 'Failed to load wallet data');
       })
       .finally(() => setLoading(false));
-  }, [apiKey, offset]);
+  }, [apiKey]);
 
   const handleFundCard = async () => {
     if (!apiKey || fundAmountCents < 100) return;
@@ -104,7 +106,7 @@ export default function WalletPage() {
   };
 
   if (loading && !wallet) {
-    return <div className="text-sm text-gray-500">Loading...</div>;
+    return <LoadingPage />;
   }
 
   if (error) {
@@ -122,9 +124,7 @@ export default function WalletPage() {
       header: 'Amount',
       render: (tx: Transaction) => (
         <span className="font-mono text-xs">
-          {tx.currency === 'usd_cents' && tx.amountUsdCents
-            ? formatUsdCents(tx.amountUsdCents)
-            : `${formatSats(tx.amountSats)} sats`}
+          {formatUsdCents(tx.amountUsdCents ?? 0)}
         </span>
       ),
     },
@@ -153,9 +153,6 @@ export default function WalletPage() {
         <div className="text-sm text-muted mb-1">Available Balance</div>
         <div className="text-4xl font-bold text-accent font-mono tracking-tight">
           {formatUsdCents(wallet?.balanceUsdCents ?? 0)}
-        </div>
-        <div className="text-sm text-muted font-mono mt-1">
-          {formatSats(wallet?.balanceSats ?? 0)} sats
         </div>
       </div>
 
@@ -265,18 +262,18 @@ export default function WalletPage() {
         )}
       </div>
 
-      {/* Funding History */}
+      {/* Billing History */}
       <div>
-        <div className="text-sm font-semibold mb-5">Funding History</div>
+        <div className="text-sm font-semibold mb-5">Billing History</div>
         <DataTable
           columns={columns}
-          data={transactions}
+          data={transactions.slice(offset, offset + LIMIT)}
           total={total}
           offset={offset}
           limit={LIMIT}
           onPageChange={setOffset}
           rowKey={(tx) => tx.id}
-          emptyMessage="No deposits yet. Add funds above to get started."
+          emptyMessage="No billing transactions yet. Add funds above to get started."
         />
       </div>
     </div>
