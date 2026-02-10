@@ -14,23 +14,34 @@
     html{ height:100%; scroll-behavior:smooth; }
     body{
       font-family:"Inter",system-ui,sans-serif;
-      background:#fff; color:#000;
+      background:#09090b; color:#fafafa;
       line-height:1.5;
       -webkit-font-smoothing:antialiased;
       min-height:100%;
       overflow-x:hidden;
     }
     a{ color:inherit; }
-    ::selection{ background:#000; color:#fff; }
+    ::selection{ background:#22c55e; color:#000; }
     .mono{ font-family:"JetBrains Mono",ui-monospace,monospace; }
+
+    /* Subtle noise texture */
+    body::before{
+      content:'';
+      position:fixed;
+      top:0; left:0; right:0; bottom:0;
+      pointer-events:none;
+      opacity:.02;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      z-index:1000;
+    }
 
     /* ── Nav ── */
     nav{
       position:sticky; top:0; z-index:100;
-      background:rgba(255,255,255,.92);
+      background:rgba(9,9,11,.85);
       backdrop-filter:blur(20px);
       -webkit-backdrop-filter:blur(20px);
-      border-bottom:1px solid #eaeaea;
+      border-bottom:1px solid #27272a;
     }
     .navInner{
       display:flex; align-items:center; justify-content:space-between;
@@ -38,25 +49,26 @@
       padding:0 32px; height:56px;
     }
     .brand{
-      font-weight:800; font-size:15px; color:#000;
+      font-weight:800; font-size:15px; color:#fafafa;
       letter-spacing:-.2px;
       display:flex; align-items:center; gap:8px;
     }
     .brandMark{
       width:20px; height:20px; border-radius:50%;
-      background:#000;
+      background:linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
     }
     .navLinks{ display:flex; gap:28px; align-items:center; font-size:14px; }
-    .navLinks a{ color:#666; text-decoration:none; transition:color .15s; }
-    .navLinks a:hover{ color:#000; }
+    .navLinks a{ color:#71717a; text-decoration:none; transition:color .15s; }
+    .navLinks a:hover{ color:#fafafa; }
     .navCta{
-      background:#000; color:#fff;
+      background:linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color:#000;
       padding:6px 14px; border-radius:6px;
-      font-weight:500; font-size:13px;
+      font-weight:600; font-size:13px;
       text-decoration:none;
-      transition:background .15s;
+      transition:all .2s;
     }
-    .navCta:hover{ background:#333; }
+    .navCta:hover{ filter:brightness(1.1); box-shadow:0 0 20px rgba(34,197,94,.3); }
 
     /* ── Hero ── */
     .hero{
@@ -71,50 +83,51 @@
     .hero h1{
       font-size:72px; font-weight:900;
       line-height:1.0; letter-spacing:-3.5px;
-      color:#000;
+      color:#fafafa;
       max-width:800px;
     }
-    .hero h1 .muted{ color:#999; }
+    .hero h1 .muted{ color:#52525b; }
 
     /* Hero terminal */
     .heroTerminal{
-      border:1px solid #eaeaea;
+      border:1px solid #27272a;
       border-radius:10px;
       overflow:hidden;
       font-family:"JetBrains Mono",monospace;
       font-size:12px;
       line-height:1.7;
+      box-shadow:0 0 40px rgba(0,0,0,.5);
     }
     .heroTerminal .htBar{
       display:flex; align-items:center; gap:6px;
       padding:10px 16px;
-      border-bottom:1px solid #eaeaea;
-      background:#fafafa;
+      border-bottom:1px solid #27272a;
+      background:#18181b;
     }
-    .heroTerminal .htBar .d{ width:8px; height:8px; border-radius:50%; background:#e0e0e0; }
-    .heroTerminal .htBar .htLabel{ margin-left:10px; font-size:11px; color:#999; }
-    .heroTerminal .htBody{ padding:16px 20px; background:#fff; }
+    .heroTerminal .htBar .d{ width:8px; height:8px; border-radius:50%; background:#3f3f46; }
+    .heroTerminal .htBar .htLabel{ margin-left:10px; font-size:11px; color:#71717a; }
+    .heroTerminal .htBody{ padding:16px 20px; background:#0a0a0a; }
     .heroTerminal .htLine{
       display:flex; gap:8px;
       padding:2px 0;
       white-space:nowrap;
     }
-    .heroTerminal .htPrompt{ color:#999; user-select:none; }
-    .heroTerminal .htCmd{ color:#000; }
-    .heroTerminal .htResult{ color:#666; padding:2px 0; }
-    .heroTerminal .htDim{ color:#ccc; }
-    .heroTerminal .htGreen{ color:#1a7f37; }
-    .heroTerminal .htBlue{ color:#0550ae; }
+    .heroTerminal .htPrompt{ color:#71717a; user-select:none; }
+    .heroTerminal .htCmd{ color:#fafafa; }
+    .heroTerminal .htResult{ color:#a1a1aa; padding:2px 0; }
+    .heroTerminal .htDim{ color:#71717a; }
+    .heroTerminal .htGreen{ color:#22c55e; }
+    .heroTerminal .htBlue{ color:#3b82f6; }
     .heroTerminal .htSep{
-      border-top:1px solid #f0f0f0;
+      border-top:1px solid #27272a;
       margin:8px 0;
     }
     .heroTerminal .htReceipt{
       display:flex; justify-content:space-between;
       padding:1px 0;
     }
-    .heroTerminal .htKey{ color:#999; }
-    .heroTerminal .htVal{ color:#000; font-weight:500; }
+    .heroTerminal .htKey{ color:#71717a; }
+    .heroTerminal .htVal{ color:#fafafa; font-weight:500; }
     /* Typing animation */
     .htTyping .htLine,
     .htTyping .htResult,
@@ -141,42 +154,44 @@
     }
     .heroCopy{
       margin:28px 0 0;
-      font-size:18px; color:#666;
+      font-size:18px; color:#a1a1aa;
       line-height:1.6;
       max-width:540px;
     }
-    .heroCopy strong{ color:#000; font-weight:600; }
+    .heroCopy strong{ color:#fafafa; font-weight:600; }
     .heroActions{
       display:flex; gap:12px; align-items:center;
       margin:36px 0 0;
     }
-    .btnBlack{
+    .btnPrimary{
       display:inline-flex; align-items:center;
-      background:#000; color:#fff;
+      background:linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color:#000;
       padding:10px 20px; border-radius:8px;
       font-weight:600; font-size:14px;
       border:none; cursor:pointer;
       text-decoration:none;
-      transition:all .15s;
+      transition:all .2s;
     }
-    .btnBlack:hover{ background:#222; }
+    .btnPrimary:hover{ filter:brightness(1.1); transform:translateY(-1px); box-shadow:0 0 20px rgba(34,197,94,.3); }
     .btnGhost{
       display:inline-flex; align-items:center;
-      background:transparent; color:#666;
+      background:transparent; color:#a1a1aa;
       padding:10px 20px; border-radius:8px;
       font-weight:500; font-size:14px;
-      border:1px solid #eaeaea;
+      border:1px solid #27272a;
       text-decoration:none;
       cursor:pointer;
       transition:all .15s;
     }
-    .btnGhost:hover{ border-color:#999; color:#000; }
+    .btnGhost:hover{ border-color:#3f3f46; color:#fafafa; }
 
     /* ── Trust bar ── */
     .trustBar{
-      border-top:1px solid #eaeaea;
-      border-bottom:1px solid #eaeaea;
+      border-top:1px solid #27272a;
+      border-bottom:1px solid #27272a;
       padding:0;
+      background:#0a0a0a;
     }
     .trustBarInner{
       display:grid; grid-template-columns:repeat(4,1fr);
@@ -184,13 +199,13 @@
     }
     .trustBarItem{
       padding:20px 32px;
-      border-right:1px solid #eaeaea;
-      font-size:13px; color:#666;
+      border-right:1px solid #27272a;
+      font-size:13px; color:#71717a;
     }
     .trustBarItem:last-child{ border-right:none; }
     .trustBarItem strong{
       display:block;
-      font-size:14px; color:#000; font-weight:600;
+      font-size:14px; color:#fafafa; font-weight:600;
       margin:0 0 2px;
     }
 
@@ -202,7 +217,7 @@
     .termSection .sectionTag{
       font-family:"JetBrains Mono",monospace;
       font-size:13px; font-weight:500;
-      color:#999; margin:0 0 16px;
+      color:#71717a; margin:0 0 16px;
       text-transform:uppercase; letter-spacing:1px;
     }
     .termSection h2{
@@ -211,50 +226,52 @@
       margin:0 0 12px;
     }
     .termSection .lead{
-      font-size:16px; color:#666; line-height:1.6;
+      font-size:16px; color:#71717a; line-height:1.6;
       max-width:480px; margin:0 0 40px;
     }
     .termGrid{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:1px;
-      background:#eaeaea;
-      border:1px solid #eaeaea;
+      background:#27272a;
+      border:1px solid #27272a;
       border-radius:12px;
       overflow:hidden;
+      box-shadow:0 0 40px rgba(0,0,0,.5);
     }
     .termPane{
-      background:#fff;
+      background:#0a0a0a;
       padding:0;
     }
     .termBar{
       display:flex; align-items:center; gap:8px;
       padding:12px 20px;
-      border-bottom:1px solid #eaeaea;
+      border-bottom:1px solid #27272a;
       font-family:"JetBrains Mono",monospace;
-      font-size:12px; color:#999;
+      font-size:12px; color:#71717a;
+      background:#18181b;
     }
     .termBar .dots{ display:flex; gap:6px; }
-    .termBar .dots span{ width:10px; height:10px; border-radius:50%; background:#eaeaea; }
+    .termBar .dots span{ width:10px; height:10px; border-radius:50%; background:#3f3f46; }
     .termBar .fileName{ margin-left:12px; }
     pre{
       margin:0; padding:24px;
       font-family:"JetBrains Mono",monospace;
       font-size:13px; line-height:1.8;
-      color:#000;
+      color:#fafafa;
       overflow-x:auto;
-      background:#fff;
+      background:#0a0a0a;
     }
-    pre .cm{ color:#8b949e; }
-    pre .kw{ color:#cf222e; }
-    pre .str{ color:#0a3069; }
-    pre .fn{ color:#8250df; }
-    pre .prop{ color:#0550ae; }
-    pre .dim{ color:#ccc; }
+    pre .cm{ color:#52525b; }
+    pre .kw{ color:#f472b6; }
+    pre .str{ color:#22c55e; }
+    pre .fn{ color:#a78bfa; }
+    pre .prop{ color:#3b82f6; }
+    pre .dim{ color:#52525b; }
     .cursor{
       display:inline-block;
       width:8px; height:16px;
-      background:#000;
+      background:#22c55e;
       vertical-align:text-bottom;
       animation:blink .8s step-end infinite;
     }
@@ -266,27 +283,27 @@
       display:flex; justify-content:space-between;
       padding:8px 24px;
       font-size:12px;
-      border-bottom:1px solid #f5f5f5;
+      border-bottom:1px solid #27272a;
     }
     .receiptPane .receiptRow:last-child{ border-bottom:none; }
-    .receiptPane .receiptRow .rKey{ color:#999; }
-    .receiptPane .receiptRow .rVal{ color:#000; font-weight:500; }
+    .receiptPane .receiptRow .rKey{ color:#71717a; }
+    .receiptPane .receiptRow .rVal{ color:#fafafa; font-weight:500; }
     .receiptPane .receiptHeader{
       padding:12px 24px 8px;
       font-size:11px; font-weight:600;
-      color:#999; text-transform:uppercase; letter-spacing:1px;
+      color:#71717a; text-transform:uppercase; letter-spacing:1px;
     }
 
     /* ── Capabilities ── */
     .capSection{
-      border-top:1px solid #eaeaea;
+      border-top:1px solid #27272a;
       padding:80px 32px;
       max-width:1200px; margin:0 auto;
     }
     .capSection .sectionTag{
       font-family:"JetBrains Mono",monospace;
       font-size:13px; font-weight:500;
-      color:#999; margin:0 0 16px;
+      color:#71717a; margin:0 0 16px;
       text-transform:uppercase; letter-spacing:1px;
     }
     .capSection h2{
@@ -298,44 +315,46 @@
       display:grid;
       grid-template-columns:repeat(2,1fr);
       gap:0;
-      border:1px solid #eaeaea;
+      border:1px solid #27272a;
       border-radius:12px;
       overflow:hidden;
+      background:#27272a;
     }
     .capItem{
       padding:24px 28px;
-      border-bottom:1px solid #eaeaea;
-      border-right:1px solid #eaeaea;
+      border-bottom:1px solid #27272a;
+      border-right:1px solid #27272a;
       display:flex; align-items:baseline; gap:16px;
       transition:background .15s;
+      background:#09090b;
     }
-    .capItem:hover{ background:#fafafa; }
+    .capItem:hover{ background:#18181b; }
     .capItem:nth-child(2n){ border-right:none; }
     .capItem:nth-last-child(-n+2){ border-bottom:none; }
     .capItem .verb{
       font-family:"JetBrains Mono",monospace;
-      font-size:14px; font-weight:600; color:#000;
+      font-size:14px; font-weight:600; color:#22c55e;
       flex-shrink:0; width:100px;
     }
     .capItem .what{
-      font-size:14px; color:#666; flex:1;
+      font-size:14px; color:#a1a1aa; flex:1;
     }
     .capItem .who{
-      font-size:12px; color:#ccc;
+      font-size:12px; color:#52525b;
       font-family:"JetBrains Mono",monospace;
       flex-shrink:0;
     }
 
     /* ── Architecture ── */
     .archSection{
-      border-top:1px solid #eaeaea;
+      border-top:1px solid #27272a;
       padding:80px 32px;
       max-width:1200px; margin:0 auto;
     }
     .archSection .sectionTag{
       font-family:"JetBrains Mono",monospace;
       font-size:13px; font-weight:500;
-      color:#999; margin:0 0 16px;
+      color:#71717a; margin:0 0 16px;
       text-transform:uppercase; letter-spacing:1px;
     }
     .archSection h2{
@@ -347,20 +366,21 @@
       display:grid;
       grid-template-columns:repeat(4,1fr);
       gap:0;
-      border:1px solid #eaeaea;
+      border:1px solid #27272a;
       border-radius:12px;
       overflow:hidden;
     }
     .archStep{
       padding:32px 24px;
-      border-right:1px solid #eaeaea;
+      border-right:1px solid #27272a;
       position:relative;
+      background:#09090b;
     }
     .archStep:last-child{ border-right:none; }
     .archStep .stepNum{
       font-family:"JetBrains Mono",monospace;
       font-size:48px; font-weight:700;
-      color:#f0f0f0;
+      color:#27272a;
       line-height:1; margin:0 0 16px;
     }
     .archStep h4{
@@ -368,7 +388,7 @@
       margin:0 0 8px;
     }
     .archStep p{
-      font-size:13px; color:#666; line-height:1.55; margin:0;
+      font-size:13px; color:#71717a; line-height:1.55; margin:0;
     }
     /* arrow between steps */
     .archStep:not(:last-child)::after{
@@ -376,22 +396,22 @@
       position:absolute;
       right:-8px; top:50%;
       transform:translateY(-50%);
-      font-size:16px; color:#ccc;
+      font-size:16px; color:#3f3f46;
       z-index:1;
-      background:#fff;
+      background:#09090b;
       padding:4px 0;
     }
 
     /* ── Ecosystem ── */
     .ecoSection{
-      border-top:1px solid #eaeaea;
+      border-top:1px solid #27272a;
       padding:80px 32px;
       max-width:1200px; margin:0 auto;
     }
     .ecoSection .sectionTag{
       font-family:"JetBrains Mono",monospace;
       font-size:13px; font-weight:500;
-      color:#999; margin:0 0 16px;
+      color:#71717a; margin:0 0 16px;
       text-transform:uppercase; letter-spacing:1px;
     }
     .ecoSection h2{
@@ -400,34 +420,34 @@
       margin:0 0 12px;
     }
     .ecoSection .lead{
-      font-size:16px; color:#666; line-height:1.6;
+      font-size:16px; color:#71717a; line-height:1.6;
       max-width:520px; margin:0 0 48px;
     }
     .ecoGrid{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:1px;
-      background:#eaeaea;
-      border:1px solid #eaeaea;
+      background:#27272a;
+      border:1px solid #27272a;
       border-radius:12px;
       overflow:hidden;
     }
     .ecoCard{
-      background:#fff;
+      background:#18181b;
       padding:32px 28px;
     }
     .ecoCard .ecoRole{
       font-family:"JetBrains Mono",monospace;
       font-size:11px; font-weight:600;
       text-transform:uppercase; letter-spacing:1px;
-      color:#999; margin:0 0 12px;
+      color:#71717a; margin:0 0 12px;
     }
     .ecoCard h3{
       font-size:20px; font-weight:800;
       letter-spacing:-.3px; margin:0 0 12px;
     }
     .ecoCard p{
-      font-size:14px; color:#666; line-height:1.6; margin:0 0 16px;
+      font-size:14px; color:#a1a1aa; line-height:1.6; margin:0 0 16px;
     }
     .ecoCard .ecoSteps{
       list-style:none; padding:0; margin:0 0 20px;
@@ -435,20 +455,20 @@
     }
     .ecoCard .ecoSteps li{
       padding:6px 0;
-      border-bottom:1px solid #f5f5f5;
-      color:#000;
+      border-bottom:1px solid #27272a;
+      color:#fafafa;
       display:flex; align-items:center; gap:10px;
     }
     .ecoCard .ecoSteps li:last-child{ border-bottom:none; }
     .ecoCard .ecoSteps .stepIcon{
       font-family:"JetBrains Mono",monospace;
-      font-size:11px; color:#999;
+      font-size:11px; color:#22c55e;
       width:20px; text-align:center; flex-shrink:0;
     }
 
     /* ── FAQ ── */
     .faqSection{
-      border-top:1px solid #eaeaea;
+      border-top:1px solid #27272a;
       padding:80px 32px;
       max-width:1200px; margin:0 auto;
     }
@@ -461,15 +481,16 @@
       grid-template-columns:1fr 1fr;
       gap:0 64px;
     }
-    .faqItem{ padding:20px 0; border-bottom:1px solid #eaeaea; }
+    .faqItem{ padding:20px 0; border-bottom:1px solid #27272a; }
     .faqItem:last-child{ border-bottom:none; }
     .faqQ{ font-size:15px; font-weight:700; margin:0 0 8px; }
-    .faqA{ font-size:14px; color:#666; line-height:1.6; margin:0; }
+    .faqA{ font-size:14px; color:#a1a1aa; line-height:1.6; margin:0; }
+    .faqA a{ color:#22c55e; font-weight:500; }
 
     /* ── CTA ── */
     .ctaSection{
-      border-top:1px solid #eaeaea;
-      background:#000; color:#fff;
+      border-top:1px solid #27272a;
+      background:#18181b; color:#fafafa;
       padding:100px 32px;
       text-align:center;
     }
@@ -478,36 +499,37 @@
       letter-spacing:-2px; margin:0 0 16px;
     }
     .ctaSection p{
-      font-size:16px; color:#888; margin:0 0 36px;
+      font-size:16px; color:#71717a; margin:0 0 36px;
     }
     .ctaRow{
       display:flex; gap:8px; justify-content:center;
     }
     .ctaRow input{
       width:280px; padding:12px 16px;
-      border:1px solid #333; border-radius:8px;
-      background:#111; color:#fff;
+      border:1px solid #27272a; border-radius:8px;
+      background:#09090b; color:#fafafa;
       font-size:14px; outline:none;
       transition:border-color .15s;
     }
-    .ctaRow input:focus{ border-color:#666; }
-    .ctaRow input::placeholder{ color:#555; }
+    .ctaRow input:focus{ border-color:#22c55e; box-shadow:0 0 0 2px rgba(34,197,94,.2); }
+    .ctaRow input::placeholder{ color:#52525b; }
     .btnWhite{
       display:inline-flex; align-items:center;
-      background:#fff; color:#000;
+      background:linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color:#000;
       padding:12px 20px; border-radius:8px;
       font-weight:600; font-size:14px;
       border:none; cursor:pointer;
-      transition:all .15s;
+      transition:all .2s;
     }
-    .btnWhite:hover{ background:#eee; }
+    .btnWhite:hover{ filter:brightness(1.1); box-shadow:0 0 20px rgba(34,197,94,.3); }
 
     footer{
-      background:#000; color:#555;
+      background:#09090b; color:#52525b;
       padding:20px 32px;
       text-align:center;
       font-size:12px;
-      border-top:1px solid #222;
+      border-top:1px solid #27272a;
     }
 
     /* ── Motion ── */
@@ -528,9 +550,10 @@
     /* ── SDK 3-pane grid ── */
     .sdkGrid{
       display:grid; grid-template-columns:1fr 1fr 1fr;
-      gap:1px; background:#eaeaea;
-      border:1px solid #eaeaea; border-radius:12px;
+      gap:1px; background:#27272a;
+      border:1px solid #27272a; border-radius:12px;
       overflow:hidden;
+      box-shadow:0 0 40px rgba(0,0,0,.5);
     }
 
     /* ── Responsive ── */
@@ -543,7 +566,7 @@
       .capItem:last-child{ border-bottom:none; }
       .archSteps{ grid-template-columns:1fr 1fr; }
       .archStep:nth-child(2){ border-right:none; }
-      .archStep:nth-child(-n+2){ border-bottom:1px solid #eaeaea; }
+      .archStep:nth-child(-n+2){ border-bottom:1px solid #27272a; }
       .archStep::after{ display:none; }
       .ecoGrid{ grid-template-columns:1fr; }
       .termGrid{ grid-template-columns:1fr; }
@@ -551,17 +574,17 @@
       .faqGrid{ grid-template-columns:1fr; }
       .trustBarInner{ grid-template-columns:1fr 1fr; }
       .trustBarItem:nth-child(2){ border-right:none; }
-      .trustBarItem:nth-child(-n+2){ border-bottom:1px solid #eaeaea; }
+      .trustBarItem:nth-child(-n+2){ border-bottom:1px solid #27272a; }
     }
     @media(max-width:600px){
       .hero h1{ font-size:36px; letter-spacing:-1.5px; }
       .hero{ padding:60px 20px 48px; }
       .ctaSection h2{ font-size:32px; }
       .archSteps{ grid-template-columns:1fr; }
-      .archStep{ border-right:none; border-bottom:1px solid #eaeaea; }
+      .archStep{ border-right:none; border-bottom:1px solid #27272a; }
       .archStep:last-child{ border-bottom:none; }
       .trustBarInner{ grid-template-columns:1fr; }
-      .trustBarItem{ border-right:none; border-bottom:1px solid #eaeaea; }
+      .trustBarItem{ border-right:none; border-bottom:1px solid #27272a; }
       .trustBarItem:last-child{ border-bottom:none; }
       .navLinks span:not(.navCta){ display:none; }
     }
@@ -599,10 +622,10 @@
         <strong>hard spend limits, per-call receipts, and zero provider credentials in your runtime.</strong>
       </p>
       <div class="heroActions hero-enter d2">
-        <a href="https://github.com/saturn-pay/saturn#quick-start" class="btnBlack">Get started</a>
+        <a href="https://github.com/saturn-pay/saturn#quick-start" class="btnPrimary">Get started</a>
         <a href="#sdk" class="btnGhost">See the SDK &darr;</a>
       </div>
-      <p class="hero-enter d3" style="margin-top:20px; font-size:13px; color:#999;">For teams running agents across multiple APIs in production.</p>
+      <p class="hero-enter d3" style="margin-top:20px; font-size:13px; color:#71717a;">For teams running agents across multiple APIs in production.</p>
     </div>
 
     <div class="heroTerminal hero-enter d3">
@@ -612,17 +635,17 @@
       </div>
       <div class="htBody htTyping">
         <div class="htLine"><span class="htPrompt">&gt;</span> <span class="htCmd">saturn.<span class="htBlue">search</span>({ query: <span class="htDim">'AAPL Q4 earnings'</span> })</span></div>
-        <div class="htResult"><span class="htGreen">&#10003;</span> 10 results &middot; 340 sats</div>
+        <div class="htResult"><span class="htGreen">&#10003;</span> 10 results &middot; $0.003</div>
 
         <div class="htLine"><span class="htPrompt">&gt;</span> <span class="htCmd">saturn.<span class="htBlue">read</span>({ url: results[0].url })</span></div>
-        <div class="htResult"><span class="htGreen">&#10003;</span> 4,200 words extracted &middot; 360 sats</div>
+        <div class="htResult"><span class="htGreen">&#10003;</span> 4,200 words extracted &middot; $0.004</div>
 
         <div class="htLine"><span class="htPrompt">&gt;</span> <span class="htCmd">saturn.<span class="htBlue">reason</span>({ prompt: <span class="htDim">'Summarize...'</span> })</span></div>
-        <div class="htResult"><span class="htGreen">&#10003;</span> 280 tokens &middot; 2,400 sats</div>
+        <div class="htResult"><span class="htGreen">&#10003;</span> 280 tokens &middot; $0.024</div>
 
         <div class="htSep"></div>
 
-        <div class="htReceipt"><span class="htKey">total</span> <span class="htVal">3,100 sats</span></div>
+        <div class="htReceipt"><span class="htKey">total</span> <span class="htVal">$0.031</span></div>
         <div class="htReceipt"><span class="htKey">calls</span> <span class="htVal">3</span></div>
         <div class="htReceipt"><span class="htKey">budget used</span> <span class="htVal">3.1%</span></div>
         <div class="htReceipt"><span class="htKey">policy</span> <span class="htVal">pol_agt_prod_001</span></div>
@@ -656,8 +679,8 @@
   <!-- SDK / Terminal -->
   <section class="termSection reveal" id="sdk">
     <div class="sectionTag">SDK</div>
-    <h2>npm install. Send sats. Ship.</h2>
-    <p class="lead">No signup form. No billing page. No API keys to manage. Just code.</p>
+    <h2>npm install. Add credits. Ship.</h2>
+    <p class="lead">No provider signups. No API keys to manage. Just code.</p>
 
     <div class="sdkGrid">
 
@@ -675,11 +698,11 @@
 })
 <span class="cm">// save apiKey to .env as SATURN_KEY</span>
 
-<span class="cm">// fund with Lightning</span>
-<span class="kw">const</span> inv = <span class="kw">await</span> saturn.wallet.<span class="fn">fund</span>({
-  <span class="prop">amountSats</span>: <span class="str">50_000</span>
+<span class="cm">// add credits via Stripe checkout</span>
+<span class="kw">const</span> { url } = <span class="kw">await</span> saturn.wallet.<span class="fn">fund</span>({
+  <span class="prop">amount</span>: <span class="str">50</span> <span class="cm">// $50 USD</span>
 })
-<span class="cm">// pay inv.paymentRequest → done</span></pre>
+<span class="cm">// redirect to url → done</span></pre>
       </div>
 
       <!-- Pane 2: Use -->
@@ -716,17 +739,17 @@
         <div class="receiptHeader">every call returns a receipt</div>
         <div class="receiptRow"><span class="rKey">capability</span><span class="rVal">reason</span></div>
         <div class="receiptRow"><span class="rKey">provider</span><span class="rVal">openai</span></div>
-        <div class="receiptRow"><span class="rKey">charged</span><span class="rVal">2,400 sats</span></div>
-        <div class="receiptRow"><span class="rKey">balance_after</span><span class="rVal">46,900 sats</span></div>
-        <div class="receiptRow"><span class="rKey">session_total</span><span class="rVal">3,100 sats (3 calls)</span></div>
+        <div class="receiptRow"><span class="rKey">charged</span><span class="rVal">$0.024</span></div>
+        <div class="receiptRow"><span class="rKey">balance_after</span><span class="rVal">$49.97</span></div>
+        <div class="receiptRow"><span class="rKey">session_total</span><span class="rVal">$0.031 (3 calls)</span></div>
         <div class="receiptRow"><span class="rKey">policy</span><span class="rVal">pol_agt_prod_001</span></div>
-        <div class="receiptRow"><span class="rKey">budget_remaining</span><span class="rVal">96,900 / 100,000</span></div>
+        <div class="receiptRow"><span class="rKey">budget_remaining</span><span class="rVal">$96.90 / $100.00</span></div>
         <div class="receiptRow"><span class="rKey">audit_id</span><span class="rVal">aud_7f3k…x9m2</span></div>
         <div class="receiptRow"><span class="rKey">latency</span><span class="rVal">1,240ms</span></div>
       </div>
 
     </div>
-    <p style="text-align:center; margin-top:20px; font-size:13px; color:#999;">That's it. No account page. No credit card. No provider keys.</p>
+    <p style="text-align:center; margin-top:20px; font-size:13px; color:#71717a;">That's it. No provider signups. No API keys to juggle. Just one SDK.</p>
   </section>
 
   <!-- Capabilities -->
@@ -786,7 +809,7 @@
         <span class="who">twilio</span>
       </div>
     </div>
-    <p style="text-align:center; margin-top:24px; font-size:0.9rem; color:#999;">Saturn picks the best provider by default. Override with <code style="background:#f0f0f0; padding:2px 6px; border-radius:3px; font-size:0.85rem;">{ provider: "openai" }</code> on any call.</p>
+    <p style="text-align:center; margin-top:24px; font-size:0.9rem; color:#71717a;">Saturn picks the best provider by default. Override with <code style="background:#27272a; padding:2px 6px; border-radius:3px; font-size:0.85rem; color:#a1a1aa;">{ provider: "openai" }</code> on any call.</p>
   </section>
 
   <!-- Architecture -->
@@ -798,7 +821,7 @@
       <div class="archStep">
         <div class="stepNum">01</div>
         <h4>Fund your account</h4>
-        <p>Deposit sats via Lightning. Saturn maintains an internal ledger and issues receipts for every deduction.</p>
+        <p>Add credits via Stripe. Saturn maintains an internal ledger and issues receipts for every deduction.</p>
       </div>
       <div class="archStep">
         <div class="stepNum">02</div>
@@ -813,7 +836,7 @@
       <div class="archStep">
         <div class="stepNum">04</div>
         <h4>Settle instantly</h4>
-        <p>Sats deducted, receipt issued, audit logged. Single round-trip. No invoices.</p>
+        <p>Credits deducted, receipt issued, audit logged. Single round-trip. No invoices.</p>
       </div>
     </div>
   </section>
@@ -830,12 +853,12 @@
         <h3>Run agents with guardrails</h3>
         <p>Give each agent a Saturn key, a budget, and a policy. Saturn handles auth, routing, and receipts — your agents never touch provider credentials.</p>
         <ol class="ecoSteps">
-          <li><span class="stepIcon">1</span> Create an account and fund it via Lightning</li>
+          <li><span class="stepIcon">1</span> Create an account and add credits via Stripe</li>
           <li><span class="stepIcon">2</span> Set policies — budget caps, rate limits, capability allowlists</li>
           <li><span class="stepIcon">3</span> Give your agent a SATURN_KEY and deploy</li>
           <li><span class="stepIcon">4</span> Monitor spend + audit trail per call</li>
         </ol>
-        <a href="https://github.com/saturn-pay/saturn#quick-start" class="btnBlack">Get started</a>
+        <a href="https://github.com/saturn-pay/saturn#quick-start" class="btnPrimary">Get started</a>
       </div>
       <div class="ecoCard">
         <div class="ecoRole">For service providers</div>
@@ -847,7 +870,7 @@
           <li><span class="stepIcon">3</span> Your service becomes available as a capability</li>
           <li><span class="stepIcon">4</span> Agents call it. You get paid per call.</li>
         </ol>
-        <a href="#faq" class="btnBlack">Submit a service</a>
+        <a href="#faq" class="btnPrimary">Submit a service</a>
         <a href="https://github.com/saturn-pay/saturn/blob/main/docs/provider-eligibility.md" class="btnGhost" style="margin-left:8px;">Eligibility requirements &rarr;</a>
       </div>
     </div>
@@ -858,8 +881,8 @@
     <h2>FAQ</h2>
     <div class="faqGrid">
       <div class="faqItem">
-        <div class="faqQ">Why Lightning?</div>
-        <p class="faqA">Machine-native payments. Global, instant, programmable, granular enough for sub-cent per-call pricing. No chargebacks, no bank hours.</p>
+        <div class="faqQ">How does billing work?</div>
+        <p class="faqA">Prepaid credits via Stripe. Add funds to your account, agents spend them per-call. Sub-cent pricing, real-time deductions, no surprise invoices at month-end.</p>
       </div>
       <div class="faqItem">
         <div class="faqQ">Is Saturn a marketplace?</div>
@@ -867,7 +890,7 @@
       </div>
       <div class="faqItem">
         <div class="faqQ">Can I submit my own API?</div>
-        <p class="faqA">Yes. Submit your service for review. If approved, Saturn operates it — handles execution, pricing, enforcement, and payments. You get paid per call. <a href="https://github.com/saturn-pay/saturn/blob/main/docs/provider-eligibility.md" style="color:#000; font-weight:500; text-decoration:underline; text-underline-offset:2px;">See eligibility requirements &rarr;</a></p>
+        <p class="faqA">Yes. Submit your service for review. If approved, Saturn operates it — handles execution, pricing, enforcement, and payments. You get paid per call. <a href="https://github.com/saturn-pay/saturn/blob/main/docs/provider-eligibility.md">See eligibility requirements &rarr;</a></p>
       </div>
       <div class="faqItem">
         <div class="faqQ">Who controls execution?</div>
@@ -879,15 +902,15 @@
       </div>
       <div class="faqItem">
         <div class="faqQ">Is Saturn a wallet?</div>
-        <p class="faqA">No. Saturn maintains an internal ledger. You deposit sats, agents spend them, every deduction produces a receipt. It's a spend balance, not a wallet.</p>
+        <p class="faqA">No. Saturn maintains an internal ledger. You add credits, agents spend them, every deduction produces a receipt. It's a spend balance, not a wallet.</p>
       </div>
       <div class="faqItem">
         <div class="faqQ">Does Saturn custody funds?</div>
-        <p class="faqA">Saturn maintains an internal ledger backed by Lightning invoices. Funds are only spendable through Saturn's policy engine. Agents cannot withdraw funds.</p>
+        <p class="faqA">Saturn maintains a prepaid credit balance. Funds are only spendable through Saturn's policy engine on capability calls. Agents cannot withdraw funds.</p>
       </div>
       <div class="faqItem">
         <div class="faqQ">Can I run Saturn myself?</div>
-        <p class="faqA">Yes. Saturn is source-available under the Business Source License. Running your own instance requires operating LND and managing Lightning liquidity. See the <a href="https://github.com/saturn-pay/saturn" style="color:#000; font-weight:500; text-decoration:underline; text-underline-offset:2px;">GitHub repo</a> for setup instructions.</p>
+        <p class="faqA">Yes. Saturn is source-available under the Business Source License. Self-hosting requires managing your own provider credentials and payment processing. See the <a href="https://github.com/saturn-pay/saturn">GitHub repo</a> for setup instructions.</p>
       </div>
     </div>
   </section>
@@ -895,7 +918,7 @@
   <!-- CTA -->
   <section class="ctaSection" id="access">
     <h2>Deploy agents with<br/>hard spend limits.</h2>
-    <p>Create an agent. Fund with Lightning. Start calling.</p>
+    <p>Create an agent. Add credits. Start calling.</p>
     <a href="https://github.com/saturn-pay/saturn#quick-start" class="btnWhite" style="display:inline-flex;text-decoration:none;">Get started</a>
   </section>
 
