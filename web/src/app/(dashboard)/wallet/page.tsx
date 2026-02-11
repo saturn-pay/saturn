@@ -6,7 +6,7 @@ import { apiFetch } from '@/lib/api';
 import { formatUsdCents, formatDateTime } from '@/lib/format';
 import { LoadingPage } from '@/components/loading';
 import { DataTable } from '@/components/data-table';
-import type { Wallet, Transaction, Paginated, FundCardResponse, FundLightningResponse } from '@/lib/types';
+import type { Wallet, Transaction, Paginated, FundCardResponse } from '@/lib/types';
 
 const PRESET_AMOUNTS = [500, 1000, 2500, 5000]; // cents
 const LIMIT = 25;
@@ -23,13 +23,8 @@ export default function WalletPage() {
   // Funding state
   const [selectedAmount, setSelectedAmount] = useState<number>(1000); // $10 default
   const [customAmount, setCustomAmount] = useState('');
-  const [fundingMethod, setFundingMethod] = useState<'card' | 'lightning'>('card');
   const [fundingLoading, setFundingLoading] = useState(false);
   const [fundingError, setFundingError] = useState('');
-
-  // Lightning invoice state
-  const [lightningInvoice, setLightningInvoice] = useState<string>('');
-  const [invoiceCopied, setInvoiceCopied] = useState(false);
 
   const fundAmountCents = customAmount ? Math.round(parseFloat(customAmount) * 100) : selectedAmount;
 
@@ -79,31 +74,6 @@ export default function WalletPage() {
     }
   };
 
-  const handleFundLightning = async () => {
-    if (!apiKey || fundAmountCents < 100) return;
-    setFundingLoading(true);
-    setFundingError('');
-    setLightningInvoice('');
-
-    try {
-      const response = await apiFetch<FundLightningResponse>('/v1/wallet/fund', {
-        apiKey,
-        method: 'POST',
-        body: { amountUsdCents: fundAmountCents },
-      });
-      setLightningInvoice(response.invoice);
-    } catch (err) {
-      setFundingError(err instanceof Error ? err.message : 'Failed to generate invoice');
-    } finally {
-      setFundingLoading(false);
-    }
-  };
-
-  const copyInvoice = async () => {
-    await navigator.clipboard.writeText(lightningInvoice);
-    setInvoiceCopied(true);
-    setTimeout(() => setInvoiceCopied(false), 2000);
-  };
 
   if (loading && !wallet) {
     return <LoadingPage />;
@@ -197,65 +167,14 @@ export default function WalletPage() {
           </div>
         </div>
 
-        {/* Payment Method Tabs */}
-        <div className="flex gap-1 mb-5 p-1 bg-background rounded-lg w-fit">
-          <button
-            onClick={() => setFundingMethod('card')}
-            className={`px-4 py-2 rounded-md text-sm transition-all ${
-              fundingMethod === 'card'
-                ? 'bg-surface font-medium text-white'
-                : 'text-muted hover:text-white'
-            }`}
-          >
-            Card
-          </button>
-          <button
-            onClick={() => setFundingMethod('lightning')}
-            className={`px-4 py-2 rounded-md text-sm transition-all ${
-              fundingMethod === 'lightning'
-                ? 'bg-surface font-medium text-white'
-                : 'text-muted hover:text-white'
-            }`}
-          >
-            Lightning
-          </button>
-        </div>
-
-        {/* Payment Actions */}
-        {fundingMethod === 'card' ? (
-          <button
-            onClick={handleFundCard}
-            disabled={fundingLoading || fundAmountCents < 100}
-            className="btn-primary px-5 py-2.5 rounded-lg text-sm"
-          >
-            {fundingLoading ? 'Processing...' : `Pay ${formatUsdCents(fundAmountCents)} with card`}
-          </button>
-        ) : (
-          <div>
-            {!lightningInvoice ? (
-              <button
-                onClick={handleFundLightning}
-                disabled={fundingLoading || fundAmountCents < 100}
-                className="btn-primary px-5 py-2.5 rounded-lg text-sm"
-              >
-                {fundingLoading ? 'Generating...' : `Generate invoice for ${formatUsdCents(fundAmountCents)}`}
-              </button>
-            ) : (
-              <div className="space-y-3">
-                <div className="bg-background rounded-lg p-4 border border-border">
-                  <div className="text-xs text-muted mb-2">Lightning Invoice</div>
-                  <div className="font-mono text-xs break-all text-zinc-400">{lightningInvoice.slice(0, 50)}...</div>
-                </div>
-                <button
-                  onClick={copyInvoice}
-                  className="btn-secondary px-4 py-2 rounded-lg text-sm"
-                >
-                  {invoiceCopied ? 'Copied!' : 'Copy invoice'}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Payment Action */}
+        <button
+          onClick={handleFundCard}
+          disabled={fundingLoading || fundAmountCents < 100}
+          className="btn-primary px-5 py-2.5 rounded-lg text-sm"
+        >
+          {fundingLoading ? 'Processing...' : `Add ${formatUsdCents(fundAmountCents)}`}
+        </button>
 
         {fundingError && (
           <div className="mt-4 text-sm text-red-400">{fundingError}</div>
