@@ -31,7 +31,21 @@ export default function AgentDetailPage() {
   const [killSwitch, setKillSwitch] = useState(false);
   const [deniedCapabilities, setDeniedCapabilities] = useState<Set<string>>(new Set());
 
+  // Track original values to detect changes
+  const [originalMaxPerCall, setOriginalMaxPerCall] = useState<string>('');
+  const [originalMaxPerDay, setOriginalMaxPerDay] = useState<string>('');
+  const [originalDeniedCapabilities, setOriginalDeniedCapabilities] = useState<Set<string>>(new Set());
+
   const AUDIT_LIMIT = 10;
+
+  // Check if there are unsaved changes
+  const setsEqual = (a: Set<string>, b: Set<string>) =>
+    a.size === b.size && [...a].every(x => b.has(x));
+
+  const hasChanges =
+    maxPerCall !== originalMaxPerCall ||
+    maxPerDay !== originalMaxPerDay ||
+    !setsEqual(deniedCapabilities, originalDeniedCapabilities);
 
   useEffect(() => {
     if (!apiKey || !agentId) return;
@@ -53,10 +67,19 @@ export default function AgentDetailPage() {
         setCapabilities(caps);
 
         // Initialize form fields
-        setMaxPerCall(pol.maxPerCallUsdCents ? (pol.maxPerCallUsdCents / 100).toString() : '');
-        setMaxPerDay(pol.maxPerDayUsdCents ? (pol.maxPerDayUsdCents / 100).toString() : '');
+        const initialMaxPerCall = pol.maxPerCallUsdCents ? (pol.maxPerCallUsdCents / 100).toString() : '';
+        const initialMaxPerDay = pol.maxPerDayUsdCents ? (pol.maxPerDayUsdCents / 100).toString() : '';
+        const initialDenied = new Set(pol.deniedCapabilities || []);
+
+        setMaxPerCall(initialMaxPerCall);
+        setMaxPerDay(initialMaxPerDay);
         setKillSwitch(pol.killSwitch);
-        setDeniedCapabilities(new Set(pol.deniedCapabilities || []));
+        setDeniedCapabilities(initialDenied);
+
+        // Store originals for change detection
+        setOriginalMaxPerCall(initialMaxPerCall);
+        setOriginalMaxPerDay(initialMaxPerDay);
+        setOriginalDeniedCapabilities(initialDenied);
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : 'Failed to load agent');
@@ -99,7 +122,13 @@ export default function AgentDetailPage() {
         body: updates,
       });
       setPolicy(updated);
-      setDeniedCapabilities(new Set(updated.deniedCapabilities || []));
+      const newDenied = new Set(updated.deniedCapabilities || []);
+      setDeniedCapabilities(newDenied);
+
+      // Update originals after successful save
+      setOriginalMaxPerCall(maxPerCall);
+      setOriginalMaxPerDay(maxPerDay);
+      setOriginalDeniedCapabilities(newDenied);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update policy');
     } finally {
@@ -199,8 +228,8 @@ export default function AgentDetailPage() {
           <h2 className="font-semibold">Policy Settings</h2>
           <button
             onClick={handleSavePolicy}
-            disabled={saving}
-            className="btn-primary px-4 py-2 rounded-lg text-sm"
+            disabled={saving || !hasChanges}
+            className="btn-primary px-4 py-2 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
