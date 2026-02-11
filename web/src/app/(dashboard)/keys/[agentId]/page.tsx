@@ -164,7 +164,7 @@ export default function AgentDetailPage() {
     return (
       <div>
         <button onClick={() => router.push('/keys')} className="text-sm text-muted hover:text-white mb-4">
-          &larr; Back to Keys
+          &larr; Back to Agents
         </button>
         <div className="text-sm text-red-400">Error: {error}</div>
       </div>
@@ -177,7 +177,7 @@ export default function AgentDetailPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <button onClick={() => router.push('/keys')} className="text-sm text-muted hover:text-white mb-2 block">
-            &larr; Back to Keys
+            &larr; Back to Agents
           </button>
           <h1 className="text-2xl font-bold tracking-tight">{agent?.name}</h1>
           <p className="text-sm text-muted mt-1">

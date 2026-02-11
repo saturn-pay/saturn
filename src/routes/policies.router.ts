@@ -6,6 +6,7 @@ import { agents, policies } from '../db/schema/index.js';
 import { eq, and } from 'drizzle-orm';
 import { requirePrimary } from '../middleware/auth.js';
 import { NotFoundError, ValidationError } from '../lib/errors.js';
+import { usdCentsToSats, satsToUsdCents, getCurrentRate } from '../services/pricing.service.js';
 
 // ---------------------------------------------------------------------------
 // Validation schemas
@@ -21,10 +22,15 @@ const policyPutSchema = z.object({
 });
 
 const policyPatchSchema = z.object({
+  // Accept both sats and USD cents (USD cents take precedence if both provided)
   maxPerCallSats: z.number().int().positive().nullable().optional(),
   maxPerDaySats: z.number().int().positive().nullable().optional(),
+  maxPerCallUsdCents: z.number().int().positive().nullable().optional(),
+  maxPerDayUsdCents: z.number().int().positive().nullable().optional(),
   allowedServices: z.array(z.string()).nullable().optional(),
   deniedServices: z.array(z.string()).nullable().optional(),
+  allowedCapabilities: z.array(z.string()).nullable().optional(),
+  deniedCapabilities: z.array(z.string()).nullable().optional(),
   killSwitch: z.boolean().optional(),
   maxBalanceSats: z.number().int().positive().nullable().optional(),
 });
@@ -64,6 +70,27 @@ async function findPolicyOrThrow(agentId: string) {
   return policy;
 }
 
+/**
+ * Enrich a policy with computed USD cents values for the frontend
+ */
+function enrichWithUsdCents(policy: typeof policies.$inferSelect) {
+  const { btcUsd } = getCurrentRate();
+
+  return {
+    ...policy,
+    // Add computed USD cents values
+    maxPerCallUsdCents: policy.maxPerCallSats
+      ? satsToUsdCents(policy.maxPerCallSats, btcUsd)
+      : null,
+    maxPerDayUsdCents: policy.maxPerDaySats
+      ? satsToUsdCents(policy.maxPerDaySats, btcUsd)
+      : null,
+    maxBalanceUsdCents: policy.maxBalanceSats
+      ? satsToUsdCents(policy.maxBalanceSats, btcUsd)
+      : null,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
@@ -81,7 +108,7 @@ policiesRouter.get('/', async (req: Request, res: Response) => {
 
   const policy = await findPolicyOrThrow(agentId);
 
-  res.json(policy);
+  res.json(enrichWithUsdCents(policy));
 });
 
 // PUT /agents/:agentId/policy — replace entire policy
@@ -112,7 +139,7 @@ policiesRouter.put('/', async (req: Request, res: Response) => {
     .where(eq(policies.agentId, agentId))
     .returning();
 
-  res.json(updated);
+  res.json(enrichWithUsdCents(updated));
 });
 
 // PATCH /agents/:agentId/policy — partial update
@@ -130,10 +157,29 @@ policiesRouter.patch('/', async (req: Request, res: Response) => {
   const updates: Record<string, unknown> = { updatedAt: new Date() };
 
   const data = parsed.data;
-  if (data.maxPerCallSats !== undefined) updates.maxPerCallSats = data.maxPerCallSats;
-  if (data.maxPerDaySats !== undefined) updates.maxPerDaySats = data.maxPerDaySats;
+  const { btcUsd } = getCurrentRate();
+
+  // USD cents take precedence over sats if both provided
+  if (data.maxPerCallUsdCents !== undefined) {
+    updates.maxPerCallSats = data.maxPerCallUsdCents === null
+      ? null
+      : usdCentsToSats(data.maxPerCallUsdCents, btcUsd);
+  } else if (data.maxPerCallSats !== undefined) {
+    updates.maxPerCallSats = data.maxPerCallSats;
+  }
+
+  if (data.maxPerDayUsdCents !== undefined) {
+    updates.maxPerDaySats = data.maxPerDayUsdCents === null
+      ? null
+      : usdCentsToSats(data.maxPerDayUsdCents, btcUsd);
+  } else if (data.maxPerDaySats !== undefined) {
+    updates.maxPerDaySats = data.maxPerDaySats;
+  }
+
   if (data.allowedServices !== undefined) updates.allowedServices = data.allowedServices;
   if (data.deniedServices !== undefined) updates.deniedServices = data.deniedServices;
+  if (data.allowedCapabilities !== undefined) updates.allowedCapabilities = data.allowedCapabilities;
+  if (data.deniedCapabilities !== undefined) updates.deniedCapabilities = data.deniedCapabilities;
   if (data.killSwitch !== undefined) updates.killSwitch = data.killSwitch;
   if (data.maxBalanceSats !== undefined) updates.maxBalanceSats = data.maxBalanceSats;
 
@@ -143,7 +189,7 @@ policiesRouter.patch('/', async (req: Request, res: Response) => {
     .where(eq(policies.agentId, agentId))
     .returning();
 
-  res.json(updated);
+  res.json(enrichWithUsdCents(updated));
 });
 
 // POST /agents/:agentId/kill — shortcut: sets kill_switch=true
@@ -158,7 +204,7 @@ policiesRouter.post('/kill', async (req: Request, res: Response) => {
     .where(eq(policies.agentId, agentId))
     .returning();
 
-  res.json(updated);
+  res.json(enrichWithUsdCents(updated));
 });
 
 // POST /agents/:agentId/unkill — shortcut: sets kill_switch=false
@@ -173,5 +219,5 @@ policiesRouter.post('/unkill', async (req: Request, res: Response) => {
     .where(eq(policies.agentId, agentId))
     .returning();
 
-  res.json(updated);
+  res.json(enrichWithUsdCents(updated));
 });
