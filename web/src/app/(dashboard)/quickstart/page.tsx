@@ -194,7 +194,7 @@ export default function QuickstartPage() {
             <span className="text-purple-400">new</span>{' '}
             <span className="text-blue-400">Saturn</span>({'{'}
             {'\n'}  apiKey:{' '}
-            <span className="text-accent">&apos;{apiKey || 'YOUR_API_KEY'}&apos;</span>
+            <span className="text-accent">&apos;{apiKey ? `${apiKey.slice(0, 7)}...${apiKey.slice(-4)}` : 'YOUR_API_KEY'}&apos;</span>
             {'\n'}{'}'});
           </pre>
         </div>
