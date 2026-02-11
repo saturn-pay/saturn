@@ -68,7 +68,7 @@ export async function createTestAccount(): Promise<TestAccount> {
 
   const baseUrl = E2E_CONFIG.apiUrl;
 
-  // Signup with email and password
+  // Signup with name, email and password
   const res = await fetch(`${baseUrl}/v1/signup`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -24,7 +24,7 @@ describe('Auth Flow', () => {
   }, 30000);
 
   describe('Signup', () => {
-    it('should create a new account with email/password', async () => {
+    it('should create a new account with name/email/password', async () => {
       const email = generateTestEmail();
       const password = generateTestPassword();
       const name = `Signup Test ${Date.now()}`;

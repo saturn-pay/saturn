@@ -22,8 +22,7 @@ const signupLimiter = rateLimit({
 });
 
 const signupSchema = z.object({
-  userName: z.string().min(1, 'Your name is required').max(255),
-  name: z.string().min(1, 'Agent name is required').max(255),
+  name: z.string().min(1, 'Name is required').max(255),
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
@@ -37,7 +36,7 @@ signupRouter.post('/', signupLimiter, async (req: Request, res: Response) => {
     throw new ValidationError('Invalid request body', parsed.error.flatten());
   }
 
-  const { userName, name, email, password } = parsed.data;
+  const { name, email, password } = parsed.data;
 
   // Check email uniqueness
   const [existing] = await db
@@ -65,7 +64,7 @@ signupRouter.post('/', signupLimiter, async (req: Request, res: Response) => {
   await db.transaction(async (tx) => {
     await tx.insert(accounts).values({
       id: accountId,
-      name: userName,
+      name,
       email,
       passwordHash,
       createdAt: now,
@@ -75,7 +74,7 @@ signupRouter.post('/', signupLimiter, async (req: Request, res: Response) => {
     await tx.insert(agents).values({
       id: agentId,
       accountId,
-      name: `${name} (primary)`,
+      name: 'Default Agent',
       apiKeyHash,
       apiKeyPrefix,
       email,
