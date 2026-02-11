@@ -29,6 +29,7 @@ export default function AgentDetailPage() {
   const [maxPerCall, setMaxPerCall] = useState<string>('');
   const [maxPerDay, setMaxPerDay] = useState<string>('');
   const [killSwitch, setKillSwitch] = useState(false);
+  const [deniedCapabilities, setDeniedCapabilities] = useState<Set<string>>(new Set());
 
   const AUDIT_LIMIT = 10;
 
@@ -55,6 +56,7 @@ export default function AgentDetailPage() {
         setMaxPerCall(pol.maxPerCallUsdCents ? (pol.maxPerCallUsdCents / 100).toString() : '');
         setMaxPerDay(pol.maxPerDayUsdCents ? (pol.maxPerDayUsdCents / 100).toString() : '');
         setKillSwitch(pol.killSwitch);
+        setDeniedCapabilities(new Set(pol.deniedCapabilities || []));
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : 'Failed to load agent');
@@ -87,6 +89,7 @@ export default function AgentDetailPage() {
       maxPerCallUsdCents: maxPerCall ? Math.round(parseFloat(maxPerCall) * 100) : null,
       maxPerDayUsdCents: maxPerDay ? Math.round(parseFloat(maxPerDay) * 100) : null,
       killSwitch,
+      deniedCapabilities: deniedCapabilities.size > 0 ? Array.from(deniedCapabilities) : null,
     };
 
     try {
@@ -96,6 +99,7 @@ export default function AgentDetailPage() {
         body: updates,
       });
       setPolicy(updated);
+      setDeniedCapabilities(new Set(updated.deniedCapabilities || []));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update policy');
     } finally {
@@ -241,7 +245,14 @@ export default function AgentDetailPage() {
                     className="w-32 px-3 py-2 bg-background border border-border rounded-lg text-sm font-mono outline-none focus:border-accent transition-all"
                   />
                 </div>
-                <p className="text-xs text-muted mt-1">Maximum daily spend for this agent</p>
+                {policy?.maxPerDayUsdCents ? (
+                  <DailySpendProgress
+                    spent={Math.round((agent?.todaySpendSats ?? 0) * 0.04)}
+                    limit={policy.maxPerDayUsdCents}
+                  />
+                ) : (
+                  <p className="text-xs text-muted mt-1">Maximum daily spend for this agent</p>
+                )}
               </div>
             </div>
           </div>
@@ -275,19 +286,45 @@ export default function AgentDetailPage() {
 
         {/* Service/Capability Restrictions */}
         <div className="mt-6 pt-6 border-t border-border">
-          <h3 className="text-xs text-muted uppercase tracking-wider mb-3">Available Capabilities</h3>
-          <div className="flex flex-wrap gap-2">
-            {capabilities.map((cap) => (
-              <span
-                key={cap.capability}
-                className="text-xs bg-background border border-border px-3 py-1.5 rounded-lg font-mono"
-              >
-                {cap.capability}
-              </span>
-            ))}
+          <h3 className="text-xs text-muted uppercase tracking-wider mb-3">Capabilities</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {capabilities.map((cap) => {
+              const isEnabled = !deniedCapabilities.has(cap.capability);
+              return (
+                <div
+                  key={cap.capability}
+                  className="flex items-center justify-between bg-background border border-border rounded-lg px-4 py-3"
+                >
+                  <div>
+                    <span className="text-sm font-mono">{cap.capability}</span>
+                    <p className="text-xs text-muted mt-0.5">{cap.description}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const next = new Set(deniedCapabilities);
+                      if (isEnabled) {
+                        next.add(cap.capability);
+                      } else {
+                        next.delete(cap.capability);
+                      }
+                      setDeniedCapabilities(next);
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      isEnabled ? 'bg-green-500' : 'bg-zinc-700'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        isEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              );
+            })}
           </div>
           <p className="text-xs text-muted mt-3">
-            All capabilities are enabled by default. Contact support for custom restrictions.
+            Toggle capabilities on or off for this agent. Changes apply after saving.
           </p>
         </div>
       </div>
@@ -380,5 +417,32 @@ function PolicyBadge({ result }: { result: string }) {
     <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${colors[result] || 'bg-gray-500/20 text-gray-400'}`}>
       {result === 'allowed' ? 'success' : result}
     </span>
+  );
+}
+
+function DailySpendProgress({ spent, limit }: { spent: number; limit: number }) {
+  const percentage = Math.min((spent / limit) * 100, 100);
+  const isNearLimit = percentage >= 80;
+  const isOverLimit = percentage >= 100;
+
+  return (
+    <div className="mt-2">
+      <div className="flex items-center justify-between text-xs mb-1">
+        <span className="text-muted">
+          {formatUsdCents(spent)} / {formatUsdCents(limit)}
+        </span>
+        <span className={isOverLimit ? 'text-red-400' : isNearLimit ? 'text-yellow-400' : 'text-muted'}>
+          {percentage.toFixed(0)}%
+        </span>
+      </div>
+      <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${
+            isOverLimit ? 'bg-red-500' : isNearLimit ? 'bg-yellow-500' : 'bg-green-500'
+          }`}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
   );
 }
