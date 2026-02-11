@@ -12,7 +12,9 @@
     "db:migrate": "drizzle-kit migrate",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "./scripts/e2e-test.sh",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "test:e2e:watch": "vitest --config vitest.e2e.config.ts",
+    "test:e2e:legacy": "./scripts/e2e-test.sh",
     "test:e2e:sdk": "tsx scripts/e2e-test-sdk.ts",
     "pricing:update": "tsx scripts/update-pricing.ts",
     "pricing:preview": "tsx scripts/update-pricing.ts --dry-run"
@@ -42,6 +44,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.50.0",
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
