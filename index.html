@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Saturn — The execution layer for AI agents</title>
-  <meta name="description" content="Saturn lets agents call capabilities, enforce budgets, and settle payments instantly." />
+  <title>Saturn — Financial guardrails for AI agents</title>
+  <meta name="description" content="Stop AI agents from burning money in production. Hard spend limits, per-call receipts, zero API key chaos." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -19,6 +19,8 @@
       -webkit-font-smoothing:antialiased;
       min-height:100%;
       overflow-x:hidden;
+      position:relative;
+      z-index:1;
     }
     a{ color:inherit; }
     ::selection{ background:#22c55e; color:#000; }
@@ -30,9 +32,9 @@
       position:fixed;
       top:0; left:0; right:0; bottom:0;
       pointer-events:none;
-      opacity:.02;
+      opacity:.015;
       background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-      z-index:1000;
+      z-index:0;
     }
 
     /* ── Nav ── */
@@ -81,12 +83,12 @@
     }
     .heroLeft{}
     .hero h1{
-      font-size:72px; font-weight:900;
-      line-height:1.0; letter-spacing:-3.5px;
+      font-size:64px; font-weight:900;
+      line-height:1.05; letter-spacing:-3px;
       color:#fafafa;
-      max-width:800px;
+      max-width:700px;
     }
-    .hero h1 .muted{ color:#52525b; }
+    .hero h1 .accent{ color:#22c55e; }
 
     /* Hero terminal */
     .heroTerminal{
@@ -186,6 +188,104 @@
     }
     .btnGhost:hover{ border-color:#3f3f46; color:#fafafa; }
 
+    /* ── Problem Section ── */
+    .problemSection{
+      border-top:1px solid #27272a;
+      padding:80px 32px;
+      background:#0a0a0a;
+    }
+    .problemInner{
+      max-width:800px; margin:0 auto;
+      text-align:center;
+    }
+    .problemSection h2{
+      font-size:36px; font-weight:800;
+      letter-spacing:-1.5px; line-height:1.1;
+      margin:0 0 32px;
+    }
+    .problemGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:24px;
+      text-align:left;
+      margin:0 0 32px;
+    }
+    .problemCard{
+      background:#18181b;
+      border:1px solid #27272a;
+      border-radius:12px;
+      padding:24px;
+    }
+    .problemCard h3{
+      font-size:15px; font-weight:700;
+      margin:0 0 12px;
+      color:#fafafa;
+    }
+    .problemCard ul{
+      list-style:none; padding:0; margin:0;
+      font-size:14px; color:#a1a1aa;
+    }
+    .problemCard ul li{
+      padding:6px 0;
+      display:flex; align-items:center; gap:8px;
+    }
+    .problemCard ul li::before{
+      content:'';
+      width:6px; height:6px;
+      background:#ef4444;
+      border-radius:50%;
+      flex-shrink:0;
+    }
+    .problemCard.solution ul li::before{
+      background:#22c55e;
+    }
+    .problemCta{
+      font-size:18px; color:#fafafa; font-weight:600;
+      margin:32px 0 0;
+    }
+
+    /* ── Social Proof ── */
+    .socialProof{
+      border-top:1px solid #27272a;
+      padding:32px;
+      text-align:center;
+      font-size:14px; color:#71717a;
+    }
+    .socialProof strong{ color:#a1a1aa; }
+
+    /* ── Who is this for ── */
+    .whoSection{
+      border-top:1px solid #27272a;
+      padding:60px 32px;
+      max-width:1200px; margin:0 auto;
+    }
+    .whoSection h2{
+      font-size:28px; font-weight:800;
+      letter-spacing:-1px;
+      margin:0 0 24px;
+      text-align:center;
+    }
+    .whoGrid{
+      display:grid;
+      grid-template-columns:repeat(4, 1fr);
+      gap:16px;
+    }
+    .whoCard{
+      background:#18181b;
+      border:1px solid #27272a;
+      border-radius:10px;
+      padding:20px;
+      font-size:14px;
+      color:#a1a1aa;
+      text-align:center;
+    }
+    .whoCard strong{
+      display:block;
+      color:#fafafa;
+      font-weight:600;
+      margin:0 0 4px;
+    }
+
     /* ── Provider logos carousel ── */
     .providersBar{
       border-top:1px solid #27272a;
@@ -194,10 +294,11 @@
       overflow:hidden;
     }
     .providersBar .provLabel{
-      font-family:"JetBrains Mono",monospace;
-      font-size:12px; font-weight:500;
-      color:#52525b; margin:0 0 24px;
-      text-transform:uppercase; letter-spacing:1px;
+      font-size:16px; font-weight:600;
+      color:#fafafa; margin:0 0 8px;
+    }
+    .providersBar .provSub{
+      font-size:14px; color:#71717a; margin:0 0 24px;
     }
     .providersTrack{
       display:flex;
@@ -214,9 +315,6 @@
       padding:0 24px;
     }
     .providerLogo{
-      display:flex;
-      align-items:center;
-      gap:8px;
       font-size:15px;
       font-weight:600;
       color:#52525b;
@@ -224,11 +322,6 @@
       white-space:nowrap;
     }
     .providerLogo:hover{ color:#fafafa; }
-    .providerLogo svg{
-      width:24px; height:24px;
-      fill:currentColor;
-      flex-shrink:0;
-    }
     @keyframes scroll{
       0%{ transform:translateX(0); }
       100%{ transform:translateX(-50%); }
@@ -244,7 +337,7 @@
       border-top:1px solid #27272a;
       border-bottom:1px solid #27272a;
       padding:0;
-      background:#0a0a0a;
+      background:#09090b;
     }
     .trustBarInner{
       display:grid; grid-template-columns:repeat(4,1fr);
@@ -459,70 +552,6 @@
       padding:4px 0;
     }
 
-    /* ── Ecosystem ── */
-    .ecoSection{
-      border-top:1px solid #27272a;
-      padding:80px 32px;
-      max-width:1200px; margin:0 auto;
-    }
-    .ecoSection .sectionTag{
-      font-family:"JetBrains Mono",monospace;
-      font-size:13px; font-weight:500;
-      color:#71717a; margin:0 0 16px;
-      text-transform:uppercase; letter-spacing:1px;
-    }
-    .ecoSection h2{
-      font-size:40px; font-weight:800;
-      letter-spacing:-1.5px; line-height:1.1;
-      margin:0 0 12px;
-    }
-    .ecoSection .lead{
-      font-size:16px; color:#71717a; line-height:1.6;
-      max-width:520px; margin:0 0 48px;
-    }
-    .ecoGrid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:1px;
-      background:#27272a;
-      border:1px solid #27272a;
-      border-radius:12px;
-      overflow:hidden;
-    }
-    .ecoCard{
-      background:#18181b;
-      padding:32px 28px;
-    }
-    .ecoCard .ecoRole{
-      font-family:"JetBrains Mono",monospace;
-      font-size:11px; font-weight:600;
-      text-transform:uppercase; letter-spacing:1px;
-      color:#71717a; margin:0 0 12px;
-    }
-    .ecoCard h3{
-      font-size:20px; font-weight:800;
-      letter-spacing:-.3px; margin:0 0 12px;
-    }
-    .ecoCard p{
-      font-size:14px; color:#a1a1aa; line-height:1.6; margin:0 0 16px;
-    }
-    .ecoCard .ecoSteps{
-      list-style:none; padding:0; margin:0 0 20px;
-      font-size:13px;
-    }
-    .ecoCard .ecoSteps li{
-      padding:6px 0;
-      border-bottom:1px solid #27272a;
-      color:#fafafa;
-      display:flex; align-items:center; gap:10px;
-    }
-    .ecoCard .ecoSteps li:last-child{ border-bottom:none; }
-    .ecoCard .ecoSteps .stepIcon{
-      font-family:"JetBrains Mono",monospace;
-      font-size:11px; color:#22c55e;
-      width:20px; text-align:center; flex-shrink:0;
-    }
-
     /* ── FAQ ── */
     .faqSection{
       border-top:1px solid #27272a;
@@ -574,7 +603,7 @@
       display:inline-flex; align-items:center;
       background:linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
       color:#000;
-      padding:12px 20px; border-radius:8px;
+      padding:12px 24px; border-radius:8px;
       font-weight:600; font-size:14px;
       border:none; cursor:pointer;
       transition:all .2s;
@@ -617,7 +646,7 @@
     @media(max-width:900px){
       .hero{ grid-template-columns:1fr; }
       .heroTerminal{ display:none; }
-      .hero h1{ font-size:48px; letter-spacing:-2px; }
+      .hero h1{ font-size:44px; letter-spacing:-2px; }
       .capList{ grid-template-columns:1fr; }
       .capItem{ border-right:none; }
       .capItem:last-child{ border-bottom:none; }
@@ -625,16 +654,17 @@
       .archStep:nth-child(2){ border-right:none; }
       .archStep:nth-child(-n+2){ border-bottom:1px solid #27272a; }
       .archStep::after{ display:none; }
-      .ecoGrid{ grid-template-columns:1fr; }
       .termGrid{ grid-template-columns:1fr; }
       .sdkGrid{ grid-template-columns:1fr; }
       .faqGrid{ grid-template-columns:1fr; }
       .trustBarInner{ grid-template-columns:1fr 1fr; }
       .trustBarItem:nth-child(2){ border-right:none; }
       .trustBarItem:nth-child(-n+2){ border-bottom:1px solid #27272a; }
+      .problemGrid{ grid-template-columns:1fr; }
+      .whoGrid{ grid-template-columns:1fr 1fr; }
     }
     @media(max-width:600px){
-      .hero h1{ font-size:36px; letter-spacing:-1.5px; }
+      .hero h1{ font-size:32px; letter-spacing:-1.5px; }
       .hero{ padding:60px 20px 48px; }
       .ctaSection h2{ font-size:32px; }
       .archSteps{ grid-template-columns:1fr; }
@@ -644,6 +674,7 @@
       .trustBarItem{ border-right:none; border-bottom:1px solid #27272a; }
       .trustBarItem:last-child{ border-bottom:none; }
       .navLinks span:not(.navCta){ display:none; }
+      .whoGrid{ grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -658,10 +689,9 @@
       </div>
       <div class="navLinks">
         <a href="#capabilities"><span>Capabilities</span></a>
-        <a href="#how"><span>Architecture</span></a>
-        <a href="#ecosystem"><span>Ecosystem</span></a>
-        <a href="#security"><span>Security</span></a>
-        <a href="https://app.saturn-pay.com" class="navCta">Get started</a>
+        <a href="#how"><span>How it works</span></a>
+        <a href="#faq"><span>FAQ</span></a>
+        <a href="https://app.saturn-pay.com" class="navCta">Start building</a>
       </div>
     </div>
   </nav>
@@ -670,19 +700,17 @@
   <section class="hero">
     <div class="heroLeft">
       <h1 class="hero-enter">
-        Give your agent a budget,<br/>
-        <span class="muted">not your API keys.</span>
+        Stop AI agents from <span class="accent">burning money</span> in production.
       </h1>
       <p class="heroCopy hero-enter d1">
-        Saturn is the execution layer for AI agents — routing, auth, policy enforcement, and receipts in one SDK.
-        Call any capability — inference, search, code execution, email — with
-        <strong>hard spend limits, per-call receipts, and zero provider credentials in your runtime.</strong>
+        Hard spend limits. Per-call receipts. Zero API key chaos.
+        <strong>One SDK for inference, search, code execution, and more</strong> — with financial guardrails built in.
       </p>
       <div class="heroActions hero-enter d2">
-        <a href="https://app.saturn-pay.com" class="btnPrimary">Get started</a>
-        <a href="#sdk" class="btnGhost">See the SDK &darr;</a>
+        <a href="https://app.saturn-pay.com" class="btnPrimary">Start building</a>
+        <a href="#how" class="btnGhost">How it works &darr;</a>
       </div>
-      <p class="hero-enter d3" style="margin-top:20px; font-size:13px; color:#71717a;">For agents that browse, reason, execute, and notify — autonomously.</p>
+      <p class="hero-enter d3" style="margin-top:20px; font-size:13px; color:#52525b;">Built for teams shipping agents across multiple providers.</p>
     </div>
 
     <div class="heroTerminal hero-enter d3">
@@ -703,110 +731,106 @@
         <div class="htSep"></div>
 
         <div class="htReceipt"><span class="htKey">total</span> <span class="htVal">$0.031</span></div>
-        <div class="htReceipt"><span class="htKey">calls</span> <span class="htVal">3</span></div>
-        <div class="htReceipt"><span class="htKey">budget used</span> <span class="htVal">3.1%</span></div>
-        <div class="htReceipt"><span class="htKey">policy</span> <span class="htVal">pol_agt_prod_001</span></div>
+        <div class="htReceipt"><span class="htKey">budget used</span> <span class="htVal">3.1% of $1.00/day</span></div>
         <div class="htReceipt"><span class="htKey">status</span> <span class="htVal"><span class="htGreen">within budget</span></span></div>
+
+        <div class="htSep"></div>
+
+        <div class="htLine"><span class="htPrompt">&gt;</span> <span class="htCmd">saturn.<span class="htBlue">reason</span>({ prompt: <span class="htDim">'...'</span> })</span></div>
+        <div class="htResult"><span style="color:#ef4444;">✗</span> <span style="color:#ef4444;">REJECTED</span> — daily limit reached ($1.00)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem Section -->
+  <section class="problemSection reveal">
+    <div class="problemInner">
+      <h2>AI agents call APIs autonomously.<br/>That's the problem.</h2>
+
+      <div class="problemGrid">
+        <div class="problemCard">
+          <h3>What can go wrong</h3>
+          <ul>
+            <li>Agents loop and retry endlessly</li>
+            <li>A bug burns $10k overnight</li>
+            <li>No visibility until the invoice arrives</li>
+            <li>API keys scattered across services</li>
+          </ul>
+        </div>
+        <div class="problemCard solution">
+          <h3>What Saturn gives you</h3>
+          <ul>
+            <li>Hard budget caps enforced per-call</li>
+            <li>Instant receipts with exact costs</li>
+            <li>One API key, all capabilities</li>
+            <li>Kill switch to stop spend instantly</li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="problemCta">If your software can spend money, it needs guardrails.</p>
+    </div>
+  </section>
+
+  <!-- Social Proof -->
+  <div class="socialProof">
+    Built for teams deploying <strong>AI sales agents</strong>, <strong>research bots</strong>, and <strong>autonomous copilots</strong> in production.
+  </div>
+
+  <!-- Who is this for -->
+  <section class="whoSection reveal">
+    <h2>Who is this for?</h2>
+    <div class="whoGrid">
+      <div class="whoCard">
+        <strong>AI startups</strong>
+        Running agents in production
+      </div>
+      <div class="whoCard">
+        <strong>SaaS companies</strong>
+        Deploying copilots to customers
+      </div>
+      <div class="whoCard">
+        <strong>Teams using 3+ providers</strong>
+        Tired of API key sprawl
+      </div>
+      <div class="whoCard">
+        <strong>Founders</strong>
+        Who need cost visibility
       </div>
     </div>
   </section>
 
   <!-- Provider logos carousel -->
   <div class="providersBar">
-    <p class="provLabel">One SDK. Many providers.</p>
+    <p class="provLabel">One SDK. One balance. Multiple providers.</p>
+    <p class="provSub">Stop managing OpenAI, Anthropic, and 8 other API keys separately.</p>
     <div class="providersTrack">
       <div class="providersLogos">
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/></svg>
-          OpenAI
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M17.194 2.926a6.922 6.922 0 0 0-4.398-1.953 6.86 6.86 0 0 0-4.985 1.458l-.04.03 5.69 6.048a.424.424 0 0 0 .543.064l.012-.008 4.373-2.884a.995.995 0 0 0 .197-1.49 7.126 7.126 0 0 0-1.392-1.265zM6.77 3.142l-.033.024a6.924 6.924 0 0 0-2.69 4.96 6.862 6.862 0 0 0 1.142 4.473l.007.01 6.343-3.245a.424.424 0 0 0 .218-.499l-.004-.014L8.5 3.142a.995.995 0 0 0-1.73 0zm13.142 4.674l-.022.032-3.253 6.34a.424.424 0 0 0 .19.564l.014.006 5.709 2.463.024.01a6.922 6.922 0 0 0 1.285-4.846 6.862 6.862 0 0 0-2.234-4.569.995.995 0 0 0-1.713 0zm-8.438 4.596l-6.034 3.09a.424.424 0 0 0-.213.52l.005.015 3.187 6.02c.15.284.467.43.788.37l.02-.005a6.924 6.924 0 0 0 4.093-3.112 6.862 6.862 0 0 0 .86-4.62l-.002-.012-1.032-2.031a.995.995 0 0 0-1.672-.235zm4.87 4.53l-2.028 1.033a.995.995 0 0 0-.235 1.672l6.019 3.187a.424.424 0 0 0 .52-.212l.005-.015.01-.024a6.922 6.922 0 0 0-.484-4.87 6.862 6.862 0 0 0-3.571-2.993l-.013-.003-.022.007a.424.424 0 0 0-.2.218z"/></svg>
-          Anthropic
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M12 0C5.372 0 0 5.373 0 12s5.372 12 12 12 12-5.373 12-12S18.628 0 12 0zm5.894 16.957c-.09.164-.293.225-.454.14l-3.86-2.196c-.164-.09-.293-.306-.293-.487V8.17c0-.18.13-.396.293-.487l3.86-2.196c.16-.09.365-.024.454.14l.75 1.32c.09.163.024.366-.14.454l-2.97 1.69v5.818l2.97 1.69c.164.088.23.29.14.454l-.75 1.32zm-4.588-1.53l-3.859 2.196c-.16.09-.365.024-.454-.14l-.75-1.32c-.09-.163-.024-.366.14-.454l2.97-1.69V8.2l-2.97-1.69c-.164-.088-.23-.29-.14-.454l.75-1.32c.09-.163.293-.225.454-.14l3.86 2.196c.163.09.292.306.292.487v6.244c0 .18-.13.396-.293.487z"/></svg>
-          Serper
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-          Firecrawl
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
-          Jina
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M4.5 11h-2V9H1v6h1.5v-2.5h2V15H6V9H4.5v2zm2.5-.5h1.5V15H10V9H7v1.5zm7-1.5H11v6h3.5v-1.5H12.5v-1h2v-1.5h-2v-1h2V9zm2.5 6h3.5v-1.5H18v-1h2v-1.5h-2v-1h2V9h-3.5v6zM23 9h-3v1.5h1.5v1h-1.5v1h1.5v1H20V15h3V9z"/></svg>
-          E2B
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M12.53.02C13.84 0 15.14.02 16.44 0c.16 1.56.62 3.09 1.54 4.37 1.06 1.49 2.6 2.55 4.28 3.14-.04 1.3-.04 2.6 0 3.9-1.7.53-3.27 1.59-4.36 3.07-.93 1.24-1.44 2.73-1.63 4.25-1.3.02-2.6.01-3.9 0-.19-1.58-.69-3.13-1.63-4.42-1.05-1.5-2.6-2.56-4.28-3.13.03-1.3.03-2.6 0-3.9 1.7-.54 3.27-1.59 4.35-3.07.95-1.27 1.44-2.8 1.59-4.37.87.02 1.74.02 2.61.02zM12 6.87c-1.22.87-2.65 1.5-4.17 1.8.27 1.52.9 2.97 1.86 4.17-.96 1.2-1.59 2.65-1.86 4.17 1.52.3 2.95.93 4.17 1.86 1.22-.93 2.65-1.56 4.17-1.86-.27-1.52-.9-2.97-1.86-4.17.96-1.2 1.59-2.65 1.86-4.17-1.52-.3-2.95-.93-4.17-1.8z"/></svg>
-          Replicate
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-          ElevenLabs
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-          Deepgram
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-          Resend
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M12 0C5.381 0 0 5.381 0 12s5.381 12 12 12 12-5.381 12-12S18.619 0 12 0zm0 3.6c2.34 0 4.245 1.905 4.245 4.245S14.34 12.09 12 12.09s-4.245-1.905-4.245-4.245S9.66 3.6 12 3.6zM12 21c-2.97 0-5.58-1.515-7.11-3.81.045-2.355 4.74-3.645 7.11-3.645s7.065 1.29 7.11 3.645C17.58 19.485 14.97 21 12 21z"/></svg>
-          Twilio
-        </div>
+        <span class="providerLogo">OpenAI</span>
+        <span class="providerLogo">Anthropic</span>
+        <span class="providerLogo">Serper</span>
+        <span class="providerLogo">Firecrawl</span>
+        <span class="providerLogo">Jina</span>
+        <span class="providerLogo">E2B</span>
+        <span class="providerLogo">Replicate</span>
+        <span class="providerLogo">ElevenLabs</span>
+        <span class="providerLogo">Deepgram</span>
+        <span class="providerLogo">Resend</span>
+        <span class="providerLogo">Twilio</span>
       </div>
       <!-- Duplicate for seamless loop -->
       <div class="providersLogos">
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/></svg>
-          OpenAI
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M17.194 2.926a6.922 6.922 0 0 0-4.398-1.953 6.86 6.86 0 0 0-4.985 1.458l-.04.03 5.69 6.048a.424.424 0 0 0 .543.064l.012-.008 4.373-2.884a.995.995 0 0 0 .197-1.49 7.126 7.126 0 0 0-1.392-1.265zM6.77 3.142l-.033.024a6.924 6.924 0 0 0-2.69 4.96 6.862 6.862 0 0 0 1.142 4.473l.007.01 6.343-3.245a.424.424 0 0 0 .218-.499l-.004-.014L8.5 3.142a.995.995 0 0 0-1.73 0zm13.142 4.674l-.022.032-3.253 6.34a.424.424 0 0 0 .19.564l.014.006 5.709 2.463.024.01a6.922 6.922 0 0 0 1.285-4.846 6.862 6.862 0 0 0-2.234-4.569.995.995 0 0 0-1.713 0zm-8.438 4.596l-6.034 3.09a.424.424 0 0 0-.213.52l.005.015 3.187 6.02c.15.284.467.43.788.37l.02-.005a6.924 6.924 0 0 0 4.093-3.112 6.862 6.862 0 0 0 .86-4.62l-.002-.012-1.032-2.031a.995.995 0 0 0-1.672-.235zm4.87 4.53l-2.028 1.033a.995.995 0 0 0-.235 1.672l6.019 3.187a.424.424 0 0 0 .52-.212l.005-.015.01-.024a6.922 6.922 0 0 0-.484-4.87 6.862 6.862 0 0 0-3.571-2.993l-.013-.003-.022.007a.424.424 0 0 0-.2.218z"/></svg>
-          Anthropic
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M12 0C5.372 0 0 5.373 0 12s5.372 12 12 12 12-5.373 12-12S18.628 0 12 0zm5.894 16.957c-.09.164-.293.225-.454.14l-3.86-2.196c-.164-.09-.293-.306-.293-.487V8.17c0-.18.13-.396.293-.487l3.86-2.196c.16-.09.365-.024.454.14l.75 1.32c.09.163.024.366-.14.454l-2.97 1.69v5.818l2.97 1.69c.164.088.23.29.14.454l-.75 1.32zm-4.588-1.53l-3.859 2.196c-.16.09-.365.024-.454-.14l-.75-1.32c-.09-.163-.024-.366.14-.454l2.97-1.69V8.2l-2.97-1.69c-.164-.088-.23-.29-.14-.454l.75-1.32c.09-.163.293-.225.454-.14l3.86 2.196c.163.09.292.306.292.487v6.244c0 .18-.13.396-.293.487z"/></svg>
-          Serper
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-          Firecrawl
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
-          Jina
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M4.5 11h-2V9H1v6h1.5v-2.5h2V15H6V9H4.5v2zm2.5-.5h1.5V15H10V9H7v1.5zm7-1.5H11v6h3.5v-1.5H12.5v-1h2v-1.5h-2v-1h2V9zm2.5 6h3.5v-1.5H18v-1h2v-1.5h-2v-1h2V9h-3.5v6zM23 9h-3v1.5h1.5v1h-1.5v1h1.5v1H20V15h3V9z"/></svg>
-          E2B
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M12.53.02C13.84 0 15.14.02 16.44 0c.16 1.56.62 3.09 1.54 4.37 1.06 1.49 2.6 2.55 4.28 3.14-.04 1.3-.04 2.6 0 3.9-1.7.53-3.27 1.59-4.36 3.07-.93 1.24-1.44 2.73-1.63 4.25-1.3.02-2.6.01-3.9 0-.19-1.58-.69-3.13-1.63-4.42-1.05-1.5-2.6-2.56-4.28-3.13.03-1.3.03-2.6 0-3.9 1.7-.54 3.27-1.59 4.35-3.07.95-1.27 1.44-2.8 1.59-4.37.87.02 1.74.02 2.61.02zM12 6.87c-1.22.87-2.65 1.5-4.17 1.8.27 1.52.9 2.97 1.86 4.17-.96 1.2-1.59 2.65-1.86 4.17 1.52.3 2.95.93 4.17 1.86 1.22-.93 2.65-1.56 4.17-1.86-.27-1.52-.9-2.97-1.86-4.17.96-1.2 1.59-2.65 1.86-4.17-1.52-.3-2.95-.93-4.17-1.8z"/></svg>
-          Replicate
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-          ElevenLabs
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-          Deepgram
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-          Resend
-        </div>
-        <div class="providerLogo">
-          <svg viewBox="0 0 24 24"><path d="M12 0C5.381 0 0 5.381 0 12s5.381 12 12 12 12-5.381 12-12S18.619 0 12 0zm0 3.6c2.34 0 4.245 1.905 4.245 4.245S14.34 12.09 12 12.09s-4.245-1.905-4.245-4.245S9.66 3.6 12 3.6zM12 21c-2.97 0-5.58-1.515-7.11-3.81.045-2.355 4.74-3.645 7.11-3.645s7.065 1.29 7.11 3.645C17.58 19.485 14.97 21 12 21z"/></svg>
-          Twilio
-        </div>
+        <span class="providerLogo">OpenAI</span>
+        <span class="providerLogo">Anthropic</span>
+        <span class="providerLogo">Serper</span>
+        <span class="providerLogo">Firecrawl</span>
+        <span class="providerLogo">Jina</span>
+        <span class="providerLogo">E2B</span>
+        <span class="providerLogo">Replicate</span>
+        <span class="providerLogo">ElevenLabs</span>
+        <span class="providerLogo">Deepgram</span>
+        <span class="providerLogo">Resend</span>
+        <span class="providerLogo">Twilio</span>
       </div>
     </div>
   </div>
@@ -815,105 +839,29 @@
   <div class="trustBar" id="security">
     <div class="trustBarInner">
       <div class="trustBarItem">
-        <strong>Preflight pricing</strong>
-        Exact cost before execution. No reconciliation.
+        <strong>Know the cost before you call</strong>
+        Exact price shown before execution.
       </div>
       <div class="trustBarItem">
-        <strong>Per-call receipts</strong>
-        Receipt with cost, provider, and audit ID on every call.
+        <strong>Receipt on every call</strong>
+        Cost, provider, and audit ID returned.
       </div>
       <div class="trustBarItem">
         <strong>Hard budget caps</strong>
-        Over-budget rejected before touching upstream.
+        Over-budget calls rejected instantly.
       </div>
       <div class="trustBarItem">
-        <strong>Zero provider keys</strong>
-        Agent &rarr; Saturn &rarr; Provider. You never touch upstream auth.
+        <strong>Zero API keys in your code</strong>
+        One Saturn key. We handle the rest.
       </div>
     </div>
   </div>
 
-  <!-- SDK / Terminal -->
-  <section class="termSection reveal" id="sdk">
-    <div class="sectionTag">SDK</div>
-    <h2>npm install. Add credits. Ship.</h2>
-    <p class="lead">No provider signups. No API keys to manage. Just code.</p>
-
-    <div class="sdkGrid">
-
-      <!-- Pane 1: Setup -->
-      <div class="termPane">
-        <div class="termBar">
-          <div class="dots"><span></span><span></span><span></span></div>
-          <div class="fileName">1. setup</div>
-        </div>
-        <pre><span class="cm">// create an agent — no browser needed</span>
-<span class="kw">import</span> { <span class="prop">Saturn</span> } <span class="kw">from</span> <span class="str">'@saturn-pay/sdk'</span>
-
-<span class="kw">const</span> { saturn, apiKey } = <span class="kw">await</span> Saturn.<span class="fn">signup</span>({
-  <span class="prop">name</span>: <span class="str">'research-agent'</span>
-})
-<span class="cm">// save apiKey to .env as SATURN_KEY</span>
-
-<span class="cm">// add credits (Stripe checkout)</span>
-<span class="kw">const</span> { url } = <span class="kw">await</span> saturn.wallet.<span class="fn">fund</span>({
-  <span class="prop">amount</span>: <span class="str">50</span> <span class="cm">// $50 USD</span>
-})
-<span class="cm">// redirect to url → pay by card → done</span></pre>
-      </div>
-
-      <!-- Pane 2: Use -->
-      <div class="termPane">
-        <div class="termBar">
-          <div class="dots"><span></span><span></span><span></span></div>
-          <div class="fileName">2. agent.ts</div>
-        </div>
-        <pre><span class="cm">// every run after setup</span>
-<span class="kw">import</span> { <span class="prop">Saturn</span> } <span class="kw">from</span> <span class="str">'@saturn-pay/sdk'</span>
-
-<span class="kw">const</span> saturn = <span class="kw">new</span> <span class="fn">Saturn</span>({
-  <span class="prop">apiKey</span>: process.env.<span class="prop">SATURN_KEY</span>
-})
-
-<span class="kw">const</span> hits = <span class="kw">await</span> saturn.<span class="fn">search</span>({
-  <span class="prop">query</span>: <span class="str">'AAPL Q4 earnings'</span>
-})
-<span class="kw">const</span> page = <span class="kw">await</span> saturn.<span class="fn">read</span>({
-  <span class="prop">url</span>: hits.data.results[0].url
-})
-<span class="kw">const</span> brief = <span class="kw">await</span> saturn.<span class="fn">reason</span>({
-  <span class="prop">model</span>: <span class="str">'gpt-4.2'</span>,
-  <span class="prop">prompt</span>: <span class="str">`Summarize:\n${page.data.content}`</span>
-})<span class="cursor"></span></pre>
-      </div>
-
-      <!-- Pane 3: Receipt -->
-      <div class="termPane receiptPane">
-        <div class="termBar">
-          <div class="dots"><span></span><span></span><span></span></div>
-          <div class="fileName">3. receipt</div>
-        </div>
-        <div class="receiptHeader">every call returns a receipt</div>
-        <div class="receiptRow"><span class="rKey">capability</span><span class="rVal">reason</span></div>
-        <div class="receiptRow"><span class="rKey">provider</span><span class="rVal">openai</span></div>
-        <div class="receiptRow"><span class="rKey">charged</span><span class="rVal">$0.024</span></div>
-        <div class="receiptRow"><span class="rKey">balance_after</span><span class="rVal">$49.97</span></div>
-        <div class="receiptRow"><span class="rKey">session_total</span><span class="rVal">$0.031 (3 calls)</span></div>
-        <div class="receiptRow"><span class="rKey">policy</span><span class="rVal">pol_agt_prod_001</span></div>
-        <div class="receiptRow"><span class="rKey">budget_remaining</span><span class="rVal">$96.90 / $100.00</span></div>
-        <div class="receiptRow"><span class="rKey">audit_id</span><span class="rVal">aud_7f3k…x9m2</span></div>
-        <div class="receiptRow"><span class="rKey">latency</span><span class="rVal">1,240ms</span></div>
-      </div>
-
-    </div>
-    <p style="text-align:center; margin-top:20px; font-size:13px; color:#71717a;">That's it. No provider signups. No API keys to juggle. Just one SDK.</p>
-  </section>
-
   <!-- Capabilities -->
   <section class="capSection reveal" id="capabilities">
     <div class="sectionTag">Capabilities</div>
-    <h2>Every verb, one SDK.<br/>Saturn picks the provider.</h2>
-    <p class="lead" style="max-width:400px;">Default routing, explicit overrides. You're always in control.</p>
+    <h2>Everything your agent needs.<br/>One SDK.</h2>
+    <p class="lead" style="max-width:500px;">Inference, search, code execution, email, SMS, and more. Saturn routes to the best provider automatically.</p>
 
     <div class="capList">
       <div class="capItem">
@@ -967,69 +915,33 @@
         <span class="who">twilio</span>
       </div>
     </div>
-    <p style="text-align:center; margin-top:24px; font-size:0.9rem; color:#71717a;">Saturn picks the best provider by default. Override with <code style="background:#27272a; padding:2px 6px; border-radius:3px; font-size:0.85rem; color:#a1a1aa;">{ provider: "openai" }</code> on any call.</p>
   </section>
 
   <!-- Architecture -->
   <section class="archSection reveal" id="how">
-    <div class="sectionTag">Architecture</div>
-    <h2>Fund. Call. Enforce. Settle.</h2>
+    <div class="sectionTag">How it works</div>
+    <h2>Add credits. Set limits. Deploy.</h2>
 
     <div class="archSteps">
       <div class="archStep">
         <div class="stepNum">01</div>
-        <h4>Fund your account</h4>
-        <p>Add credits via Stripe. Saturn maintains an internal ledger and issues receipts for every deduction.</p>
+        <h4>Add prepaid credits</h4>
+        <p>Pay with card. No subscriptions, no minimums.</p>
       </div>
       <div class="archStep">
         <div class="stepNum">02</div>
-        <h4>Call a capability</h4>
-        <p>saturn.reason(), .search(), .execute(). One interface, any provider.</p>
+        <h4>Set spend limits</h4>
+        <p>Per-call caps, daily budgets, capability restrictions. You control what agents can do.</p>
       </div>
       <div class="archStep">
         <div class="stepNum">03</div>
-        <h4>Enforce policies</h4>
-        <p>Budget, rate limits, and capability allowlists checked before any upstream call leaves Saturn.</p>
+        <h4>Call any capability</h4>
+        <p>saturn.reason(), .search(), .execute(). One SDK, any provider.</p>
       </div>
       <div class="archStep">
         <div class="stepNum">04</div>
-        <h4>Settle instantly</h4>
-        <p>Credits deducted, receipt issued, audit logged. Single round-trip. No invoices.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Ecosystem -->
-  <section class="ecoSection reveal" id="ecosystem">
-    <div class="sectionTag">Ecosystem</div>
-    <h2>Two sides. One registry.</h2>
-    <p class="lead">Saturn is a curated ecosystem. Operators run agents. Providers supply capabilities. Every integration is reviewed.</p>
-
-    <div class="ecoGrid">
-      <div class="ecoCard">
-        <div class="ecoRole">For agent operators</div>
-        <h3>Run agents with guardrails</h3>
-        <p>Give each agent a Saturn key, a budget, and a policy. Saturn handles auth, routing, and receipts — your agents never touch provider credentials.</p>
-        <ol class="ecoSteps">
-          <li><span class="stepIcon">1</span> Create an account and add credits via Stripe</li>
-          <li><span class="stepIcon">2</span> Set policies — budget caps, rate limits, capability allowlists</li>
-          <li><span class="stepIcon">3</span> Give your agent a SATURN_KEY and deploy</li>
-          <li><span class="stepIcon">4</span> Monitor spend + audit trail per call</li>
-        </ol>
-        <a href="https://app.saturn-pay.com" class="btnPrimary">Get started</a>
-      </div>
-      <div class="ecoCard">
-        <div class="ecoRole">For service providers</div>
-        <h3>Make your API agent-ready</h3>
-        <p>You run an API. Saturn operates it for agents — handling execution, pricing, budget enforcement, and payments. You get paid per call.</p>
-        <ol class="ecoSteps">
-          <li><span class="stepIcon">1</span> Submit your API for review</li>
-          <li><span class="stepIcon">2</span> Saturn reviews and sets up execution + pricing</li>
-          <li><span class="stepIcon">3</span> Your service becomes available as a capability</li>
-          <li><span class="stepIcon">4</span> Agents call it. You get paid per call.</li>
-        </ol>
-        <a href="#faq" class="btnPrimary">Submit a service</a>
-        <a href="https://github.com/saturn-pay/saturn/blob/main/docs/provider-eligibility.md" class="btnGhost" style="margin-left:8px;">Eligibility requirements &rarr;</a>
+        <h4>Get receipts</h4>
+        <p>Every call returns cost, provider, and audit ID. Full visibility.</p>
       </div>
     </div>
   </section>
@@ -1040,35 +952,35 @@
     <div class="faqGrid">
       <div class="faqItem">
         <div class="faqQ">How does billing work?</div>
-        <p class="faqA">Prepaid credits via Stripe. Add funds to your account, agents spend them per-call. Sub-cent pricing, real-time deductions, no surprise invoices at month-end.</p>
+        <p class="faqA">Prepaid credits via card. Add credits to your account, agents spend them per-call. Sub-cent pricing, real-time deductions, no surprise invoices.</p>
       </div>
       <div class="faqItem">
-        <div class="faqQ">Is Saturn a marketplace?</div>
-        <p class="faqA">No. Saturn is a curated registry. Providers submit services for review — they don't self-list. Every integration is vetted before agents can call it.</p>
+        <div class="faqQ">What happens if my agent exceeds its budget?</div>
+        <p class="faqA">The call is rejected before it touches any upstream provider. Your agent gets an error, not a bill.</p>
       </div>
       <div class="faqItem">
-        <div class="faqQ">Can I submit my own API?</div>
-        <p class="faqA">Yes. Submit your service for review. If approved, Saturn operates it — handles execution, pricing, enforcement, and payments. You get paid per call. <a href="https://github.com/saturn-pay/saturn/blob/main/docs/provider-eligibility.md">See eligibility requirements &rarr;</a></p>
-      </div>
-      <div class="faqItem">
-        <div class="faqQ">Who controls execution?</div>
-        <p class="faqA">Saturn. Every call is policy-checked, budget-enforced, and audited before it touches upstream. Saturn is not an API gateway — it owns the full call lifecycle.</p>
+        <div class="faqQ">Can I set different limits for different agents?</div>
+        <p class="faqA">Yes. Each agent gets its own API key and policy — per-call limits, daily caps, and capability restrictions.</p>
       </div>
       <div class="faqItem">
         <div class="faqQ">What does a call cost?</div>
-        <p class="faqA">Per-call, per-capability, per-provider. You see the exact price before every call. No monthly minimums, no subscriptions.</p>
+        <p class="faqA">Per-call, per-capability. Costs track upstream pricing plus a small Saturn margin. You see the exact price before every call.</p>
       </div>
       <div class="faqItem">
-        <div class="faqQ">Is Saturn a wallet?</div>
-        <p class="faqA">No. Saturn maintains an internal ledger. You add credits, agents spend them, every deduction produces a receipt. It's a spend balance, not a wallet.</p>
+        <div class="faqQ">Do I need to sign up with each provider?</div>
+        <p class="faqA">No. Saturn handles all provider credentials. You just use one Saturn API key.</p>
       </div>
       <div class="faqItem">
-        <div class="faqQ">Does Saturn custody funds?</div>
-        <p class="faqA">Saturn maintains a prepaid credit balance. Funds are only spendable through Saturn's policy engine on capability calls. Agents cannot withdraw funds.</p>
+        <div class="faqQ">Can I override the default provider?</div>
+        <p class="faqA">Yes. Use <code style="background:#27272a; padding:2px 6px; border-radius:3px; font-size:0.85rem;">saturn.reason({ ..., provider: "anthropic" })</code> to specify your preference.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">Is there a kill switch?</div>
+        <p class="faqA">Yes. One click in the dashboard stops all spend for an agent instantly.</p>
       </div>
       <div class="faqItem">
         <div class="faqQ">Can I run Saturn myself?</div>
-        <p class="faqA">Yes. Saturn is source-available under the Business Source License. Self-hosting requires managing your own provider credentials and payment processing. See the <a href="https://github.com/saturn-pay/saturn">GitHub repo</a> for setup instructions.</p>
+        <p class="faqA">Yes — you can self-host. Hosted Saturn includes managed routing, pricing, and guardrails. Self-hosting is for teams that want full control. See the <a href="https://github.com/saturn-pay/saturn">GitHub repo</a>.</p>
       </div>
     </div>
   </section>
@@ -1076,8 +988,8 @@
   <!-- CTA -->
   <section class="ctaSection" id="access">
     <h2>Deploy agents with<br/>hard spend limits.</h2>
-    <p>Create an agent. Add credits. Start calling.</p>
-    <a href="https://app.saturn-pay.com" class="btnWhite" style="display:inline-flex;text-decoration:none;">Get started</a>
+    <p>Create an account &rarr; add prepaid credits &rarr; get your API key.</p>
+    <a href="https://app.saturn-pay.com" class="btnWhite" style="display:inline-flex;text-decoration:none;">Start building</a>
   </section>
 
   <footer>&copy; <span id="year"></span> Saturn</footer>
