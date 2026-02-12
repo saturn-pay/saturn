@@ -726,11 +726,11 @@
     </div>
   </section>
 
-  <!-- Guarantees Section (NEW) -->
+  <!-- Runtime Enforcement -->
   <section class="guaranteesSection reveal" id="guarantees">
-    <div class="sectionTag">Guarantees</div>
-    <h2>Enforcement at runtime.</h2>
-    <p class="lead">Policy checks happen before execution. Over-budget calls never reach upstream providers.</p>
+    <div class="sectionTag">Runtime Enforcement</div>
+    <h2>Financial controls enforced before execution.</h2>
+    <p class="lead">Budget checks happen before upstream calls. Over-limit requests fail closed.</p>
 
     <div class="guaranteesGrid">
       <div class="guaranteeCard">
@@ -756,7 +756,7 @@
   <section class="archSection reveal" id="how">
     <div class="sectionTag">How it works</div>
     <h2>Add credits. Set limits. Deploy.</h2>
-    <p class="lead">Policy checks happen before execution. Calls that fail policy never reach upstream providers.</p>
+    <p class="lead">Add credits. Define policy. Deploy. Enforcement happens automatically.</p>
 
     <div class="archSteps">
       <div class="archStep">
@@ -785,8 +785,8 @@
   <!-- Integration -->
   <section class="archSection reveal" id="integration" style="padding-top:40px;">
     <div class="sectionTag">Integration</div>
-    <h2>One call in. Policy enforced.</h2>
-    <p class="lead">Set caps once. Saturn estimates cost, checks policy, and either executes or rejects before upstream spend.</p>
+    <h2>Single integration. Enforced everywhere.</h2>
+    <p class="lead">Replace provider SDKs with one Saturn SDK. Policy applies to every call.</p>
 
     <div class="heroTerminal" style="max-width:900px; margin:0 auto;">
       <div class="htBar">
@@ -825,33 +825,10 @@
     </div>
   </div>
 
-  <!-- Who is this for -->
-  <section class="whoSection reveal">
-    <h2>Who is this for?</h2>
-    <div class="whoGrid">
-      <div class="whoCard">
-        <strong>Agent startups</strong>
-        Running autonomous workflows in production
-      </div>
-      <div class="whoCard">
-        <strong>SaaS copilots</strong>
-        Multi-tenant spend boundaries per customer
-      </div>
-      <div class="whoCard">
-        <strong>Infra / platform teams</strong>
-        One policy layer across providers
-      </div>
-      <div class="whoCard">
-        <strong>Security / compliance</strong>
-        Audit trail + kill switches
-      </div>
-    </div>
-  </section>
-
   <!-- Provider logos carousel -->
   <div class="providersBar">
-    <p class="provLabel">One policy layer across every provider.</p>
-    <p class="provSub">Set caps once. Every call is checked before execution — regardless of vendor.</p>
+    <p class="provLabel">Enforcement across the providers you already use.</p>
+    <p class="provSub">Same policy. Same receipts. Same guarantees.</p>
     <div class="providersTrack">
       <div class="providersLogos">
         <span class="providerLogo">OpenAI</span>
@@ -883,7 +860,77 @@
     </div>
   </div>
 
-  <!-- Capabilities (demoted) -->
+  <!-- Built for production -->
+  <section class="whoSection reveal">
+    <h2>Built for production environments.</h2>
+    <div class="whoGrid">
+      <div class="whoCard">
+        <strong>Agent startups</strong>
+        Running autonomous workflows in production
+      </div>
+      <div class="whoCard">
+        <strong>SaaS platforms</strong>
+        Per-tenant spend boundaries
+      </div>
+      <div class="whoCard">
+        <strong>Platform / infra teams</strong>
+        Centralized policy across providers
+      </div>
+      <div class="whoCard">
+        <strong>Security & compliance</strong>
+        Audit trails and runtime controls
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faqSection reveal" id="faq">
+    <h2>FAQ</h2>
+    <div class="faqGrid">
+      <div class="faqItem">
+        <div class="faqQ">What happens if my agent exceeds its budget?</div>
+        <p class="faqA">The call is rejected before it touches any upstream provider. Your agent gets an error, not a bill.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">What happens if Saturn is down?</div>
+        <p class="faqA">Fail closed by default. If Saturn is unreachable, calls are rejected. Configurable for sandbox/dev environments.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">How does billing work?</div>
+        <p class="faqA">Prepaid credits via card. Add credits to your account, agents spend them per-call. Sub-cent pricing, real-time deductions, no surprise invoices.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">What's the latency overhead?</div>
+        <p class="faqA">Policy checks typically add low-tens of milliseconds — negligible compared to upstream provider latency.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">Can I set different limits for different agents?</div>
+        <p class="faqA">Yes. Each agent gets its own API key and policy — per-call limits, daily caps, and capability restrictions.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">How do you estimate cost before execution?</div>
+        <p class="faqA">We estimate based on provider pricing + request shape (model, token count). Settle on actuals after execution. Refund if overestimated.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">Do I need to sign up with each provider?</div>
+        <p class="faqA">No. Saturn handles all provider credentials. You just use one Saturn API key.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">Is there a kill switch?</div>
+        <p class="faqA">Yes. One click in the dashboard stops all spend for an agent instantly.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">Can I override the default provider?</div>
+        <p class="faqA">Yes. Use <code style="background:#27272a; padding:2px 6px; border-radius:3px; font-size:0.85rem;">saturn.reason({ ..., provider: "anthropic" })</code> to specify your preference.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">Can I run Saturn myself?</div>
+        <p class="faqA">Yes — you can self-host. Hosted Saturn includes managed routing, pricing, and guardrails. Self-hosting is for teams that want full control. See the <a href="https://github.com/saturn-pay/saturn">GitHub repo</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Capabilities -->
   <section class="capSection reveal" id="capabilities">
     <div class="sectionTag">Capabilities</div>
     <h2>Common agent capabilities.</h2>
@@ -943,57 +990,10 @@
     </div>
   </section>
 
-  <!-- FAQ -->
-  <section class="faqSection reveal" id="faq">
-    <h2>FAQ</h2>
-    <div class="faqGrid">
-      <div class="faqItem">
-        <div class="faqQ">What happens if my agent exceeds its budget?</div>
-        <p class="faqA">The call is rejected before it touches any upstream provider. Your agent gets an error, not a bill.</p>
-      </div>
-      <div class="faqItem">
-        <div class="faqQ">What happens if Saturn is down?</div>
-        <p class="faqA">Fail closed by default. If Saturn is unreachable, calls are rejected. Configurable for sandbox/dev environments.</p>
-      </div>
-      <div class="faqItem">
-        <div class="faqQ">How does billing work?</div>
-        <p class="faqA">Prepaid credits via card. Add credits to your account, agents spend them per-call. Sub-cent pricing, real-time deductions, no surprise invoices.</p>
-      </div>
-      <div class="faqItem">
-        <div class="faqQ">What's the latency overhead?</div>
-        <p class="faqA">Policy checks typically add low-tens of milliseconds — negligible compared to upstream provider latency.</p>
-      </div>
-      <div class="faqItem">
-        <div class="faqQ">Can I set different limits for different agents?</div>
-        <p class="faqA">Yes. Each agent gets its own API key and policy — per-call limits, daily caps, and capability restrictions.</p>
-      </div>
-      <div class="faqItem">
-        <div class="faqQ">How do you estimate cost before execution?</div>
-        <p class="faqA">We estimate based on provider pricing + request shape (model, token count). Settle on actuals after execution. Refund if overestimated.</p>
-      </div>
-      <div class="faqItem">
-        <div class="faqQ">Do I need to sign up with each provider?</div>
-        <p class="faqA">No. Saturn handles all provider credentials. You just use one Saturn API key.</p>
-      </div>
-      <div class="faqItem">
-        <div class="faqQ">Is there a kill switch?</div>
-        <p class="faqA">Yes. One click in the dashboard stops all spend for an agent instantly.</p>
-      </div>
-      <div class="faqItem">
-        <div class="faqQ">Can I override the default provider?</div>
-        <p class="faqA">Yes. Use <code style="background:#27272a; padding:2px 6px; border-radius:3px; font-size:0.85rem;">saturn.reason({ ..., provider: "anthropic" })</code> to specify your preference.</p>
-      </div>
-      <div class="faqItem">
-        <div class="faqQ">Can I run Saturn myself?</div>
-        <p class="faqA">Yes — you can self-host. Hosted Saturn includes managed routing, pricing, and guardrails. Self-hosting is for teams that want full control. See the <a href="https://github.com/saturn-pay/saturn">GitHub repo</a>.</p>
-      </div>
-    </div>
-  </section>
-
   <!-- CTA -->
   <section class="ctaSection" id="access">
-    <h2>Deploy agents with<br/>hard spend limits.</h2>
-    <p>Create an account &rarr; add prepaid credits &rarr; get your API key.</p>
+    <h2>Make autonomous software<br/>financially safe.</h2>
+    <p>Add prepaid credits. Define policy. Deploy with guardrails.</p>
     <a href="https://app.saturn-pay.com" class="btnWhite" style="display:inline-flex;text-decoration:none;">Start building</a>
   </section>
 
