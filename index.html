@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Saturn — Financial guardrails for AI agents</title>
-  <meta name="description" content="Stop AI agents from burning money in production. Hard spend limits, per-call receipts, zero API key chaos." />
+  <meta name="description" content="Stop AI agents from burning money in production. Hard spend limits enforced before execution, per-call receipts, kill switch." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -150,6 +150,9 @@
     .htTyping > :nth-child(11){ animation-delay:3.45s; }
     .htTyping > :nth-child(12){ animation-delay:3.6s; }
     .htTyping > :nth-child(13){ animation-delay:3.75s; }
+    .htTyping > :nth-child(14){ animation-delay:3.9s; }
+    .htTyping > :nth-child(15){ animation-delay:4.05s; }
+    .htTyping > :nth-child(16){ animation-delay:4.2s; }
     @keyframes htReveal{
       from{ opacity:0; transform:translateY(4px); }
       to{ opacity:1; transform:translateY(0); }
@@ -157,6 +160,13 @@
     .heroCopy{
       margin:28px 0 0;
       font-size:18px; color:#a1a1aa;
+      line-height:1.6;
+      max-width:540px;
+    }
+    .heroSubcopy{
+      margin:12px 0 0;
+      font-size:14px;
+      color:#71717a;
       line-height:1.6;
       max-width:540px;
     }
@@ -244,14 +254,75 @@
       margin:32px 0 0;
     }
 
-    /* ── Social Proof ── */
-    .socialProof{
+    /* ── Guarantees Section ── */
+    .guaranteesSection{
       border-top:1px solid #27272a;
-      padding:32px;
-      text-align:center;
-      font-size:14px; color:#71717a;
+      padding:80px 32px;
+      max-width:1200px; margin:0 auto;
     }
-    .socialProof strong{ color:#a1a1aa; }
+    .guaranteesSection .sectionTag{
+      font-family:"JetBrains Mono",monospace;
+      font-size:13px; font-weight:500;
+      color:#71717a; margin:0 0 16px;
+      text-transform:uppercase; letter-spacing:1px;
+    }
+    .guaranteesSection h2{
+      font-size:40px; font-weight:800;
+      letter-spacing:-1.5px; line-height:1.1;
+      margin:0 0 12px;
+    }
+    .guaranteesSection .lead{
+      font-size:15px; color:#71717a; line-height:1.6;
+      margin:0 0 40px;
+      max-width:560px;
+    }
+    .guaranteesGrid{
+      display:grid;
+      grid-template-columns:repeat(4, 1fr);
+      gap:0;
+      border:1px solid #27272a;
+      border-radius:12px;
+      overflow:hidden;
+    }
+    .guaranteeCard{
+      padding:28px 24px;
+      border-right:1px solid #27272a;
+      background:#09090b;
+      transition:background .15s;
+    }
+    .guaranteeCard:last-child{ border-right:none; }
+    .guaranteeCard:hover{ background:#18181b; }
+    .guaranteeCard h4{
+      font-size:15px; font-weight:700;
+      margin:0 0 8px;
+      color:#fafafa;
+    }
+    .guaranteeCard p{
+      font-size:13px; color:#71717a; line-height:1.55; margin:0;
+    }
+
+    /* ── Trust bar ── */
+    .trustBar{
+      border-top:1px solid #27272a;
+      border-bottom:1px solid #27272a;
+      padding:0;
+      background:#09090b;
+    }
+    .trustBarInner{
+      display:grid; grid-template-columns:repeat(4,1fr);
+      max-width:1200px; margin:0 auto;
+    }
+    .trustBarItem{
+      padding:20px 32px;
+      border-right:1px solid #27272a;
+      font-size:13px; color:#71717a;
+    }
+    .trustBarItem:last-child{ border-right:none; }
+    .trustBarItem strong{
+      display:block;
+      font-size:14px; color:#fafafa; font-weight:600;
+      margin:0 0 2px;
+    }
 
     /* ── Who is this for ── */
     .whoSection{
@@ -299,6 +370,7 @@
     }
     .providersBar .provSub{
       font-size:14px; color:#71717a; margin:0 0 24px;
+      max-width:500px; margin-left:auto; margin-right:auto;
     }
     .providersTrack{
       display:flex;
@@ -329,170 +401,6 @@
     @media(max-width:600px){
       .providersLogos{ gap:32px; }
       .providerLogo{ font-size:13px; }
-      .providerLogo svg{ width:20px; height:20px; }
-    }
-
-    /* ── Trust bar ── */
-    .trustBar{
-      border-top:1px solid #27272a;
-      border-bottom:1px solid #27272a;
-      padding:0;
-      background:#09090b;
-    }
-    .trustBarInner{
-      display:grid; grid-template-columns:repeat(4,1fr);
-      max-width:1200px; margin:0 auto;
-    }
-    .trustBarItem{
-      padding:20px 32px;
-      border-right:1px solid #27272a;
-      font-size:13px; color:#71717a;
-    }
-    .trustBarItem:last-child{ border-right:none; }
-    .trustBarItem strong{
-      display:block;
-      font-size:14px; color:#fafafa; font-weight:600;
-      margin:0 0 2px;
-    }
-
-    /* ── Terminal block ── */
-    .termSection{
-      padding:80px 32px;
-      max-width:1200px; margin:0 auto;
-    }
-    .termSection .sectionTag{
-      font-family:"JetBrains Mono",monospace;
-      font-size:13px; font-weight:500;
-      color:#71717a; margin:0 0 16px;
-      text-transform:uppercase; letter-spacing:1px;
-    }
-    .termSection h2{
-      font-size:40px; font-weight:800;
-      letter-spacing:-1.5px; line-height:1.1;
-      margin:0 0 12px;
-    }
-    .termSection .lead{
-      font-size:16px; color:#71717a; line-height:1.6;
-      max-width:480px; margin:0 0 40px;
-    }
-    .termGrid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:1px;
-      background:#27272a;
-      border:1px solid #27272a;
-      border-radius:12px;
-      overflow:hidden;
-      box-shadow:0 0 40px rgba(0,0,0,.5);
-    }
-    .termPane{
-      background:#0a0a0a;
-      padding:0;
-    }
-    .termBar{
-      display:flex; align-items:center; gap:8px;
-      padding:12px 20px;
-      border-bottom:1px solid #27272a;
-      font-family:"JetBrains Mono",monospace;
-      font-size:12px; color:#71717a;
-      background:#18181b;
-    }
-    .termBar .dots{ display:flex; gap:6px; }
-    .termBar .dots span{ width:10px; height:10px; border-radius:50%; background:#3f3f46; }
-    .termBar .fileName{ margin-left:12px; }
-    pre{
-      margin:0; padding:24px;
-      font-family:"JetBrains Mono",monospace;
-      font-size:13px; line-height:1.8;
-      color:#fafafa;
-      overflow-x:auto;
-      background:#0a0a0a;
-    }
-    pre .cm{ color:#52525b; }
-    pre .kw{ color:#f472b6; }
-    pre .str{ color:#22c55e; }
-    pre .fn{ color:#a78bfa; }
-    pre .prop{ color:#3b82f6; }
-    pre .dim{ color:#52525b; }
-    .cursor{
-      display:inline-block;
-      width:8px; height:16px;
-      background:#22c55e;
-      vertical-align:text-bottom;
-      animation:blink .8s step-end infinite;
-    }
-    @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:0;} }
-
-    /* Receipt pane */
-    .receiptPane{ font-family:"JetBrains Mono",monospace; }
-    .receiptPane .receiptRow{
-      display:flex; justify-content:space-between;
-      padding:8px 24px;
-      font-size:12px;
-      border-bottom:1px solid #27272a;
-    }
-    .receiptPane .receiptRow:last-child{ border-bottom:none; }
-    .receiptPane .receiptRow .rKey{ color:#71717a; }
-    .receiptPane .receiptRow .rVal{ color:#fafafa; font-weight:500; }
-    .receiptPane .receiptHeader{
-      padding:12px 24px 8px;
-      font-size:11px; font-weight:600;
-      color:#71717a; text-transform:uppercase; letter-spacing:1px;
-    }
-
-    /* ── Capabilities ── */
-    .capSection{
-      border-top:1px solid #27272a;
-      padding:80px 32px;
-      max-width:1200px; margin:0 auto;
-    }
-    .capSection .sectionTag{
-      font-family:"JetBrains Mono",monospace;
-      font-size:13px; font-weight:500;
-      color:#71717a; margin:0 0 16px;
-      text-transform:uppercase; letter-spacing:1px;
-    }
-    .capSection h2{
-      font-size:40px; font-weight:800;
-      letter-spacing:-1.5px; line-height:1.1;
-      margin:0 0 12px;
-    }
-    .capSection .lead{
-      font-size:15px; color:#71717a; line-height:1.6;
-      margin:0 0 40px;
-    }
-    .capList{
-      display:grid;
-      grid-template-columns:repeat(2,1fr);
-      gap:0;
-      border:1px solid #27272a;
-      border-radius:12px;
-      overflow:hidden;
-      background:#27272a;
-    }
-    .capItem{
-      padding:24px 28px;
-      border-bottom:1px solid #27272a;
-      border-right:1px solid #27272a;
-      display:flex; align-items:baseline; gap:16px;
-      transition:background .15s;
-      background:#09090b;
-    }
-    .capItem:hover{ background:#18181b; }
-    .capItem:nth-child(2n){ border-right:none; }
-    .capItem:nth-last-child(-n+2){ border-bottom:none; }
-    .capItem .verb{
-      font-family:"JetBrains Mono",monospace;
-      font-size:14px; font-weight:600; color:#22c55e;
-      flex-shrink:0; width:100px;
-    }
-    .capItem .what{
-      font-size:14px; color:#a1a1aa; flex:1;
-    }
-    .capItem .who{
-      font-size:12px; color:#52525b;
-      font-family:"JetBrains Mono",monospace;
-      flex-shrink:0;
     }
 
     /* ── Architecture ── */
@@ -510,7 +418,11 @@
     .archSection h2{
       font-size:40px; font-weight:800;
       letter-spacing:-1.5px; line-height:1.1;
-      margin:0 0 48px;
+      margin:0 0 12px;
+    }
+    .archSection .lead{
+      font-size:15px; color:#71717a; line-height:1.6;
+      margin:0 0 40px;
     }
     .archSteps{
       display:grid;
@@ -552,6 +464,61 @@
       padding:4px 0;
     }
 
+    /* ── Capabilities ── */
+    .capSection{
+      border-top:1px solid #27272a;
+      padding:80px 32px;
+      max-width:1200px; margin:0 auto;
+    }
+    .capSection .sectionTag{
+      font-family:"JetBrains Mono",monospace;
+      font-size:13px; font-weight:500;
+      color:#71717a; margin:0 0 16px;
+      text-transform:uppercase; letter-spacing:1px;
+    }
+    .capSection h2{
+      font-size:32px; font-weight:700;
+      letter-spacing:-1px; line-height:1.1;
+      margin:0 0 12px;
+    }
+    .capSection .lead{
+      font-size:14px; color:#71717a; line-height:1.6;
+      margin:0 0 32px;
+    }
+    .capList{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:0;
+      border:1px solid #27272a;
+      border-radius:12px;
+      overflow:hidden;
+      background:#27272a;
+    }
+    .capItem{
+      padding:20px 24px;
+      border-bottom:1px solid #27272a;
+      border-right:1px solid #27272a;
+      display:flex; align-items:baseline; gap:16px;
+      transition:background .15s;
+      background:#09090b;
+    }
+    .capItem:hover{ background:#18181b; }
+    .capItem:nth-child(2n){ border-right:none; }
+    .capItem:nth-last-child(-n+2){ border-bottom:none; }
+    .capItem .verb{
+      font-family:"JetBrains Mono",monospace;
+      font-size:13px; font-weight:600; color:#22c55e;
+      flex-shrink:0; width:90px;
+    }
+    .capItem .what{
+      font-size:13px; color:#a1a1aa; flex:1;
+    }
+    .capItem .who{
+      font-size:11px; color:#52525b;
+      font-family:"JetBrains Mono",monospace;
+      flex-shrink:0;
+    }
+
     /* ── FAQ ── */
     .faqSection{
       border-top:1px solid #27272a;
@@ -587,18 +554,6 @@
     .ctaSection p{
       font-size:16px; color:#71717a; margin:0 0 36px;
     }
-    .ctaRow{
-      display:flex; gap:8px; justify-content:center;
-    }
-    .ctaRow input{
-      width:280px; padding:12px 16px;
-      border:1px solid #27272a; border-radius:8px;
-      background:#09090b; color:#fafafa;
-      font-size:14px; outline:none;
-      transition:border-color .15s;
-    }
-    .ctaRow input:focus{ border-color:#22c55e; box-shadow:0 0 0 2px rgba(34,197,94,.2); }
-    .ctaRow input::placeholder{ color:#52525b; }
     .btnWhite{
       display:inline-flex; align-items:center;
       background:linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
@@ -633,15 +588,6 @@
       to{ opacity:1; transform:translateY(0); }
     }
 
-    /* ── SDK 3-pane grid ── */
-    .sdkGrid{
-      display:grid; grid-template-columns:1fr 1fr 1fr;
-      gap:1px; background:#27272a;
-      border:1px solid #27272a; border-radius:12px;
-      overflow:hidden;
-      box-shadow:0 0 40px rgba(0,0,0,.5);
-    }
-
     /* ── Responsive ── */
     @media(max-width:900px){
       .hero{ grid-template-columns:1fr; }
@@ -654,14 +600,15 @@
       .archStep:nth-child(2){ border-right:none; }
       .archStep:nth-child(-n+2){ border-bottom:1px solid #27272a; }
       .archStep::after{ display:none; }
-      .termGrid{ grid-template-columns:1fr; }
-      .sdkGrid{ grid-template-columns:1fr; }
       .faqGrid{ grid-template-columns:1fr; }
       .trustBarInner{ grid-template-columns:1fr 1fr; }
       .trustBarItem:nth-child(2){ border-right:none; }
       .trustBarItem:nth-child(-n+2){ border-bottom:1px solid #27272a; }
       .problemGrid{ grid-template-columns:1fr; }
       .whoGrid{ grid-template-columns:1fr 1fr; }
+      .guaranteesGrid{ grid-template-columns:1fr 1fr; }
+      .guaranteeCard:nth-child(2){ border-right:none; }
+      .guaranteeCard:nth-child(-n+2){ border-bottom:1px solid #27272a; }
     }
     @media(max-width:600px){
       .hero h1{ font-size:32px; letter-spacing:-1.5px; }
@@ -675,6 +622,9 @@
       .trustBarItem:last-child{ border-bottom:none; }
       .navLinks span:not(.navCta){ display:none; }
       .whoGrid{ grid-template-columns:1fr; }
+      .guaranteesGrid{ grid-template-columns:1fr; }
+      .guaranteeCard{ border-right:none; border-bottom:1px solid #27272a; }
+      .guaranteeCard:last-child{ border-bottom:none; }
     }
   </style>
 </head>
@@ -688,8 +638,9 @@
         Saturn
       </div>
       <div class="navLinks">
-        <a href="#capabilities"><span>Capabilities</span></a>
         <a href="#how"><span>How it works</span></a>
+        <a href="#integration"><span>Integration</span></a>
+        <a href="#guarantees"><span>Guarantees</span></a>
         <a href="#faq"><span>FAQ</span></a>
         <a href="https://app.saturn-pay.com" class="navCta">Start building</a>
       </div>
@@ -703,14 +654,16 @@
         Stop AI agents from <span class="accent">burning money</span> in production.
       </h1>
       <p class="heroCopy hero-enter d1">
-        Hard spend limits. Per-call receipts. Zero API key chaos.
-        <strong>One SDK for inference, search, code execution, and more</strong> — with financial guardrails built in.
+        <strong>Hard caps enforced before execution.</strong> Per-call receipts. Kill switch. Zero API key chaos.
+      </p>
+      <p class="heroSubcopy hero-enter d1">
+        One Saturn key for common agent capabilities — guardrails apply to every call.
       </p>
       <div class="heroActions hero-enter d2">
         <a href="https://app.saturn-pay.com" class="btnPrimary">Start building</a>
         <a href="#how" class="btnGhost">How it works &darr;</a>
       </div>
-      <p class="hero-enter d3" style="margin-top:20px; font-size:13px; color:#52525b;">Built for teams shipping agents across multiple providers.</p>
+      <p class="hero-enter d3" style="margin-top:20px; font-size:13px; color:#52525b;">Built for production agents — per-agent limits, receipts, and kill switches.</p>
     </div>
 
     <div class="heroTerminal hero-enter d3">
@@ -719,25 +672,26 @@
         <span class="htLabel">agent session</span>
       </div>
       <div class="htBody htTyping">
-        <div class="htLine"><span class="htPrompt">&gt;</span> <span class="htCmd">saturn.<span class="htBlue">search</span>({ query: <span class="htDim">'AAPL Q4 earnings'</span> })</span></div>
-        <div class="htResult"><span class="htGreen">&#10003;</span> 10 results &middot; $0.003</div>
-
-        <div class="htLine"><span class="htPrompt">&gt;</span> <span class="htCmd">saturn.<span class="htBlue">read</span>({ url: results[0].url })</span></div>
-        <div class="htResult"><span class="htGreen">&#10003;</span> 4,200 words extracted &middot; $0.004</div>
-
-        <div class="htLine"><span class="htPrompt">&gt;</span> <span class="htCmd">saturn.<span class="htBlue">reason</span>({ prompt: <span class="htDim">'Summarize...'</span> })</span></div>
+        <div class="htLine"><span class="htPrompt">&gt;</span> <span class="htCmd">saturn.<span class="htBlue">reason</span>({ prompt: <span class="htDim">'Summarize Q4 earnings...'</span> })</span></div>
         <div class="htResult"><span class="htGreen">&#10003;</span> 280 tokens &middot; $0.024</div>
 
         <div class="htSep"></div>
 
-        <div class="htReceipt"><span class="htKey">total</span> <span class="htVal">$0.031</span></div>
-        <div class="htReceipt"><span class="htKey">budget used</span> <span class="htVal">3.1% of $1.00/day</span></div>
-        <div class="htReceipt"><span class="htKey">status</span> <span class="htVal"><span class="htGreen">within budget</span></span></div>
+        <div class="htReceipt"><span class="htKey">estimated</span> <span class="htVal">$0.026</span></div>
+        <div class="htReceipt"><span class="htKey">charged</span> <span class="htVal">$0.024</span></div>
+        <div class="htReceipt"><span class="htKey">daily used</span> <span class="htVal">$0.89 of $5.00</span></div>
+        <div class="htReceipt"><span class="htKey">policy</span> <span class="htVal"><span class="htGreen">ALLOW</span></span></div>
 
         <div class="htSep"></div>
 
-        <div class="htLine"><span class="htPrompt">&gt;</span> <span class="htCmd">saturn.<span class="htBlue">reason</span>({ prompt: <span class="htDim">'...'</span> })</span></div>
-        <div class="htResult"><span style="color:#ef4444;">✗</span> <span style="color:#ef4444;">REJECTED</span> — daily limit reached ($1.00)</div>
+        <div class="htLine"><span class="htPrompt">&gt;</span> <span class="htCmd">saturn.<span class="htBlue">reason</span>({ prompt: <span class="htDim">'Analyze 200-page PDF...'</span> })</span></div>
+        <div class="htResult"><span style="color:#ef4444;">✗</span> <span style="color:#ef4444;">REJECTED</span> — would exceed daily cap ($5.00)</div>
+
+        <div class="htSep"></div>
+
+        <div class="htReceipt"><span class="htKey">estimated</span> <span class="htVal">$4.80</span></div>
+        <div class="htReceipt"><span class="htKey">charged</span> <span class="htVal">$0.00</span></div>
+        <div class="htReceipt"><span class="htKey">policy</span> <span class="htVal"><span style="color:#ef4444;">REJECT (DAILY_CAP)</span></span></div>
       </div>
     </div>
   </section>
@@ -751,18 +705,18 @@
         <div class="problemCard">
           <h3>What can go wrong</h3>
           <ul>
-            <li>Agents loop and retry endlessly</li>
             <li>A bug burns $10k overnight</li>
-            <li>No visibility until the invoice arrives</li>
-            <li>API keys scattered across services</li>
+            <li>Agents loop and retry endlessly</li>
+            <li>No hard stop before execution</li>
+            <li>You discover costs on the invoice (days later)</li>
           </ul>
         </div>
         <div class="problemCard solution">
           <h3>What Saturn gives you</h3>
           <ul>
             <li>Hard budget caps enforced per-call</li>
+            <li>Calls rejected before touching providers</li>
             <li>Instant receipts with exact costs</li>
-            <li>One API key, all capabilities</li>
             <li>Kill switch to stop spend instantly</li>
           </ul>
         </div>
@@ -772,9 +726,103 @@
     </div>
   </section>
 
-  <!-- Social Proof -->
-  <div class="socialProof">
-    Built for teams deploying <strong>AI sales agents</strong>, <strong>research bots</strong>, and <strong>autonomous copilots</strong> in production.
+  <!-- Guarantees Section (NEW) -->
+  <section class="guaranteesSection reveal" id="guarantees">
+    <div class="sectionTag">Guarantees</div>
+    <h2>Enforcement at runtime.</h2>
+    <p class="lead">Policy checks happen before execution. Over-budget calls never reach upstream providers.</p>
+
+    <div class="guaranteesGrid">
+      <div class="guaranteeCard">
+        <h4>Fail closed</h4>
+        <p>Over-budget calls are rejected before touching upstream providers. Your agent gets an error, not a bill.</p>
+      </div>
+      <div class="guaranteeCard">
+        <h4>Atomic billing</h4>
+        <p>Reserve → execute → settle. If upstream fails, credits are refunded. No partial charges.</p>
+      </div>
+      <div class="guaranteeCard">
+        <h4>Per-agent isolation</h4>
+        <p>Each agent has its own key and policy. Compromise doesn't cascade. Kill one without affecting others.</p>
+      </div>
+      <div class="guaranteeCard">
+        <h4>Auditable receipts</h4>
+        <p>Every call returns audit ID, provider, cost, and policy result — queryable by agent and time.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="archSection reveal" id="how">
+    <div class="sectionTag">How it works</div>
+    <h2>Add credits. Set limits. Deploy.</h2>
+    <p class="lead">Policy checks happen before execution. Calls that fail policy never reach upstream providers.</p>
+
+    <div class="archSteps">
+      <div class="archStep">
+        <div class="stepNum">01</div>
+        <h4>Add prepaid credits</h4>
+        <p>Pay with card. No subscriptions, no minimums.</p>
+      </div>
+      <div class="archStep">
+        <div class="stepNum">02</div>
+        <h4>Set spend limits</h4>
+        <p>Per-call caps, daily budgets, capability restrictions. Enforced before every call.</p>
+      </div>
+      <div class="archStep">
+        <div class="stepNum">03</div>
+        <h4>Call any capability</h4>
+        <p>saturn.reason(), .search(), .execute(). Guardrails apply to every call.</p>
+      </div>
+      <div class="archStep">
+        <div class="stepNum">04</div>
+        <h4>Get receipts</h4>
+        <p>Every call returns cost, provider, and audit ID. Full visibility.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Integration -->
+  <section class="archSection reveal" id="integration" style="padding-top:40px;">
+    <div class="sectionTag">Integration</div>
+    <h2>One call in. Policy enforced.</h2>
+    <p class="lead">Set caps once. Saturn estimates cost, checks policy, and either executes or rejects before upstream spend.</p>
+
+    <div class="heroTerminal" style="max-width:900px; margin:0 auto;">
+      <div class="htBar">
+        <span class="d"></span><span class="d"></span><span class="d"></span>
+        <span class="htLabel">sdk</span>
+      </div>
+      <div class="htBody">
+        <div class="htLine"><span class="htPrompt"></span> <span class="htCmd"><span class="htDim">const</span> saturn = <span class="htDim">new</span> Saturn({ apiKey: process.env.SATURN_KEY })</span></div>
+        <div class="htLine"><span class="htPrompt"></span> <span class="htCmd"><span class="htDim">await</span> saturn.<span class="htBlue">reason</span>({ prompt: <span class="htDim">'...'</span>, <span class="htDim">maxPerCallUsdCents</span>: <span class="htDim">50</span> })</span></div>
+        <div class="htSep"></div>
+        <div class="htResult"><span class="htGreen">&#10003;</span> executed &middot; receipt returned</div>
+        <div class="htResult"><span style="color:#ef4444;">✗</span> rejected &middot; BUDGET_EXCEEDED (before upstream)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust bar -->
+  <div class="trustBar">
+    <div class="trustBarInner">
+      <div class="trustBarItem">
+        <strong>Hard budget caps</strong>
+        Over-budget calls rejected instantly.
+      </div>
+      <div class="trustBarItem">
+        <strong>Estimate cost before you call</strong>
+        Cost estimated before execution.
+      </div>
+      <div class="trustBarItem">
+        <strong>Receipt on every call</strong>
+        Cost, provider, and audit ID returned.
+      </div>
+      <div class="trustBarItem">
+        <strong>Zero API keys in your code</strong>
+        One Saturn key. We handle the rest.
+      </div>
+    </div>
   </div>
 
   <!-- Who is this for -->
@@ -782,28 +830,28 @@
     <h2>Who is this for?</h2>
     <div class="whoGrid">
       <div class="whoCard">
-        <strong>AI startups</strong>
-        Running agents in production
+        <strong>Agent startups</strong>
+        Running autonomous workflows in production
       </div>
       <div class="whoCard">
-        <strong>SaaS companies</strong>
-        Deploying copilots to customers
+        <strong>SaaS copilots</strong>
+        Multi-tenant spend boundaries per customer
       </div>
       <div class="whoCard">
-        <strong>Teams using 3+ providers</strong>
-        Tired of API key sprawl
+        <strong>Infra / platform teams</strong>
+        One policy layer across providers
       </div>
       <div class="whoCard">
-        <strong>Founders</strong>
-        Who need cost visibility
+        <strong>Security / compliance</strong>
+        Audit trail + kill switches
       </div>
     </div>
   </section>
 
   <!-- Provider logos carousel -->
   <div class="providersBar">
-    <p class="provLabel">One SDK. One balance. Multiple providers.</p>
-    <p class="provSub">Stop managing OpenAI, Anthropic, and 8 other API keys separately.</p>
+    <p class="provLabel">One policy layer across every provider.</p>
+    <p class="provSub">Set caps once. Every call is checked before execution — regardless of vendor.</p>
     <div class="providersTrack">
       <div class="providersLogos">
         <span class="providerLogo">OpenAI</span>
@@ -835,33 +883,11 @@
     </div>
   </div>
 
-  <!-- Trust bar -->
-  <div class="trustBar" id="security">
-    <div class="trustBarInner">
-      <div class="trustBarItem">
-        <strong>Know the cost before you call</strong>
-        Exact price shown before execution.
-      </div>
-      <div class="trustBarItem">
-        <strong>Receipt on every call</strong>
-        Cost, provider, and audit ID returned.
-      </div>
-      <div class="trustBarItem">
-        <strong>Hard budget caps</strong>
-        Over-budget calls rejected instantly.
-      </div>
-      <div class="trustBarItem">
-        <strong>Zero API keys in your code</strong>
-        One Saturn key. We handle the rest.
-      </div>
-    </div>
-  </div>
-
-  <!-- Capabilities -->
+  <!-- Capabilities (demoted) -->
   <section class="capSection reveal" id="capabilities">
     <div class="sectionTag">Capabilities</div>
-    <h2>Everything your agent needs.<br/>One SDK.</h2>
-    <p class="lead" style="max-width:500px;">Inference, search, code execution, email, SMS, and more. Saturn routes to the best provider automatically.</p>
+    <h2>Common agent capabilities.</h2>
+    <p class="lead">Guardrails apply to every call. Use what you need.</p>
 
     <div class="capList">
       <div class="capItem">
@@ -917,66 +943,45 @@
     </div>
   </section>
 
-  <!-- Architecture -->
-  <section class="archSection reveal" id="how">
-    <div class="sectionTag">How it works</div>
-    <h2>Add credits. Set limits. Deploy.</h2>
-
-    <div class="archSteps">
-      <div class="archStep">
-        <div class="stepNum">01</div>
-        <h4>Add prepaid credits</h4>
-        <p>Pay with card. No subscriptions, no minimums.</p>
-      </div>
-      <div class="archStep">
-        <div class="stepNum">02</div>
-        <h4>Set spend limits</h4>
-        <p>Per-call caps, daily budgets, capability restrictions. You control what agents can do.</p>
-      </div>
-      <div class="archStep">
-        <div class="stepNum">03</div>
-        <h4>Call any capability</h4>
-        <p>saturn.reason(), .search(), .execute(). One SDK, any provider.</p>
-      </div>
-      <div class="archStep">
-        <div class="stepNum">04</div>
-        <h4>Get receipts</h4>
-        <p>Every call returns cost, provider, and audit ID. Full visibility.</p>
-      </div>
-    </div>
-  </section>
-
   <!-- FAQ -->
   <section class="faqSection reveal" id="faq">
     <h2>FAQ</h2>
     <div class="faqGrid">
       <div class="faqItem">
+        <div class="faqQ">What happens if my agent exceeds its budget?</div>
+        <p class="faqA">The call is rejected before it touches any upstream provider. Your agent gets an error, not a bill.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">What happens if Saturn is down?</div>
+        <p class="faqA">Fail closed by default. If Saturn is unreachable, calls are rejected. Configurable for sandbox/dev environments.</p>
+      </div>
+      <div class="faqItem">
         <div class="faqQ">How does billing work?</div>
         <p class="faqA">Prepaid credits via card. Add credits to your account, agents spend them per-call. Sub-cent pricing, real-time deductions, no surprise invoices.</p>
       </div>
       <div class="faqItem">
-        <div class="faqQ">What happens if my agent exceeds its budget?</div>
-        <p class="faqA">The call is rejected before it touches any upstream provider. Your agent gets an error, not a bill.</p>
+        <div class="faqQ">What's the latency overhead?</div>
+        <p class="faqA">Policy checks typically add low-tens of milliseconds — negligible compared to upstream provider latency.</p>
       </div>
       <div class="faqItem">
         <div class="faqQ">Can I set different limits for different agents?</div>
         <p class="faqA">Yes. Each agent gets its own API key and policy — per-call limits, daily caps, and capability restrictions.</p>
       </div>
       <div class="faqItem">
-        <div class="faqQ">What does a call cost?</div>
-        <p class="faqA">Per-call, per-capability. Costs track upstream pricing plus a small Saturn margin. You see the exact price before every call.</p>
+        <div class="faqQ">How do you estimate cost before execution?</div>
+        <p class="faqA">We estimate based on provider pricing + request shape (model, token count). Settle on actuals after execution. Refund if overestimated.</p>
       </div>
       <div class="faqItem">
         <div class="faqQ">Do I need to sign up with each provider?</div>
         <p class="faqA">No. Saturn handles all provider credentials. You just use one Saturn API key.</p>
       </div>
       <div class="faqItem">
-        <div class="faqQ">Can I override the default provider?</div>
-        <p class="faqA">Yes. Use <code style="background:#27272a; padding:2px 6px; border-radius:3px; font-size:0.85rem;">saturn.reason({ ..., provider: "anthropic" })</code> to specify your preference.</p>
-      </div>
-      <div class="faqItem">
         <div class="faqQ">Is there a kill switch?</div>
         <p class="faqA">Yes. One click in the dashboard stops all spend for an agent instantly.</p>
+      </div>
+      <div class="faqItem">
+        <div class="faqQ">Can I override the default provider?</div>
+        <p class="faqA">Yes. Use <code style="background:#27272a; padding:2px 6px; border-radius:3px; font-size:0.85rem;">saturn.reason({ ..., provider: "anthropic" })</code> to specify your preference.</p>
       </div>
       <div class="faqItem">
         <div class="faqQ">Can I run Saturn myself?</div>
