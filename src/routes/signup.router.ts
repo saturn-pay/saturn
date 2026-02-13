@@ -15,7 +15,7 @@ const BCRYPT_SALT_ROUNDS = 10;
 
 const signupLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 signups per IP per window
+  max: 50, // 50 signups per IP per window
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many signup attempts, please try again later' },
