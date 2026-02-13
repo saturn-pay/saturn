@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
+import { z } from 'zod';
 import { db } from '../db/client.js';
 import {
   accounts,
@@ -15,6 +16,8 @@ import { requirePrimary } from '../middleware/auth.js';
 import { getCurrentRate } from '../services/pricing.service.js';
 import { NotFoundError, ValidationError } from '../lib/errors.js';
 import { approveSubmission, rejectSubmission } from '../services/registry.service.js';
+import { generateId } from '../lib/id.js';
+import { ID_PREFIXES } from '../config/constants.js';
 
 function paramString(value: string | string[] | undefined): string {
   if (Array.isArray(value)) return value[0];
@@ -428,5 +431,70 @@ adminRouter.patch('/registry/submissions/:id', async (req: Request, res: Respons
     .where(eq(serviceSubmissions.id, submissionId));
 
   res.json(updated);
+});
+
+// ---------------------------------------------------------------------------
+// POST /wallet/credit — Admin: credit USD to wallet (for testing/demos)
+// ---------------------------------------------------------------------------
+
+const creditSchema = z.object({
+  amountUsdCents: z.number().int().positive(),
+  description: z.string().optional(),
+});
+
+adminRouter.post('/wallet/credit', async (req: Request, res: Response) => {
+  const accountId = req.account!.id;
+
+  const parsed = creditSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw new ValidationError('Invalid request body', parsed.error.flatten());
+  }
+
+  const { amountUsdCents, description } = parsed.data;
+
+  // Find the account's wallet
+  const [wallet] = await db
+    .select()
+    .from(wallets)
+    .where(eq(wallets.accountId, accountId));
+
+  if (!wallet) {
+    throw new NotFoundError('Wallet for account', accountId);
+  }
+
+  // Credit the wallet
+  const [updatedWallet] = await db
+    .update(wallets)
+    .set({
+      balanceUsdCents: sql`${wallets.balanceUsdCents} + ${amountUsdCents}`,
+      lifetimeInUsdCents: sql`${wallets.lifetimeInUsdCents} + ${amountUsdCents}`,
+      updatedAt: new Date(),
+    })
+    .where(eq(wallets.id, wallet.id))
+    .returning();
+
+  // Record the transaction
+  const [transaction] = await db
+    .insert(transactions)
+    .values({
+      id: generateId(ID_PREFIXES.transaction),
+      walletId: wallet.id,
+      type: 'credit_stripe', // Using existing type
+      currency: 'usd_cents',
+      amountSats: 0,
+      amountUsdCents,
+      balanceAfter: 0,
+      balanceAfterUsdCents: updatedWallet.balanceUsdCents,
+      referenceType: null,
+      referenceId: null,
+      description: description || `Admin credit of $${(amountUsdCents / 100).toFixed(2)}`,
+      createdAt: new Date(),
+    })
+    .returning();
+
+  res.json({
+    wallet: updatedWallet,
+    transaction,
+  });
 });
 
