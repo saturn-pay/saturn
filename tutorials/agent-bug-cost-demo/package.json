@@ -1,0 +1,22 @@
+{
+  "name": "agent-bug-cost-demo",
+  "version": "1.0.0",
+  "description": "Demo: Same bug, different financial outcome. See how Saturn prevents runaway AI costs.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "unsafe": "tsx src/unsafe-mode.ts",
+    "saturn": "tsx src/saturn-mode.ts",
+    "demo": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "@saturn-pay/sdk": "file:../../sdk",
+    "dotenv": "^17.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  }
+}

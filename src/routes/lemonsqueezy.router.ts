@@ -52,6 +52,9 @@ lemonsqueezyWebhookRouter.post('/', async (req: Request, res: Response) => {
         const orderId = event.data?.id;
         const checkoutSessionId = event.meta?.custom_data?.checkoutSessionId;
         const status = event.data?.attributes?.status;
+        // Get the actual amount paid (in cents) from the webhook
+        const totalUsd = event.data?.attributes?.total_usd;
+        const actualAmountCents = totalUsd ? Math.round(parseFloat(totalUsd) * 100) : null;
 
         if (!checkoutSessionId) {
           logger.warn({ orderId }, 'Order missing checkoutSessionId in custom data');
@@ -70,6 +73,8 @@ lemonsqueezyWebhookRouter.post('/', async (req: Request, res: Response) => {
           .set({
             status: 'completed',
             lemonOrderId: String(orderId),
+            // Update amount if user changed it on checkout page
+            ...(actualAmountCents && { amountUsdCents: actualAmountCents }),
             completedAt: new Date(),
           })
           .where(
@@ -81,14 +86,16 @@ lemonsqueezyWebhookRouter.post('/', async (req: Request, res: Response) => {
           .returning();
 
         if (updated) {
+          // Credit the actual paid amount (from webhook or stored)
+          const creditAmount = actualAmountCents || updated.amountUsdCents;
           await walletService.creditFromCheckout(
             updated.walletId,
-            updated.amountUsdCents,
+            creditAmount,
             updated.id,
           );
 
           logger.info(
-            { checkoutSessionId, walletId: updated.walletId, amountUsdCents: updated.amountUsdCents },
+            { checkoutSessionId, walletId: updated.walletId, amountUsdCents: creditAmount },
             'Wallet credited from LemonSqueezy order (USD)',
           );
         } else {
@@ -172,6 +179,7 @@ export async function handleFundCardLemonSqueezy(
     productOptions: {
       name: 'Saturn Wallet Funding',
       description: `Add $${(amountUsdCents / 100).toFixed(2)} to your wallet`,
+      redirectUrl: 'https://app.saturn-pay.com/wallet?funded=true',
     },
     checkoutOptions: {
       embed: false,

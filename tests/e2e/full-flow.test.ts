@@ -247,7 +247,7 @@ describe('Full User Journey', () => {
     it('should reject calls with insufficient balance', async () => {
       await expect(
         testState.saturn!.read({ url: 'https://example.com' })
-      ).rejects.toThrow(/INSUFFICIENT_BALANCE/);
+      ).rejects.toThrow(/Insufficient balance/);
     });
   });
 

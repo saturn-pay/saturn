@@ -96,7 +96,7 @@ describe('Capabilities (Real API Calls)', () => {
           prompt: 'Say hello',
           maxTokens: 10,
         })
-      ).rejects.toThrow(/INSUFFICIENT_BALANCE/);
+      ).rejects.toThrow(/Insufficient balance/);
     });
 
     it('should reject search() with insufficient balance', async () => {
@@ -107,7 +107,7 @@ describe('Capabilities (Real API Calls)', () => {
           query: 'test query',
           numResults: 1,
         })
-      ).rejects.toThrow(/INSUFFICIENT_BALANCE/);
+      ).rejects.toThrow(/Insufficient balance/);
     });
 
     it('should reject read() with insufficient balance', async () => {
@@ -117,7 +117,7 @@ describe('Capabilities (Real API Calls)', () => {
         testAccount.saturn.read({
           url: 'https://example.com',
         })
-      ).rejects.toThrow(/INSUFFICIENT_BALANCE/);
+      ).rejects.toThrow(/Insufficient balance/);
     });
   });
 
@@ -216,7 +216,7 @@ describe('Capabilities (Real API Calls)', () => {
           messages: [{ role: 'user', content: 'Hello' }],
           max_tokens: 5,
         })
-      ).rejects.toThrow(/INSUFFICIENT_BALANCE/);
+      ).rejects.toThrow(/Insufficient balance/);
     });
 
     describe.skipIf(!hasFunds)('Generic Proxy (Funded)', () => {

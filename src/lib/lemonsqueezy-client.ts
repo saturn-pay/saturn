@@ -19,6 +19,7 @@ export interface CreateCheckoutOptions {
   productOptions?: {
     name?: string;
     description?: string;
+    redirectUrl?: string;
   };
   checkoutOptions?: {
     embed?: boolean;
@@ -55,7 +56,10 @@ export async function createCheckout(options: CreateCheckoutOptions): Promise<Le
         type: 'checkouts',
         attributes: {
           custom_price: options.customPrice,
-          product_options: options.productOptions || {},
+          product_options: {
+            ...options.productOptions,
+            redirect_url: options.productOptions?.redirectUrl,
+          },
           checkout_options: options.checkoutOptions || {},
           checkout_data: options.checkoutData,
           expires_at: options.expiresAt,
