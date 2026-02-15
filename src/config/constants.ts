@@ -21,6 +21,12 @@ export const STRIPE_FUNDING = {
   sessionExpirySecs: 1800,
 } as const;
 
+export const LEMONSQUEEZY_FUNDING = {
+  minAmountUsdCents: 500,
+  maxAmountUsdCents: 50_000,
+  sessionExpirySecs: 1800,
+} as const;
+
 export const RATE_UPDATE_INTERVAL_CRON = '*/5 * * * *'; // every 5 minutes
 
 export const API_KEY_PREFIXES = {

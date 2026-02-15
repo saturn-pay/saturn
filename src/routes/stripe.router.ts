@@ -174,14 +174,15 @@ export async function handleFundCard(
       accountId,
     },
     expires_at: Math.floor(Date.now() / 1000) + STRIPE_FUNDING.sessionExpirySecs,
-    success_url: `${req.headers.origin || 'https://app.trysaturn.com'}/wallet?funded=true`,
-    cancel_url: `${req.headers.origin || 'https://app.trysaturn.com'}/wallet?funded=false`,
+    success_url: `${req.headers.origin || 'https://app.saturn-pay.com'}/wallet?funded=true`,
+    cancel_url: `${req.headers.origin || 'https://app.saturn-pay.com'}/wallet?funded=false`,
   });
 
   // Insert checkout session record
   await db.insert(checkoutSessions).values({
     id: checkoutSessionId,
     walletId,
+    provider: 'stripe',
     stripeSessionId: session.id,
     amountUsdCents,
     btcUsdRate: btcUsd.toString(),

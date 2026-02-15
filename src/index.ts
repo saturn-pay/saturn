@@ -41,6 +41,11 @@ if (env.STRIPE_WEBHOOK_SECRET) {
   app.use('/webhooks/stripe', express.raw({ type: 'application/json' }), stripeWebhookRouter);
 }
 
+if (env.LEMONSQUEEZY_WEBHOOK_SECRET) {
+  const { lemonsqueezyWebhookRouter } = await import('./routes/lemonsqueezy.router.js');
+  app.use('/webhooks/lemonsqueezy', express.raw({ type: 'application/json' }), lemonsqueezyWebhookRouter);
+}
+
 // ---------------------------------------------------------------------------
 // Rate limiters
 // ---------------------------------------------------------------------------

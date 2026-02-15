@@ -35,6 +35,11 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
 
+  LEMONSQUEEZY_API_KEY: z.string().optional(),
+  LEMONSQUEEZY_WEBHOOK_SECRET: z.string().optional(),
+  LEMONSQUEEZY_STORE_ID: z.string().optional(),
+  LEMONSQUEEZY_VARIANT_ID: z.string().optional(),
+
   JWT_SECRET: z.string().default('change-me-in-production'),
 
   CORS_ORIGIN: z.string().optional(),

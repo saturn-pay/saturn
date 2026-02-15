@@ -11,6 +11,8 @@ import { NotFoundError, ValidationError } from '../lib/errors.js';
 import * as walletService from '../services/wallet.service.js';
 import * as lightningService from '../services/lightning.service.js';
 import { handleFundCard } from './stripe.router.js';
+import { handleFundCardLemonSqueezy } from './lemonsqueezy.router.js';
+import { env } from '../config/env.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -214,7 +216,12 @@ walletsRouter.post('/fund-card', async (req: Request, res: Response) => {
   await verifyAgentOwnership(agentId, account.id);
   const wallet = await getWalletForAccount(account.id);
 
-  await handleFundCard(wallet.id, account.id, req, res);
+  // Prefer LemonSqueezy if configured, fallback to Stripe
+  if (env.LEMONSQUEEZY_API_KEY) {
+    await handleFundCardLemonSqueezy(wallet.id, account.id, req, res);
+  } else {
+    await handleFundCard(wallet.id, account.id, req, res);
+  }
 });
 
 // GET /agents/:agentId/wallet/invoices
@@ -274,7 +281,12 @@ agentWalletsRouter.post('/fund-card', async (req: Request, res: Response) => {
     throw new NotFoundError('Wallet');
   }
 
-  await handleFundCard(wallet.id, account.id, req, res);
+  // Prefer LemonSqueezy if configured, fallback to Stripe
+  if (env.LEMONSQUEEZY_API_KEY) {
+    await handleFundCardLemonSqueezy(wallet.id, account.id, req, res);
+  } else {
+    await handleFundCard(wallet.id, account.id, req, res);
+  }
 });
 
 // GET /wallet/invoices
