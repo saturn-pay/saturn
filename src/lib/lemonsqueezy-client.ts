@@ -57,7 +57,8 @@ export async function createCheckout(options: CreateCheckoutOptions): Promise<Le
         attributes: {
           custom_price: options.customPrice,
           product_options: {
-            ...options.productOptions,
+            name: options.productOptions?.name,
+            description: options.productOptions?.description,
             redirect_url: options.productOptions?.redirectUrl,
           },
           checkout_options: options.checkoutOptions || {},
