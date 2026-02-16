@@ -52,9 +52,12 @@ lemonsqueezyWebhookRouter.post('/', async (req: Request, res: Response) => {
         const orderId = event.data?.id;
         const checkoutSessionId = event.meta?.custom_data?.checkoutSessionId;
         const status = event.data?.attributes?.status;
-        // Get the actual amount paid (in cents) from the webhook
-        const totalUsd = event.data?.attributes?.total_usd;
-        const actualAmountCents = totalUsd ? Math.round(parseFloat(totalUsd) * 100) : null;
+        // Get the actual amount paid from the webhook
+        // LemonSqueezy's 'total' is in cents, 'total_usd' is decimal dollars
+        const totalCents = event.data?.attributes?.total;
+        const actualAmountCents = totalCents ? Number(totalCents) : null;
+
+        logger.info({ orderId, totalCents, actualAmountCents }, 'LemonSqueezy order webhook received');
 
         if (!checkoutSessionId) {
           logger.warn({ orderId }, 'Order missing checkoutSessionId in custom data');
