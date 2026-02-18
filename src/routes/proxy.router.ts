@@ -19,6 +19,7 @@ function paramString(value: string | string[] | undefined): string {
 const BLOCKED_UPSTREAM_HEADERS = new Set([
   'set-cookie', 'authorization', 'x-api-key', 'cookie',
   'transfer-encoding', 'connection', 'keep-alive',
+  'content-length', 'content-encoding', // These must be set by Express based on our response body
 ]);
 
 function setFilteredHeaders(res: Response, headers: Record<string, string>): void {
