@@ -9,6 +9,13 @@ export function formatUsdCents(cents: number): string {
   });
 }
 
+export function formatBrlCents(cents: number): string {
+  return (cents / 100).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
+}
+
 export function formatUsdMicros(micros: number): string {
   return (micros / 1000000).toLocaleString('en-US', {
     style: 'currency',

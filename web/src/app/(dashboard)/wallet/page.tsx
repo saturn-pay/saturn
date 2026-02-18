@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
-import { formatUsdCents, formatDateTime } from '@/lib/format';
+import { formatUsdCents, formatBrlCents, formatDateTime } from '@/lib/format';
 import { LoadingPage } from '@/components/loading';
 import { DataTable } from '@/components/data-table';
 import type { Wallet, Transaction, Paginated, FundCardResponse } from '@/lib/types';
@@ -25,6 +25,7 @@ export default function WalletPage() {
   const [customAmount, setCustomAmount] = useState('');
   const [fundingLoading, setFundingLoading] = useState(false);
   const [fundingError, setFundingError] = useState('');
+  const [pendingCheckout, setPendingCheckout] = useState<FundCardResponse | null>(null);
 
   const fundAmountCents = customAmount ? Math.round(parseFloat(customAmount) * 100) : selectedAmount;
 
@@ -66,12 +67,23 @@ export default function WalletPage() {
         method: 'POST',
         body: { amountUsdCents: fundAmountCents },
       });
-      // Redirect to Stripe checkout
-      window.location.href = response.checkoutUrl;
+      // Show confirmation modal with BRL amount
+      setPendingCheckout(response);
+      setFundingLoading(false);
     } catch (err) {
       setFundingError(err instanceof Error ? err.message : 'Failed to start checkout');
       setFundingLoading(false);
     }
+  };
+
+  const handleConfirmPayment = () => {
+    if (pendingCheckout) {
+      window.location.href = pendingCheckout.checkoutUrl;
+    }
+  };
+
+  const handleCancelPayment = () => {
+    setPendingCheckout(null);
   };
 
 
@@ -195,6 +207,51 @@ export default function WalletPage() {
           emptyMessage="No billing transactions yet. Add funds above to get started."
         />
       </div>
+
+      {/* BRL Confirmation Modal */}
+      {pendingCheckout && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-surface border border-border rounded-xl p-6 max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">Confirm Payment</h2>
+
+            <div className="space-y-4 mb-6">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted">You selected:</span>
+                <span className="font-medium">{formatUsdCents(pendingCheckout.amountUsdCents)}</span>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-muted text-sm">You&apos;ll be charged:</span>
+                  <span className="text-2xl font-bold text-accent">{formatBrlCents(pendingCheckout.amountBrlCents)}</span>
+                </div>
+                <div className="text-xs text-muted mt-1 text-right">
+                  Rate: 1 USD = {pendingCheckout.usdBrlRate.toFixed(2)} BRL
+                </div>
+              </div>
+
+              <p className="text-xs text-muted bg-background rounded-lg p-3">
+                Your card will be charged in Brazilian Reais (BRL). Your bank may apply additional currency conversion fees.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelPayment}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-background border border-border hover:border-zinc-500 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmPayment}
+                className="flex-1 btn-primary px-4 py-2.5 rounded-lg text-sm font-medium"
+              >
+                Continue to Payment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

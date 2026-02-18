@@ -149,21 +149,25 @@ export async function handleFundCard(
     throw new ValidationError('Amount too small to convert to sats at current rate');
   }
 
+  // Get USD/BRL rate and convert to BRL
+  const usdBrl = await pricing.fetchUsdBrlRate();
+  const amountBrlCents = pricing.usdCentsToBrlCents(amountUsdCents, usdBrl);
+
   const checkoutSessionId = generateId(ID_PREFIXES.checkoutSession);
 
-  // Create Stripe Checkout session
+  // Create Stripe Checkout session in BRL
   const stripe = getStripe();
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     line_items: [
       {
         price_data: {
-          currency: 'usd',
+          currency: 'brl',
           product_data: {
             name: 'Saturn Wallet Funding',
-            description: `Add $${(amountUsdCents / 100).toFixed(2)} to your wallet`,
+            description: `Add $${(amountUsdCents / 100).toFixed(2)} USD to your wallet`,
           },
-          unit_amount: amountUsdCents,
+          unit_amount: amountBrlCents,
         },
         quantity: 1,
       },
@@ -172,13 +176,15 @@ export async function handleFundCard(
       checkoutSessionId,
       walletId,
       accountId,
+      amountUsdCents: String(amountUsdCents),
+      usdBrlRate: usdBrl.toFixed(4),
     },
     expires_at: Math.floor(Date.now() / 1000) + STRIPE_FUNDING.sessionExpirySecs,
     success_url: `${req.headers.origin || 'https://app.saturn-pay.com'}/wallet?funded=true`,
     cancel_url: `${req.headers.origin || 'https://app.saturn-pay.com'}/wallet?funded=false`,
   });
 
-  // Insert checkout session record
+  // Insert checkout session record (store original USD amount)
   await db.insert(checkoutSessions).values({
     id: checkoutSessionId,
     walletId,
@@ -199,6 +205,8 @@ export async function handleFundCard(
     checkoutSessionId,
     checkoutUrl: session.url,
     amountUsdCents,
+    amountBrlCents,
+    usdBrlRate: usdBrl,
     amountSats,
     btcUsdRate: btcUsd,
     expiresAt,

@@ -4,11 +4,16 @@ import { services, servicePricing } from '../db/schema/index.js';
 import { logger } from '../lib/logger.js';
 
 // ---------------------------------------------------------------------------
-// Cached BTC/USD rate
+// Cached rates
 // ---------------------------------------------------------------------------
 
-let cachedRate: { btcUsd: number; fetchedAt: Date } = {
+let cachedBtcRate: { btcUsd: number; fetchedAt: Date } = {
   btcUsd: 100_000, // sensible default until first fetch
+  fetchedAt: new Date(0),
+};
+
+let cachedUsdBrlRate: { usdBrl: number; fetchedAt: Date } = {
+  usdBrl: 5.80, // sensible default until first fetch
   fetchedAt: new Date(0),
 };
 
@@ -47,12 +52,74 @@ export function satsToUsdCents(sats: number, btcUsd: number): number {
 // ---------------------------------------------------------------------------
 
 export function getCurrentRate(): { btcUsd: number; fetchedAt: Date } {
-  return { ...cachedRate };
+  return { ...cachedBtcRate };
 }
 
 export function setCurrentRate(btcUsd: number): void {
-  cachedRate = { btcUsd, fetchedAt: new Date() };
+  cachedBtcRate = { btcUsd, fetchedAt: new Date() };
   logger.info({ btcUsd }, 'BTC/USD rate updated in pricing cache');
+}
+
+export function getUsdBrlRate(): { usdBrl: number; fetchedAt: Date } {
+  return { ...cachedUsdBrlRate };
+}
+
+export function setUsdBrlRate(usdBrl: number): void {
+  cachedUsdBrlRate = { usdBrl, fetchedAt: new Date() };
+  logger.info({ usdBrl }, 'USD/BRL rate updated in pricing cache');
+}
+
+/**
+ * Convert USD cents to BRL cents at the given exchange rate.
+ */
+export function usdCentsToBrlCents(usdCents: number, usdBrl: number): number {
+  return Math.round(usdCents * usdBrl);
+}
+
+/**
+ * Fetch live USD/BRL rate from exchangerate.host (free, no API key needed).
+ * Falls back to cached rate if fetch fails.
+ */
+export async function fetchUsdBrlRate(): Promise<number> {
+  // Return cached if fresh (less than 5 minutes old)
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  if (cachedUsdBrlRate.fetchedAt > fiveMinutesAgo) {
+    return cachedUsdBrlRate.usdBrl;
+  }
+
+  try {
+    // Try exchangerate.host first (free, no key)
+    const res = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=BRL');
+    if (res.ok) {
+      const data = await res.json() as { rates?: { BRL?: number } };
+      const rate = data?.rates?.BRL;
+      if (typeof rate === 'number' && rate > 0) {
+        setUsdBrlRate(rate);
+        return rate;
+      }
+    }
+  } catch (err) {
+    logger.warn({ err }, 'Failed to fetch USD/BRL from exchangerate.host');
+  }
+
+  try {
+    // Fallback: BCB (Banco Central do Brasil) API
+    const res = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL');
+    if (res.ok) {
+      const data = await res.json() as { USDBRL?: { bid?: string } };
+      const rate = parseFloat(data?.USDBRL?.bid || '');
+      if (!isNaN(rate) && rate > 0) {
+        setUsdBrlRate(rate);
+        return rate;
+      }
+    }
+  } catch (err) {
+    logger.warn({ err }, 'Failed to fetch USD/BRL from awesomeapi');
+  }
+
+  // Return cached rate as last resort
+  logger.warn({ cachedRate: cachedUsdBrlRate.usdBrl }, 'Using cached USD/BRL rate');
+  return cachedUsdBrlRate.usdBrl;
 }
 
 // ---------------------------------------------------------------------------

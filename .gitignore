@@ -7,3 +7,6 @@ dist/
 coverage/
 .DS_Store
 web/tsconfig.tsbuildinfo
+
+# GTM / launch content (local only)
+gtm-local/

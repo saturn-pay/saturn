@@ -169,7 +169,13 @@ export interface Capability {
 
 export interface FundCardResponse {
   checkoutUrl: string;
-  sessionId: string;
+  checkoutSessionId: string;
+  amountUsdCents: number;
+  amountBrlCents: number;
+  usdBrlRate: number;
+  amountSats: number;
+  btcUsdRate: number;
+  expiresAt: string;
 }
 
 export interface FundLightningResponse {
