@@ -431,13 +431,24 @@ function ChecklistItem({ done, label, href }: { done: boolean; label: string; hr
 }
 
 function formatCharge(log: AuditLog): string {
-  if (log.chargedUsdCents !== null && log.chargedUsdCents !== undefined) {
-    return formatUsdCents(log.chargedUsdCents);
+  // Try chargedUsdCents first, fallback to quotedUsdCents
+  const cents = log.chargedUsdCents ?? log.quotedUsdCents;
+  if (cents !== null && cents !== undefined && cents > 0) {
+    const dollars = cents / 100;
+    if (dollars < 0.01) {
+      return '$' + dollars.toFixed(4);
+    }
+    return '$' + dollars.toFixed(2);
   }
-  if (log.chargedSats !== null && log.chargedSats !== undefined) {
-    // Convert sats to approximate USD (rough estimate: 1 sat ≈ $0.0004 at ~$40k BTC)
-    // For now just show as cents equivalent
-    return formatUsdCents(Math.round(log.chargedSats * 0.04));
+  // Try sats
+  const sats = log.chargedSats ?? log.quotedSats;
+  if (sats !== null && sats !== undefined && sats > 0) {
+    // Convert sats to USD (rough: 1 BTC = $100k, so 1 sat = $0.001)
+    const dollars = sats * 0.00001;
+    if (dollars < 0.01) {
+      return '$' + dollars.toFixed(4);
+    }
+    return '$' + dollars.toFixed(2);
   }
   return '—';
 }

@@ -193,6 +193,9 @@ export default function KeysPage() {
               <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
                 Created
               </th>
+              <th className="text-center px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                View
+              </th>
               <th className="text-right px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
                 Actions
               </th>
@@ -201,7 +204,7 @@ export default function KeysPage() {
           <tbody>
             {agents.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-muted">
+                <td colSpan={5} className="px-4 py-8 text-center text-muted">
                   No agents yet. Create one to get started.
                 </td>
               </tr>
@@ -212,15 +215,27 @@ export default function KeysPage() {
                   className="border-b border-border last:border-b-0 hover:bg-surface/50 transition-colors"
                 >
                   <td className="px-4 py-3">
-                    <a href={`/keys/${agent.id}`} className="font-medium hover:text-accent transition-colors">
+                    <span className="font-medium">
                       {agent.name}
-                    </a>
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={agent.status} />
                   </td>
                   <td className="px-4 py-3 text-muted text-xs">
                     {formatDate(agent.createdAt)}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <a
+                      href={`/keys/${agent.id}`}
+                      className="inline-flex items-center gap-1 text-xs text-accent hover:text-accent/80 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      View
+                    </a>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
