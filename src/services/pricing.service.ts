@@ -13,7 +13,7 @@ let cachedBtcRate: { btcUsd: number; fetchedAt: Date } = {
 };
 
 let cachedUsdBrlRate: { usdBrl: number; fetchedAt: Date } = {
-  usdBrl: 5.80, // sensible default until first fetch
+  usdBrl: 5.25, // sensible default until first fetch
   fetchedAt: new Date(0),
 };
 
@@ -77,7 +77,7 @@ export function usdCentsToBrlCents(usdCents: number, usdBrl: number): number {
 }
 
 /**
- * Fetch live USD/BRL rate from exchangerate.host (free, no API key needed).
+ * Fetch live USD/BRL rate from awesomeapi (free Brazilian API).
  * Falls back to cached rate if fetch fails.
  */
 export async function fetchUsdBrlRate(): Promise<number> {
@@ -88,22 +88,7 @@ export async function fetchUsdBrlRate(): Promise<number> {
   }
 
   try {
-    // Try exchangerate.host first (free, no key)
-    const res = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=BRL');
-    if (res.ok) {
-      const data = await res.json() as { rates?: { BRL?: number } };
-      const rate = data?.rates?.BRL;
-      if (typeof rate === 'number' && rate > 0) {
-        setUsdBrlRate(rate);
-        return rate;
-      }
-    }
-  } catch (err) {
-    logger.warn({ err }, 'Failed to fetch USD/BRL from exchangerate.host');
-  }
-
-  try {
-    // Fallback: BCB (Banco Central do Brasil) API
+    // Primary: AwesomeAPI (Brazilian API, free, reliable)
     const res = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL');
     if (res.ok) {
       const data = await res.json() as { USDBRL?: { bid?: string } };
