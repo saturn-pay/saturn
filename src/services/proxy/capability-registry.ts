@@ -90,27 +90,27 @@ export function initCapabilities(): void {
 
   register({
     capability: 'execute',
-    description: 'Run code safely in a sandboxed environment.',
+    description: 'Run code safely in a sandboxed environment. (Coming soon)',
     providers: [
-      { slug: 'e2b', priority: 1, active: true },
+      { slug: 'e2b', priority: 1, active: false },
     ],
     defaultProvider: 'e2b',
   });
 
   register({
     capability: 'email',
-    description: 'Send transactional email. Notifications, reports, one-off messages.',
+    description: 'Send transactional email. Notifications, reports, one-off messages. (Coming soon)',
     providers: [
-      { slug: 'resend', priority: 1, active: true },
+      { slug: 'resend', priority: 1, active: false },
     ],
     defaultProvider: 'resend',
   });
 
   register({
     capability: 'sms',
-    description: 'Send short text messages. Alerts, verifications, time-sensitive pings.',
+    description: 'Send short text messages. Alerts, verifications, time-sensitive pings. (Coming soon)',
     providers: [
-      { slug: 'twilio', priority: 1, active: true },
+      { slug: 'twilio', priority: 1, active: false },
     ],
     defaultProvider: 'twilio',
   });

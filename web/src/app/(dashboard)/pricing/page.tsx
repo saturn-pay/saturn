@@ -115,6 +115,9 @@ function CheckIcon({ className }: { className?: string }) {
   );
 }
 
+// Capabilities that are coming soon (not yet available)
+const COMING_SOON_CAPABILITIES = new Set(['execute', 'email', 'sms']);
+
 // Parameter definitions for each capability
 const CAPABILITY_PARAMS: Record<string, Array<{
   name: string;
@@ -313,6 +316,11 @@ export default function PricingPage() {
                         <code className="text-sm font-semibold bg-background px-2.5 py-1 rounded-lg border border-border text-accent">
                           saturn.{cap.capability}()
                         </code>
+                        {COMING_SOON_CAPABILITIES.has(cap.capability) && (
+                          <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-medium">
+                            Coming soon
+                          </span>
+                        )}
                         <svg
                           className={`w-4 h-4 text-muted transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                           fill="none"
