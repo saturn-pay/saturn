@@ -5,6 +5,9 @@ import { AuthProvider } from '@/lib/auth';
 export const metadata: Metadata = {
   title: 'Saturn Dashboard',
   description: 'Control plane for your Saturn agents',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
