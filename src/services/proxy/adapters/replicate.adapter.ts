@@ -5,7 +5,7 @@ const POLL_INTERVAL_MS = 2_000;
 const POLL_TIMEOUT_MS = 60_000;
 
 // Default model: FLUX.1-schnell (fast, high quality)
-const DEFAULT_MODEL_VERSION = 'black-forest-labs/flux-schnell';
+const DEFAULT_MODEL = 'black-forest-labs/flux-schnell';
 
 export class ReplicateAdapter extends BaseAdapter {
   slug = 'replicate';
@@ -27,22 +27,31 @@ export class ReplicateAdapter extends BaseAdapter {
 
     // Transform simplified request to Replicate format
     const input = body as Record<string, unknown>;
+    let model: string;
     let requestBody: Record<string, unknown>;
 
-    if (input.version || input.input) {
-      // Already in Replicate format, pass through
+    if (input.version) {
+      // Old format with version hash - use predictions endpoint
+      model = '';
       requestBody = input;
+    } else if (input.input) {
+      // Already has input wrapper, extract model
+      model = (input.model as string) || DEFAULT_MODEL;
+      requestBody = { input: input.input };
     } else {
       // Transform from simplified SDK format: { prompt, model?, ... }
-      const { model, ...rest } = input;
-      requestBody = {
-        model: (model as string) || DEFAULT_MODEL_VERSION,
-        input: rest, // prompt, width, height, etc. go into input
-      };
+      const { model: modelParam, ...rest } = input;
+      model = (modelParam as string) || DEFAULT_MODEL;
+      requestBody = { input: rest }; // prompt, width, height, etc. go into input
     }
 
+    // Use the models endpoint (simpler, doesn't require version hash)
+    const endpoint = model
+      ? `https://api.replicate.com/v1/models/${model}/predictions`
+      : 'https://api.replicate.com/v1/predictions';
+
     // Create the prediction
-    const createRes = await fetch('https://api.replicate.com/v1/predictions', {
+    const createRes = await fetch(endpoint, {
       method: 'POST',
       headers,
       body: JSON.stringify(requestBody),
