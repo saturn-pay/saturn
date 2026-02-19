@@ -16,7 +16,7 @@ export class SerperAdapter extends BaseAdapter {
     const res = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'X-API-KEY': apiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
