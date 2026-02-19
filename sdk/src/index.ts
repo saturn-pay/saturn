@@ -118,14 +118,26 @@ export class Saturn {
     return this.client.proxyPost<NormalizedScrapeResponse>('/v1/capabilities/scrape', body, opts);
   }
 
+  /**
+   * Execute code in a sandboxed environment.
+   * @deprecated Coming soon - this capability is not yet available.
+   */
   execute(body: ExecuteRequest, opts?: RequestOptions): Promise<ProxyCallResponse<NormalizedExecuteResponse>> {
     return this.client.proxyPost<NormalizedExecuteResponse>('/v1/capabilities/execute', body, opts);
   }
 
+  /**
+   * Send transactional email.
+   * @deprecated Coming soon - this capability is not yet available.
+   */
   email(body: EmailRequest, opts?: RequestOptions): Promise<ProxyCallResponse<NormalizedEmailResponse>> {
     return this.client.proxyPost<NormalizedEmailResponse>('/v1/capabilities/email', body, opts);
   }
 
+  /**
+   * Send SMS messages.
+   * @deprecated Coming soon - this capability is not yet available.
+   */
   sms(body: SmsRequest, opts?: RequestOptions): Promise<ProxyCallResponse<NormalizedSmsResponse>> {
     return this.client.proxyPost<NormalizedSmsResponse>('/v1/capabilities/sms', body, opts);
   }
