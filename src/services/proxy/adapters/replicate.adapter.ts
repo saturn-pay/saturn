@@ -4,6 +4,9 @@ import { getPrice } from '../../pricing.service.js';
 const POLL_INTERVAL_MS = 2_000;
 const POLL_TIMEOUT_MS = 60_000;
 
+// Default model: FLUX.1-schnell (fast, high quality)
+const DEFAULT_MODEL_VERSION = 'black-forest-labs/flux-schnell';
+
 export class ReplicateAdapter extends BaseAdapter {
   slug = 'replicate';
 
@@ -19,13 +22,30 @@ export class ReplicateAdapter extends BaseAdapter {
     const headers = {
       'Authorization': `Bearer ${apiToken}`,
       'Content-Type': 'application/json',
+      'Prefer': 'wait', // Use sync mode for faster response
     };
+
+    // Transform simplified request to Replicate format
+    const input = body as Record<string, unknown>;
+    let requestBody: Record<string, unknown>;
+
+    if (input.version || input.input) {
+      // Already in Replicate format, pass through
+      requestBody = input;
+    } else {
+      // Transform from simplified SDK format: { prompt, model?, ... }
+      const { model, ...rest } = input;
+      requestBody = {
+        model: (model as string) || DEFAULT_MODEL_VERSION,
+        input: rest, // prompt, width, height, etc. go into input
+      };
+    }
 
     // Create the prediction
     const createRes = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers,
-      body: JSON.stringify(body),
+      body: JSON.stringify(requestBody),
     });
 
     const prediction = (await createRes.json()) as { id: string; status: string; [k: string]: unknown };
