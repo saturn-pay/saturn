@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { db } from '../db/client.js';
 import { agents, policies } from '../db/schema/index.js';
 import { eq, and } from 'drizzle-orm';
-import { requirePrimary } from '../middleware/auth.js';
+import { requirePrimary, invalidateAuthCache } from '../middleware/auth.js';
 import { NotFoundError, ValidationError } from '../lib/errors.js';
 import { usdCentsToSats, satsToUsdCents, getCurrentRate } from '../services/pricing.service.js';
 
@@ -139,6 +139,9 @@ policiesRouter.put('/', async (req: Request, res: Response) => {
     .where(eq(policies.agentId, agentId))
     .returning();
 
+  // Invalidate auth cache (policy changed)
+  invalidateAuthCache(agentId);
+
   res.json(enrichWithUsdCents(updated));
 });
 
@@ -189,6 +192,11 @@ policiesRouter.patch('/', async (req: Request, res: Response) => {
     .where(eq(policies.agentId, agentId))
     .returning();
 
+  // Invalidate auth cache if killSwitch changed
+  if (data.killSwitch !== undefined) {
+    invalidateAuthCache(agentId);
+  }
+
   res.json(enrichWithUsdCents(updated));
 });
 
@@ -204,6 +212,9 @@ policiesRouter.post('/kill', async (req: Request, res: Response) => {
     .where(eq(policies.agentId, agentId))
     .returning();
 
+  // Invalidate auth cache (policy now has kill switch on)
+  invalidateAuthCache(agentId);
+
   res.json(enrichWithUsdCents(updated));
 });
 
@@ -218,6 +229,9 @@ policiesRouter.post('/unkill', async (req: Request, res: Response) => {
     .set({ killSwitch: false, updatedAt: new Date() })
     .where(eq(policies.agentId, agentId))
     .returning();
+
+  // Invalidate auth cache (policy kill switch changed)
+  invalidateAuthCache(agentId);
 
   res.json(enrichWithUsdCents(updated));
 });

@@ -8,7 +8,7 @@ import { agents, wallets, policies } from '../db/schema/index.js';
 import { eq, and } from 'drizzle-orm';
 import { generateId } from '../lib/id.js';
 import { ID_PREFIXES, API_KEY_PREFIXES, DEFAULT_POLICY } from '../config/constants.js';
-import { requirePrimary } from '../middleware/auth.js';
+import { requirePrimary, invalidateAuthCache } from '../middleware/auth.js';
 import { NotFoundError, ValidationError } from '../lib/errors.js';
 
 const BCRYPT_SALT_ROUNDS = 10;
@@ -202,6 +202,11 @@ agentsRouter.patch('/:agentId', async (req: Request, res: Response) => {
     throw new NotFoundError('Agent', agentId);
   }
 
+  // Invalidate auth cache if status changed
+  if (parsed.data.status !== undefined) {
+    invalidateAuthCache(agentId);
+  }
+
   res.json(sanitizeAgent(updated));
 });
 
@@ -223,6 +228,9 @@ agentsRouter.post('/:agentId/regenerate', async (req: Request, res: Response) =>
     .set({ apiKeyHash, apiKeyPrefix, updatedAt: new Date() })
     .where(eq(agents.id, agent.id))
     .returning();
+
+  // Invalidate auth cache (old API key no longer valid)
+  invalidateAuthCache(agent.id);
 
   res.json({
     ...sanitizeAgent(updated),
@@ -252,6 +260,9 @@ agentsRouter.delete('/:agentId', async (req: Request, res: Response) => {
       .set({ killSwitch: true, updatedAt: now })
       .where(eq(policies.agentId, agent.id));
   });
+
+  // Invalidate auth cache (agent is now killed)
+  invalidateAuthCache(agent.id);
 
   res.status(204).end();
 });

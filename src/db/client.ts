@@ -10,6 +10,9 @@ export function getPool(): pg.Pool {
   if (!pool) {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
+      max: 50, // Max connections in pool (default was 10)
+      idleTimeoutMillis: 30_000, // Close idle connections after 30s
+      connectionTimeoutMillis: 5_000, // Fail fast if can't connect in 5s
     });
   }
   return pool;

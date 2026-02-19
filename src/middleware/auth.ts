@@ -9,6 +9,51 @@ import { AuthError, PolicyDeniedError } from '../lib/errors.js';
 import { API_KEY_PREFIXES } from '../config/constants.js';
 import { env } from '../config/env.js';
 
+// ---------------------------------------------------------------------------
+// Auth cache — avoids bcrypt.compare (~100ms) and DB queries on every request
+// ---------------------------------------------------------------------------
+
+interface AuthCacheEntry {
+  agent: typeof schema.agents.$inferSelect;
+  account: typeof schema.accounts.$inferSelect;
+  wallet: typeof schema.wallets.$inferSelect | null;
+  policy: typeof schema.policies.$inferSelect | null;
+  cachedAt: number;
+}
+
+const AUTH_CACHE_TTL_MS = 10_000; // 10 seconds
+const AUTH_CACHE_MAX_SIZE = 1000; // Max entries to prevent memory bloat
+
+const authCache = new Map<string, AuthCacheEntry>();
+
+function getCachedAuth(tokenHash: string): AuthCacheEntry | null {
+  const entry = authCache.get(tokenHash);
+  if (!entry) return null;
+  if (Date.now() - entry.cachedAt > AUTH_CACHE_TTL_MS) {
+    authCache.delete(tokenHash);
+    return null;
+  }
+  return entry;
+}
+
+function setCachedAuth(tokenHash: string, entry: Omit<AuthCacheEntry, 'cachedAt'>): void {
+  // Evict oldest entries if cache is full
+  if (authCache.size >= AUTH_CACHE_MAX_SIZE) {
+    const firstKey = authCache.keys().next().value;
+    if (firstKey) authCache.delete(firstKey);
+  }
+  authCache.set(tokenHash, { ...entry, cachedAt: Date.now() });
+}
+
+export function invalidateAuthCache(agentId: string): void {
+  // Invalidate all entries for this agent (rare operation)
+  for (const [key, entry] of authCache.entries()) {
+    if (entry.agent.id === agentId) {
+      authCache.delete(key);
+    }
+  }
+}
+
 function extractBearerToken(req: Request): string | null {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
@@ -75,6 +120,7 @@ async function tryJwtAuth(token: string): Promise<typeof schema.agents.$inferSel
  * Authenticates via API key (sk_agt_*) or JWT session token.
  * Loads agent + parent account + wallet + policy onto the request.
  * Rejects if agent is suspended or killed.
+ * Results are cached for 10 seconds to avoid bcrypt overhead.
  */
 export async function requireAuth(
   req: Request,
@@ -87,7 +133,24 @@ export async function requireAuth(
       throw new AuthError();
     }
 
-    // Try API key first, then JWT
+    // Hash token for cache lookup (fast SHA-256, not slow bcrypt)
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Check cache first
+    const cached = getCachedAuth(tokenHash);
+    if (cached) {
+      // Recheck status (could have changed)
+      if (cached.agent.status === 'suspended' || cached.agent.status === 'killed') {
+        throw new AuthError('Agent is ' + cached.agent.status);
+      }
+      req.agent = cached.agent;
+      req.account = cached.account;
+      req.wallet = cached.wallet ?? undefined;
+      req.policy = cached.policy ?? undefined;
+      return next();
+    }
+
+    // Cache miss — do full auth (includes slow bcrypt.compare)
     let matchedAgent = await tryApiKeyAuth(token);
     if (!matchedAgent) {
       matchedAgent = await tryJwtAuth(token);
@@ -127,13 +190,19 @@ export async function requireAuth(
         .where(eq(schema.policies.agentId, matchedAgent.id)),
     ]);
 
-    if (walletRows.length > 0) {
-      req.wallet = walletRows[0];
-    }
+    const wallet = walletRows[0] ?? null;
+    const policy = policyRows[0] ?? null;
 
-    if (policyRows.length > 0) {
-      req.policy = policyRows[0];
-    }
+    if (wallet) req.wallet = wallet;
+    if (policy) req.policy = policy;
+
+    // Cache the result
+    setCachedAuth(tokenHash, {
+      agent: matchedAgent,
+      account,
+      wallet,
+      policy,
+    });
 
     next();
   } catch (err) {
