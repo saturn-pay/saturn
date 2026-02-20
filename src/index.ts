@@ -126,11 +126,20 @@ async function start(): Promise<void> {
     startRateUpdater();
     logger.info('Rate updater started');
 
-    const { verifyLndConnection } = await import('./lib/lnd-client.js');
-    await verifyLndConnection();
+    // LND is optional - server starts even if LND fails
+    let lndAvailable = false;
+    try {
+      const { verifyLndConnection } = await import('./lib/lnd-client.js');
+      await verifyLndConnection();
+      lndAvailable = true;
+    } catch (err) {
+      logger.warn({ err }, 'LND connection failed - Lightning features disabled, server continuing');
+    }
 
-    startInvoiceWatcher();
-    logger.info('Invoice watcher started');
+    if (lndAvailable) {
+      startInvoiceWatcher();
+      logger.info('Invoice watcher started');
+    }
 
     startInvoiceExpiryJob();
     logger.info('Invoice expiry job started');
