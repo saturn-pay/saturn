@@ -13,16 +13,37 @@ export class DeepgramAdapter extends BaseAdapter {
     const apiKey = process.env.DEEPGRAM_API_KEY;
     if (!apiKey) throw new Error('DEEPGRAM_API_KEY is not set');
 
-    const payload = body as { content_type?: string; [k: string]: unknown };
-    const contentType = payload.content_type || 'application/json';
+    const payload = body as { audio?: string; url?: string; content_type?: string; language?: string; [k: string]: unknown };
 
-    const res = await fetch('https://api.deepgram.com/v1/listen', {
+    let requestBody: BodyInit;
+    let contentType: string;
+
+    if (payload.url) {
+      // URL-based transcription: send JSON with url field
+      contentType = 'application/json';
+      requestBody = JSON.stringify({ url: payload.url });
+    } else if (payload.audio) {
+      // Base64-encoded audio: decode and send as raw bytes
+      contentType = payload.content_type || 'audio/wav';
+      const buffer = Buffer.from(payload.audio, 'base64');
+      requestBody = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    } else {
+      throw new Error('Either audio (base64) or url must be provided');
+    }
+
+    // Build query params for Deepgram options
+    const params = new URLSearchParams();
+    if (payload.language) params.set('language', payload.language);
+    const queryString = params.toString();
+    const url = `https://api.deepgram.com/v1/listen${queryString ? `?${queryString}` : ''}`;
+
+    const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Token ${apiKey}`,
         'Content-Type': contentType,
       },
-      body: JSON.stringify(body),
+      body: requestBody,
     });
 
     const data = await res.json();
