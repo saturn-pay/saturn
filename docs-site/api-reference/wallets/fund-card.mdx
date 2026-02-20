@@ -1,0 +1,97 @@
+---
+title: "Fund via Card"
+api: "POST /v1/wallet/fund-card"
+description: "Create a Stripe checkout session to fund wallet with card"
+---
+
+Creates a Stripe checkout session for adding funds via credit/debit card.
+
+## Request
+
+<ParamField body="amountUsdCents" type="number" required>
+  Amount in USD cents to add to wallet. Minimum: 1000 ($10.00)
+</ParamField>
+
+## Response
+
+<ResponseField name="checkoutUrl" type="string">
+  Stripe checkout URL. Redirect the user here to complete payment.
+</ResponseField>
+
+<ResponseField name="sessionId" type="string">
+  Stripe session ID for tracking
+</ResponseField>
+
+<ResponseField name="amountUsdCents" type="number">
+  Amount that will be charged
+</ResponseField>
+
+<ResponseField name="expiresAt" type="string">
+  ISO 8601 timestamp when session expires
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.saturn-pay.com/v1/wallet/fund-card \
+  -H "Authorization: Bearer sk_agt_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amountUsdCents": 1000
+  }'
+```
+
+```typescript Node.js
+const response = await fetch('https://api.saturn-pay.com/v1/wallet/fund-card', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer sk_agt_...',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ amountUsdCents: 1000 })  // $10.00
+});
+
+const { checkoutUrl } = await response.json();
+// Redirect user to checkoutUrl
+window.location.href = checkoutUrl;
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.saturn-pay.com/v1/wallet/fund-card',
+    headers={'Authorization': 'Bearer sk_agt_...'},
+    json={'amountUsdCents': 2500}  # $25.00
+)
+
+data = response.json()
+print('Complete payment at:', data['checkoutUrl'])
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "checkoutUrl": "https://checkout.stripe.com/c/pay/cs_live_...",
+  "sessionId": "cs_live_abc123",
+  "amountUsdCents": 1000,
+  "expiresAt": "2024-01-20T16:00:00Z"
+}
+```
+
+```json 400 Bad Request
+{
+  "error": {
+    "code": "INVALID_AMOUNT",
+    "message": "Minimum amount is $10.00 (1000 cents)"
+  }
+}
+```
+</ResponseExample>
+
+## Notes
+
+- Minimum amount: $10.00 (1000 cents)
+- Session expires after 30 minutes
+- Credits are added after successful payment (usually instant)
+- Standard card processing fees apply

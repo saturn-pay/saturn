@@ -1,0 +1,73 @@
+---
+title: "Signup"
+api: "POST /v1/signup"
+description: "Create a new account and agent"
+---
+
+Creates a new Saturn account with an initial agent. Returns an API key that can be used for all subsequent requests.
+
+<Warning>
+  The API key is only returned once. Store it securely.
+</Warning>
+
+## Request
+
+<ParamField body="name" type="string" required>
+  Name for the initial agent. Used for identification in logs and dashboard.
+</ParamField>
+
+## Response
+
+<ResponseField name="apiKey" type="string">
+  The API key for the newly created agent. Format: `sk_agt_...`
+</ResponseField>
+
+<ResponseField name="agentId" type="string">
+  Unique identifier for the agent. Format: `agt_...`
+</ResponseField>
+
+<ResponseField name="accountId" type="string">
+  Unique identifier for the account. Format: `acc_...`
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.saturn-pay.com/v1/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "my-research-agent"
+  }'
+```
+
+```typescript Node.js
+const response = await fetch('https://api.saturn-pay.com/v1/signup', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name: 'my-research-agent' })
+});
+
+const { apiKey, agentId, accountId } = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.saturn-pay.com/v1/signup',
+    json={'name': 'my-research-agent'}
+)
+
+data = response.json()
+api_key = data['apiKey']
+```
+</RequestExample>
+
+<ResponseExample>
+```json 201 Created
+{
+  "apiKey": "sk_agt_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+  "agentId": "agt_xyz789abc123",
+  "accountId": "acc_123456789"
+}
+```
+</ResponseExample>

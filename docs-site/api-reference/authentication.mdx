@@ -1,0 +1,97 @@
+---
+title: "Authentication"
+description: "How to authenticate with the Saturn API"
+---
+
+All API requests (except signup and health) require authentication via Bearer token.
+
+## Authentication Header
+
+Include your API key in the `Authorization` header:
+
+```bash
+Authorization: Bearer sk_agt_your_api_key_here
+```
+
+## Example Request
+
+```bash
+curl https://api.saturn-pay.com/v1/wallet \
+  -H "Authorization: Bearer sk_agt_abc123def456..."
+```
+
+## API Key Format
+
+Saturn API keys follow this format:
+
+```
+sk_agt_[32 random characters]
+```
+
+- `sk_` — Secret key prefix
+- `agt_` — Agent key identifier
+- `[32 chars]` — Unique identifier
+
+## Getting an API Key
+
+### Option 1: Signup (New Account)
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.saturn-pay.com/v1/signup \
+  -H "Content-Type: application/json" \
+  -d '{"name": "my-agent"}'
+```
+
+```typescript SDK
+const { saturn, apiKey } = await Saturn.signup({
+  name: 'my-agent'
+});
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "apiKey": "sk_agt_abc123...",
+  "agentId": "agt_xyz789",
+  "accountId": "acc_123456"
+}
+```
+
+### Option 2: Create Agent (Existing Account)
+
+```bash
+curl -X POST https://api.saturn-pay.com/v1/agents \
+  -H "Authorization: Bearer sk_agt_your_existing_key" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "worker-2"}'
+```
+
+## Error Responses
+
+### 401 Unauthorized
+
+Missing or invalid API key:
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Invalid or missing API key"
+  }
+}
+```
+
+### 403 Forbidden
+
+Valid key but agent is killed or lacks permission:
+
+```json
+{
+  "error": {
+    "code": "AGENT_KILLED",
+    "message": "Agent has been disabled"
+  }
+}
+```

@@ -1,0 +1,92 @@
+---
+title: "Introduction"
+description: "Runtime financial guardrails for AI agents"
+---
+
+Saturn is the execution layer for AI agents. It sits between your agent and the APIs it calls — handling auth, routing, budget enforcement, and per-call receipts.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Deploy your first agent in 5 minutes
+  </Card>
+  <Card title="Capabilities" icon="wand-magic-sparkles" href="/capabilities/overview">
+    10 capability verbs for AI agents
+  </Card>
+  <Card title="SDK Reference" icon="code" href="/sdk/typescript">
+    TypeScript SDK documentation
+  </Card>
+  <Card title="Pricing" icon="credit-card" href="/pricing">
+    Pay-as-you-go with prepaid credits
+  </Card>
+</CardGroup>
+
+## What Saturn Does
+
+- **Routes requests** to 15+ upstream providers (OpenAI, Anthropic, Serper, E2B, and more)
+- **Enforces budgets** with per-agent caps and daily limits
+- **Processes payments** via card (USD) or Lightning (sats)
+- **Logs everything** with full audit trail and cost attribution
+
+## Runtime Enforcement vs Dashboards
+
+Dashboards show you what happened. Saturn prevents what shouldn't happen.
+
+| Approach | When it acts | Outcome |
+|----------|--------------|---------|
+| Dashboard alerts | After spend occurs | You see the bill |
+| Saturn enforcement | Before upstream call | Call rejected if over budget |
+
+Saturn operates at the execution boundary. Every capability call passes through policy checks before reaching any upstream provider. Over-budget calls are rejected—not logged, not alerted, **rejected**.
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Your Agent                           │
+└─────────────────────────────┬───────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                         Saturn                              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │   Policy    │  │   Ledger    │  │   Provider Router   │  │
+│  │   Engine    │──│   (Credits) │──│   (OpenAI, etc.)    │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
+└─────────────────────────────┬───────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Upstream Providers (OpenAI, Anthropic, etc.)   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Every call:
+1. Authenticated via agent API key
+2. Checked against policy (caps, allowed capabilities)
+3. Quoted against current credit balance
+4. Executed only if all checks pass
+5. Settled atomically with receipt issued
+
+## When to Use Saturn
+
+<CardGroup cols={2}>
+  <Card title="Autonomous Agents" icon="robot">
+    AI agents that call paid APIs without human oversight
+  </Card>
+  <Card title="Multi-tenant SaaS" icon="users">
+    Per-user AI features with isolated budgets
+  </Card>
+  <Card title="Production Systems" icon="shield-check">
+    Where cost overruns are unacceptable
+  </Card>
+  <Card title="Multi-Provider" icon="layer-group">
+    Unified budgets across OpenAI, Anthropic, and more
+  </Card>
+</CardGroup>
+
+## When Not to Use Saturn
+
+- Single-user CLI tools with manual oversight
+- Development environments where cost is irrelevant
+- Systems where you want unbounded spend
+- Scenarios requiring direct provider API access for unsupported features

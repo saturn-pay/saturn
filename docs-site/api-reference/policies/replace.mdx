@@ -1,0 +1,73 @@
+---
+title: "Replace Policy"
+api: "PUT /v1/agents/{id}/policy"
+description: "Replace an agent's entire policy configuration"
+---
+
+Replaces the entire policy for an agent. Unlike PATCH, this requires all fields and will reset any fields not provided.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The agent ID (e.g., `agt_abc123`)
+</ParamField>
+
+## Request
+
+<ParamField body="maxPerCallUsdCents" type="number" required>
+  Maximum cost allowed per single API call (in USD cents).
+  Use `0` for no limit.
+</ParamField>
+
+<ParamField body="maxPerDayUsdCents" type="number" required>
+  Maximum total spend allowed per day (in USD cents).
+  Use `0` for no limit.
+</ParamField>
+
+<ParamField body="allowedCapabilities" type="array" required>
+  List of capabilities this agent can use.
+  Use empty array `[]` to allow all capabilities.
+</ParamField>
+
+## Response
+
+Returns the new policy object.
+
+<RequestExample>
+```bash cURL
+curl -X PUT https://api.saturn-pay.com/v1/agents/agt_abc123/policy \
+  -H "Authorization: Bearer sk_agt_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "maxPerCallUsdCents": 100,
+    "maxPerDayUsdCents": 1000,
+    "allowedCapabilities": ["reason", "search", "read", "execute"]
+  }'
+```
+
+```typescript Node.js
+const response = await fetch('https://api.saturn-pay.com/v1/agents/agt_abc123/policy', {
+  method: 'PUT',
+  headers: {
+    'Authorization': 'Bearer sk_agt_...',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    maxPerCallUsdCents: 100,
+    maxPerDayUsdCents: 1000,
+    allowedCapabilities: []  // Allow all
+  })
+});
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "maxPerCallUsdCents": 100,
+  "maxPerDayUsdCents": 1000,
+  "allowedCapabilities": ["reason", "search", "read", "execute"],
+  "dailySpentUsdCents": 0
+}
+```
+</ResponseExample>

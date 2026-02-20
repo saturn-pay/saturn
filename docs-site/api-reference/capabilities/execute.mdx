@@ -1,0 +1,212 @@
+---
+title: "Execute Capability"
+api: "POST /v1/capabilities/{capability}"
+description: "Execute a capability and get results"
+---
+
+Executes a capability (reason, search, read, etc.) and returns the result along with billing metadata.
+
+## Path Parameters
+
+<ParamField path="capability" type="string" required>
+  The capability to execute. One of: `reason`, `search`, `read`, `scrape`, `execute`, `imagine`, `speak`, `transcribe`, `email`, `sms`
+</ParamField>
+
+## Request Body
+
+Request body varies by capability. See capability-specific documentation for details.
+
+### Common Parameters
+
+<ParamField body="provider" type="string">
+  Specific provider to use. If omitted, Saturn chooses the best available.
+</ParamField>
+
+### Capability-Specific Parameters
+
+<Tabs>
+  <Tab title="reason">
+    <ParamField body="prompt" type="string" required>
+      The text prompt to send to the LLM.
+    </ParamField>
+    <ParamField body="model" type="string">
+      Specific model (e.g., `gpt-4o`, `claude-sonnet-4-20250514`)
+    </ParamField>
+    <ParamField body="systemPrompt" type="string">
+      System prompt for context
+    </ParamField>
+    <ParamField body="maxTokens" type="number">
+      Maximum tokens in response
+    </ParamField>
+    <ParamField body="temperature" type="number">
+      Sampling temperature (0-2)
+    </ParamField>
+  </Tab>
+  <Tab title="search">
+    <ParamField body="query" type="string" required>
+      The search query
+    </ParamField>
+    <ParamField body="numResults" type="number">
+      Number of results (default: 10)
+    </ParamField>
+  </Tab>
+  <Tab title="read">
+    <ParamField body="url" type="string" required>
+      URL to extract content from
+    </ParamField>
+  </Tab>
+  <Tab title="execute">
+    <ParamField body="code" type="string" required>
+      Code to execute
+    </ParamField>
+    <ParamField body="language" type="string" required>
+      `python`, `javascript`, or `bash`
+    </ParamField>
+    <ParamField body="timeout" type="number">
+      Max execution time in ms
+    </ParamField>
+  </Tab>
+</Tabs>
+
+## Response
+
+<ResponseField name="data" type="object">
+  Capability-specific result data
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Billing and execution metadata
+  <Expandable title="metadata fields">
+    <ResponseField name="chargedUsdCents" type="number">
+      Actual cost in USD cents
+    </ResponseField>
+    <ResponseField name="chargedSats" type="number">
+      Actual cost in satoshis
+    </ResponseField>
+    <ResponseField name="quotedUsdCents" type="number">
+      Pre-quoted estimate
+    </ResponseField>
+    <ResponseField name="balanceAfter" type="number">
+      Remaining balance after charge
+    </ResponseField>
+    <ResponseField name="auditId" type="string">
+      Unique receipt ID
+    </ResponseField>
+    <ResponseField name="provider" type="string">
+      Provider that handled the request
+    </ResponseField>
+    <ResponseField name="latencyMs" type="number">
+      Request duration in milliseconds
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL (reason)
+curl -X POST https://api.saturn-pay.com/v1/capabilities/reason \
+  -H "Authorization: Bearer sk_agt_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Explain quantum computing in one sentence",
+    "maxTokens": 100
+  }'
+```
+
+```bash cURL (search)
+curl -X POST https://api.saturn-pay.com/v1/capabilities/search \
+  -H "Authorization: Bearer sk_agt_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "latest AI research",
+    "numResults": 5
+  }'
+```
+
+```bash cURL (read)
+curl -X POST https://api.saturn-pay.com/v1/capabilities/read \
+  -H "Authorization: Bearer sk_agt_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/article"
+  }'
+```
+
+```typescript Node.js
+const response = await fetch('https://api.saturn-pay.com/v1/capabilities/reason', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer sk_agt_...',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    prompt: 'Explain quantum computing in one sentence'
+  })
+});
+
+const { data, metadata } = await response.json();
+console.log(data.content);
+console.log(`Cost: ${metadata.chargedUsdCents} cents`);
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK (reason)
+{
+  "data": {
+    "content": "Quantum computing harnesses quantum mechanical phenomena like superposition and entanglement to process information in fundamentally new ways.",
+    "finishReason": "stop",
+    "usage": {
+      "promptTokens": 12,
+      "completionTokens": 24,
+      "totalTokens": 36
+    }
+  },
+  "metadata": {
+    "chargedUsdCents": 2,
+    "chargedSats": 6,
+    "quotedUsdCents": 3,
+    "balanceAfter": 998,
+    "auditId": "aud_abc123xyz",
+    "provider": "openai",
+    "model": "gpt-4o",
+    "latencyMs": 1234
+  }
+}
+```
+
+```json 200 OK (search)
+{
+  "data": {
+    "results": [
+      {
+        "title": "Latest AI Research Papers",
+        "url": "https://arxiv.org/list/cs.AI",
+        "snippet": "Recent advances in artificial intelligence...",
+        "position": 1
+      }
+    ],
+    "query": "latest AI research",
+    "totalResults": 5
+  },
+  "metadata": {
+    "chargedUsdCents": 1,
+    "provider": "serper",
+    "auditId": "aud_def456"
+  }
+}
+```
+
+```json 402 Budget Exceeded
+{
+  "error": {
+    "code": "BUDGET_EXCEEDED",
+    "message": "Daily budget exceeded: $5.00 limit reached",
+    "details": {
+      "dailySpent": 500,
+      "dailyCap": 500,
+      "quotedCost": 15
+    }
+  }
+}
+```
+</ResponseExample>

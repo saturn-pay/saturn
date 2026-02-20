@@ -1,0 +1,77 @@
+---
+title: "List Agents"
+api: "GET /v1/agents"
+description: "List all agents in your account"
+---
+
+Returns a list of all agents belonging to your account.
+
+## Response
+
+<ResponseField name="agents" type="array">
+  Array of agent objects
+  <Expandable title="Agent object">
+    <ResponseField name="id" type="string">
+      Unique agent identifier
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Agent name
+    </ResponseField>
+    <ResponseField name="killed" type="boolean">
+      Whether the kill switch is active
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp
+    </ResponseField>
+    <ResponseField name="lastActiveAt" type="string">
+      Last API call timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl https://api.saturn-pay.com/v1/agents \
+  -H "Authorization: Bearer sk_agt_..."
+```
+
+```typescript Node.js
+const response = await fetch('https://api.saturn-pay.com/v1/agents', {
+  headers: { 'Authorization': 'Bearer sk_agt_...' }
+});
+
+const agents = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://api.saturn-pay.com/v1/agents',
+    headers={'Authorization': 'Bearer sk_agt_...'}
+)
+
+agents = response.json()
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+[
+  {
+    "id": "agt_abc123",
+    "name": "research-agent",
+    "killed": false,
+    "createdAt": "2024-01-15T10:30:00Z",
+    "lastActiveAt": "2024-01-20T14:22:00Z"
+  },
+  {
+    "id": "agt_def456",
+    "name": "worker-1",
+    "killed": false,
+    "createdAt": "2024-01-16T09:00:00Z",
+    "lastActiveAt": "2024-01-19T18:45:00Z"
+  }
+]
+```
+</ResponseExample>

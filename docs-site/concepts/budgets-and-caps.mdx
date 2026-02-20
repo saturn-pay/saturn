@@ -1,0 +1,127 @@
+---
+title: "Budgets & Caps"
+description: "Per-agent spending limits with runtime enforcement"
+---
+
+**Budgets** are spending limits enforced at the agent level. Saturn supports two cap types:
+
+| Cap Type | Scope | Resets |
+|----------|-------|--------|
+| `maxPerCallUsdCents` | Single API call | Never (per-call) |
+| `maxPerDayUsdCents` | 24-hour rolling window | Daily at midnight UTC |
+
+Caps are independent of credit balance. An agent with $100 in credits but a $5/day cap cannot spend more than $5/day.
+
+## Why Caps Exist
+
+Credits answer: "How much money is available?"
+Caps answer: "How much should this agent be allowed to spend?"
+
+Without caps:
+- A bug can drain your entire credit balance in seconds
+- No economic boundaries between workloads
+- Cost attribution becomes cost allocation after the fact
+
+Caps create **runtime enforcement**. The call is rejected *before* it happens.
+
+## Enforcement Order
+
+When Saturn receives a request:
+
+1. Is the agent active? (not killed)
+2. Is the capability allowed?
+3. Does quoted cost exceed `maxPerCallUsdCents`? → Reject
+4. Does (today's spend + quoted cost) exceed `maxPerDayUsdCents`? → Reject
+5. Does quoted cost exceed available credits? → Reject
+6. All checks pass → Execute
+
+```
+Agent daily cap: $1.00
+Today's spend: $0.95
+Quoted cost: $0.10
+Result: REJECTED (BudgetExceeded) — would exceed daily cap
+```
+
+## Setting Caps
+
+<Tabs>
+  <Tab title="SDK">
+    ```typescript
+    await saturn.policies.update(agentId, {
+      maxPerCallUsdCents: 50,    // $0.50 max per call
+      maxPerDayUsdCents: 500,    // $5.00 max per day
+    });
+    ```
+  </Tab>
+  <Tab title="REST API">
+    ```bash
+    curl -X PATCH https://api.saturn-pay.com/v1/agents/{id}/policy \
+      -H "Authorization: Bearer sk_agt_..." \
+      -H "Content-Type: application/json" \
+      -d '{
+        "maxPerCallUsdCents": 50,
+        "maxPerDayUsdCents": 500
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+## Handling Budget Errors
+
+```typescript
+import { SaturnPolicyDeniedError } from '@saturn-pay/sdk';
+
+try {
+  await saturn.reason({ prompt: veryLongPrompt });
+} catch (err) {
+  if (err instanceof SaturnPolicyDeniedError) {
+    if (err.code === 'BUDGET_EXCEEDED') {
+      console.log('Call would exceed cap:', err.message);
+      // Wait for daily reset, or reduce request size
+    }
+  }
+}
+```
+
+## Cap Recommendations
+
+| Workload | Per-Call Cap | Per-Day Cap |
+|----------|--------------|-------------|
+| Simple classification | $0.10 | $5.00 |
+| Research agent | $0.50 | $20.00 |
+| Code generation | $1.00 | $50.00 |
+| Multi-step reasoning | $2.00 | $100.00 |
+
+<Tip>
+  Start with tight caps. You can always increase them. You can't un-spend money.
+</Tip>
+
+## Common Mistakes
+
+| Mistake | Consequence |
+|---------|-------------|
+| Setting caps too high | Caps become meaningless |
+| Setting caps too low | Legitimate calls rejected |
+| Forgetting per-call caps | Single expensive call drains daily budget |
+| Not testing cap behavior | Surprise rejections in production |
+
+## Example: Protecting Against Infinite Loops
+
+Without Saturn:
+```typescript
+// BUG: Forgot to break
+while (true) {
+  await openai.chat.completions.create({ ... }); // $0.02 each
+  // Runs 50,000 times before you notice = $1,000
+}
+```
+
+With Saturn:
+```typescript
+// Same bug, different outcome
+while (true) {
+  await saturn.reason({ ... }); // $0.02 each
+  // Runs 250 times, then: BUDGET_EXCEEDED
+  // Total damage: $5.00 (your cap)
+}
+```

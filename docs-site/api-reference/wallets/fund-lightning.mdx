@@ -1,0 +1,87 @@
+---
+title: "Fund via Lightning"
+api: "POST /v1/wallet/fund"
+description: "Create a Lightning invoice to fund wallet"
+---
+
+Creates a Lightning Network invoice that, when paid, will credit your wallet with the specified amount of satoshis.
+
+## Request
+
+<ParamField body="amountSats" type="number" required>
+  Amount in satoshis to add to wallet
+</ParamField>
+
+## Response
+
+<ResponseField name="paymentRequest" type="string">
+  Lightning invoice (BOLT11 format). Pay this with any Lightning wallet.
+</ResponseField>
+
+<ResponseField name="paymentHash" type="string">
+  Payment hash for tracking
+</ResponseField>
+
+<ResponseField name="amountSats" type="number">
+  Invoice amount in satoshis
+</ResponseField>
+
+<ResponseField name="expiresAt" type="string">
+  ISO 8601 timestamp when invoice expires
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.saturn-pay.com/v1/wallet/fund \
+  -H "Authorization: Bearer sk_agt_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amountSats": 10000
+  }'
+```
+
+```typescript Node.js
+const response = await fetch('https://api.saturn-pay.com/v1/wallet/fund', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer sk_agt_...',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ amountSats: 10000 })
+});
+
+const invoice = await response.json();
+console.log('Pay this invoice:', invoice.paymentRequest);
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.saturn-pay.com/v1/wallet/fund',
+    headers={'Authorization': 'Bearer sk_agt_...'},
+    json={'amountSats': 10000}
+)
+
+invoice = response.json()
+print('Pay this invoice:', invoice['paymentRequest'])
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "paymentRequest": "lnbc100u1p3h9j2xpp5...",
+  "paymentHash": "abc123def456...",
+  "amountSats": 10000,
+  "expiresAt": "2024-01-20T16:00:00Z"
+}
+```
+</ResponseExample>
+
+## Notes
+
+- Invoice expires after 1 hour
+- Credits are added instantly when payment is received
+- No minimum amount
+- No fees charged by Saturn (you pay Lightning routing fees)

@@ -1,0 +1,94 @@
+---
+title: "Update Policy"
+api: "PATCH /v1/agents/{id}/policy"
+description: "Update an agent's policy configuration"
+---
+
+Updates the policy (budget caps, allowed capabilities) for a specific agent. Only the fields you include will be updated.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The agent ID (e.g., `agt_abc123`)
+</ParamField>
+
+## Request
+
+<ParamField body="maxPerCallUsdCents" type="number">
+  Maximum cost allowed per single API call (in USD cents).
+  Set to `0` or `null` for no limit.
+</ParamField>
+
+<ParamField body="maxPerDayUsdCents" type="number">
+  Maximum total spend allowed per day (in USD cents).
+  Resets at midnight UTC. Set to `0` or `null` for no limit.
+</ParamField>
+
+<ParamField body="allowedCapabilities" type="array">
+  List of capabilities this agent can use.
+  Set to `null` or empty array to allow all capabilities.
+</ParamField>
+
+## Response
+
+Returns the updated policy object.
+
+<RequestExample>
+```bash cURL (set caps)
+curl -X PATCH https://api.saturn-pay.com/v1/agents/agt_abc123/policy \
+  -H "Authorization: Bearer sk_agt_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "maxPerCallUsdCents": 50,
+    "maxPerDayUsdCents": 500
+  }'
+```
+
+```bash cURL (restrict capabilities)
+curl -X PATCH https://api.saturn-pay.com/v1/agents/agt_abc123/policy \
+  -H "Authorization: Bearer sk_agt_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "allowedCapabilities": ["reason", "search"]
+  }'
+```
+
+```typescript Node.js
+const response = await fetch('https://api.saturn-pay.com/v1/agents/agt_abc123/policy', {
+  method: 'PATCH',
+  headers: {
+    'Authorization': 'Bearer sk_agt_...',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    maxPerCallUsdCents: 50,    // $0.50 max per call
+    maxPerDayUsdCents: 500,    // $5.00 max per day
+    allowedCapabilities: ['reason', 'search', 'read']
+  })
+});
+```
+
+```python Python
+import requests
+
+response = requests.patch(
+    'https://api.saturn-pay.com/v1/agents/agt_abc123/policy',
+    headers={'Authorization': 'Bearer sk_agt_...'},
+    json={
+        'maxPerCallUsdCents': 100,  # $1.00 max per call
+        'maxPerDayUsdCents': 1000,  # $10.00 max per day
+    }
+)
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "maxPerCallUsdCents": 50,
+  "maxPerDayUsdCents": 500,
+  "allowedCapabilities": ["reason", "search", "read"],
+  "dailySpentUsdCents": 127
+}
+```
+</ResponseExample>

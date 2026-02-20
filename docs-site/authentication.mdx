@@ -1,0 +1,165 @@
+---
+title: "Authentication"
+description: "API key management and authentication"
+---
+
+Every SDK instance requires an API key. API keys identify your agent and authorize requests.
+
+## Getting an API Key
+
+### New Agent (Signup)
+
+Create a new account and agent:
+
+```typescript
+import { Saturn } from '@saturn-pay/sdk';
+
+const { saturn, apiKey } = await Saturn.signup({
+  name: 'my-agent',
+  baseUrl: 'https://api.saturn-pay.com',
+});
+
+// Save apiKey — it's only shown once
+console.log('API Key:', apiKey);
+```
+
+### Additional Agents
+
+Create additional agents under your account:
+
+```typescript
+const saturn = new Saturn({ apiKey: 'sk_agt_...' });
+
+const newAgent = await saturn.agents.create({
+  name: 'worker-2'
+});
+
+console.log('New agent key:', newAgent.apiKey);
+```
+
+## Using an API Key
+
+Initialize the SDK with an existing key:
+
+```typescript
+const saturn = new Saturn({
+  apiKey: 'sk_agt_your_key_here'
+});
+```
+
+Or set via environment variable:
+
+```bash
+export SATURN_API_KEY=sk_agt_your_key_here
+```
+
+```typescript
+const saturn = new Saturn({
+  apiKey: process.env.SATURN_API_KEY
+});
+```
+
+## API Key Format
+
+Saturn API keys follow this format:
+
+```
+sk_agt_[32 random characters]
+```
+
+- `sk_` — Secret key prefix (never expose in client-side code)
+- `agt_` — Agent key identifier
+- `[32 chars]` — Unique identifier
+
+## HTTP Authentication
+
+When using the REST API directly, include the key in the Authorization header:
+
+```bash
+curl https://api.saturn-pay.com/v1/capabilities/reason \
+  -H "Authorization: Bearer sk_agt_your_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Hello"}'
+```
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Never expose keys in client-side code">
+    API keys are server-side only. Never include them in:
+    - Browser JavaScript
+    - Mobile app code
+    - Public repositories
+    - Client-side environment variables
+  </Accordion>
+
+  <Accordion title="Use environment variables">
+    Store keys in environment variables, not in code:
+    ```bash
+    # .env (never commit this file)
+    SATURN_API_KEY=sk_agt_...
+    ```
+
+    Add `.env` to your `.gitignore`.
+  </Accordion>
+
+  <Accordion title="Rotate keys after team changes">
+    When team members leave or roles change:
+    1. Create a new agent with a new key
+    2. Update your deployments
+    3. Delete or disable the old agent
+  </Accordion>
+
+  <Accordion title="Use separate keys per environment">
+    Create separate agents for:
+    - Development
+    - Staging
+    - Production
+
+    This prevents dev mistakes from affecting production budgets.
+  </Accordion>
+
+  <Accordion title="Set budget caps on all agents">
+    Every agent should have:
+    - `maxPerCallUsdCents` — prevents single expensive calls
+    - `maxPerDayUsdCents` — prevents runaway loops
+
+    Never deploy an agent without caps.
+  </Accordion>
+</AccordionGroup>
+
+## Key Revocation
+
+If a key is compromised, disable the agent immediately:
+
+```typescript
+// Via dashboard: Toggle "Kill Switch" to ON
+
+// Via API:
+await saturn.agents.update(agentId, {
+  killed: true
+});
+```
+
+This immediately blocks all API calls using that key.
+
+## Common Mistakes
+
+| Mistake | Consequence |
+|---------|-------------|
+| Committing keys to git | Key exposed publicly |
+| Using one key for all environments | Dev mistakes affect production |
+| Not rotating after team changes | Security exposure |
+| Creating agents without caps | Unbounded spend risk |
+| Storing keys in client-side code | Key visible to users |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Agents & Keys" icon="id-card" href="/concepts/agents-and-keys">
+    Understand agent isolation
+  </Card>
+  <Card title="Budgets & Caps" icon="gauge" href="/concepts/budgets-and-caps">
+    Set spending limits
+  </Card>
+</CardGroup>

@@ -1,0 +1,393 @@
+openapi: 3.0.3
+info:
+  title: Saturn API
+  description: Runtime financial guardrails for AI agents
+  version: 1.0.0
+  contact:
+    email: support@saturn-pay.com
+    url: https://docs.saturn-pay.com
+
+servers:
+  - url: https://api.saturn-pay.com
+    description: Production
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API key in format sk_agt_...
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: BUDGET_EXCEEDED
+            message:
+              type: string
+              example: Daily budget exceeded
+            details:
+              type: object
+
+    Wallet:
+      type: object
+      properties:
+        balanceUsdCents:
+          type: integer
+          example: 1000
+        balanceSats:
+          type: integer
+          example: 30000
+
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+          example: agt_abc123
+        name:
+          type: string
+          example: my-agent
+        killed:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+
+    Policy:
+      type: object
+      properties:
+        maxPerCallUsdCents:
+          type: integer
+          example: 50
+        maxPerDayUsdCents:
+          type: integer
+          example: 500
+        allowedCapabilities:
+          type: array
+          items:
+            type: string
+          example: ["reason", "search", "read"]
+
+    CapabilityResponse:
+      type: object
+      properties:
+        data:
+          type: object
+        metadata:
+          type: object
+          properties:
+            chargedUsdCents:
+              type: integer
+            chargedSats:
+              type: integer
+            quotedUsdCents:
+              type: integer
+            balanceAfter:
+              type: integer
+            auditId:
+              type: string
+            provider:
+              type: string
+            latencyMs:
+              type: integer
+
+paths:
+  /v1/signup:
+    post:
+      summary: Create account and agent
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: my-agent
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  apiKey:
+                    type: string
+                    example: sk_agt_abc123...
+                  agentId:
+                    type: string
+                  accountId:
+                    type: string
+
+  /health:
+    get:
+      summary: Health check
+      security: []
+      responses:
+        '200':
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /v1/capabilities:
+    get:
+      summary: List capabilities
+      responses:
+        '200':
+          description: Capabilities list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    providers:
+                      type: array
+                      items:
+                        type: string
+                    pricing:
+                      type: object
+
+  /v1/capabilities/{capability}:
+    get:
+      summary: Get capability details
+      parameters:
+        - name: capability
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Capability details
+
+    post:
+      summary: Execute capability
+      parameters:
+        - name: capability
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [reason, search, read, scrape, execute, imagine, speak, transcribe, email, sms]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Capability executed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapabilityResponse'
+        '402':
+          description: Budget exceeded or insufficient balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/wallet:
+    get:
+      summary: Get wallet
+      responses:
+        '200':
+          description: Wallet info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+
+  /v1/wallet/fund:
+    post:
+      summary: Create Lightning invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amountSats
+              properties:
+                amountSats:
+                  type: integer
+                  example: 10000
+      responses:
+        '200':
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paymentRequest:
+                    type: string
+                  amountSats:
+                    type: integer
+
+  /v1/wallet/fund-card:
+    post:
+      summary: Create Stripe checkout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amountUsdCents
+              properties:
+                amountUsdCents:
+                  type: integer
+                  minimum: 1000
+                  example: 1000
+      responses:
+        '200':
+          description: Checkout created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checkoutUrl:
+                    type: string
+
+  /v1/agents:
+    get:
+      summary: List agents
+      responses:
+        '200':
+          description: Agents list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Agent'
+
+    post:
+      summary: Create agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Agent created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Agent'
+                  - type: object
+                    properties:
+                      apiKey:
+                        type: string
+
+  /v1/agents/{id}:
+    get:
+      summary: Get agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+
+    patch:
+      summary: Update agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                killed:
+                  type: boolean
+      responses:
+        '200':
+          description: Agent updated
+
+  /v1/agents/{id}/policy:
+    get:
+      summary: Get policy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+
+    patch:
+      summary: Update policy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Policy'
+      responses:
+        '200':
+          description: Policy updated

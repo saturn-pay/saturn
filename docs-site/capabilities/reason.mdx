@@ -1,0 +1,137 @@
+---
+title: "reason"
+description: "LLM inference — completions, summarization, extraction"
+---
+
+The `reason` capability provides access to large language models for text generation, analysis, and reasoning tasks.
+
+## Providers
+
+| Provider | Models |
+|----------|--------|
+| OpenAI | gpt-4o, gpt-4o-mini, gpt-4-turbo |
+| Anthropic | claude-sonnet-4-20250514, claude-3-5-haiku |
+
+## Basic Usage
+
+```typescript
+const result = await saturn.reason({
+  prompt: 'Explain quantum computing in simple terms',
+});
+
+console.log(result.data.content);
+// → "Quantum computing is a type of computation that..."
+```
+
+## Parameters
+
+<ParamField body="prompt" type="string" required>
+  The text prompt to send to the LLM.
+</ParamField>
+
+<ParamField body="provider" type="string">
+  Specific provider to use. If omitted, Saturn chooses the best available.
+</ParamField>
+
+<ParamField body="model" type="string">
+  Specific model to use. Requires `provider` to be set.
+</ParamField>
+
+<ParamField body="systemPrompt" type="string">
+  Optional system prompt for context.
+</ParamField>
+
+<ParamField body="maxTokens" type="number">
+  Maximum tokens in the response. Default varies by model.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  Sampling temperature (0-2). Lower is more deterministic.
+</ParamField>
+
+## Response
+
+```typescript
+interface ReasonResponse {
+  data: {
+    content: string;        // Generated text
+    finishReason: string;   // 'stop', 'length', etc.
+    usage: {
+      promptTokens: number;
+      completionTokens: number;
+      totalTokens: number;
+    };
+  };
+  metadata: {
+    chargedUsdCents: number;
+    provider: string;
+    model: string;
+    latencyMs: number;
+    auditId: string;
+  };
+}
+```
+
+## Examples
+
+### Choose a Provider
+
+```typescript
+// Use Anthropic specifically
+const result = await saturn.reason({
+  prompt: 'Analyze this code for bugs...',
+  provider: 'anthropic',
+  model: 'claude-sonnet-4-20250514',
+});
+```
+
+### With System Prompt
+
+```typescript
+const result = await saturn.reason({
+  systemPrompt: 'You are a helpful coding assistant.',
+  prompt: 'How do I reverse a string in Python?',
+});
+```
+
+### Control Output Length
+
+```typescript
+const result = await saturn.reason({
+  prompt: 'Write a haiku about programming',
+  maxTokens: 50,
+  temperature: 0.7,
+});
+```
+
+## Pricing
+
+Pricing is per-token and varies by model:
+
+| Model | Input | Output |
+|-------|-------|--------|
+| gpt-4o | $2.50/M tokens | $10.00/M tokens |
+| gpt-4o-mini | $0.15/M tokens | $0.60/M tokens |
+| claude-sonnet-4-20250514 | $3.00/M tokens | $15.00/M tokens |
+
+<Info>
+  Saturn quotes the cost before execution. The quote is based on estimated tokens. Actual cost may be slightly different based on actual usage.
+</Info>
+
+## Error Handling
+
+```typescript
+import { SaturnPolicyDeniedError, SaturnProviderError } from '@saturn-pay/sdk';
+
+try {
+  await saturn.reason({ prompt: 'Very long prompt...' });
+} catch (err) {
+  if (err instanceof SaturnPolicyDeniedError) {
+    // Budget exceeded or capability not allowed
+    console.log('Policy error:', err.message);
+  } else if (err instanceof SaturnProviderError) {
+    // Upstream provider error
+    console.log('Provider error:', err.message);
+  }
+}
+```

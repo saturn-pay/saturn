@@ -1,0 +1,130 @@
+---
+title: "search"
+description: "Web search — query to ranked results"
+---
+
+The `search` capability provides web search functionality, returning ranked results with URLs, titles, and snippets.
+
+## Providers
+
+| Provider | Features |
+|----------|----------|
+| Serper | Google search results, fast |
+| Brave | Privacy-focused, independent index |
+
+## Basic Usage
+
+```typescript
+const result = await saturn.search({
+  query: 'latest developments in AI safety',
+});
+
+for (const item of result.data.results) {
+  console.log(item.title);
+  console.log(item.url);
+  console.log(item.snippet);
+  console.log('---');
+}
+```
+
+## Parameters
+
+<ParamField body="query" type="string" required>
+  The search query.
+</ParamField>
+
+<ParamField body="numResults" type="number">
+  Number of results to return. Default: 10.
+</ParamField>
+
+<ParamField body="provider" type="string">
+  Specific provider to use (`serper` or `brave`).
+</ParamField>
+
+## Response
+
+```typescript
+interface SearchResponse {
+  data: {
+    results: Array<{
+      title: string;
+      url: string;
+      snippet: string;
+      position: number;
+    }>;
+    query: string;
+    totalResults: number;
+  };
+  metadata: {
+    chargedUsdCents: number;
+    provider: string;
+    latencyMs: number;
+    auditId: string;
+  };
+}
+```
+
+## Examples
+
+### Research Agent Pattern
+
+```typescript
+async function research(topic: string) {
+  // Search for information
+  const search = await saturn.search({
+    query: topic,
+    numResults: 5,
+  });
+
+  // Read the top results
+  const contents = await Promise.all(
+    search.data.results.slice(0, 3).map(r =>
+      saturn.read({ url: r.url })
+    )
+  );
+
+  // Synthesize
+  const summary = await saturn.reason({
+    prompt: `Summarize these findings about "${topic}":\n\n${
+      contents.map(c => c.data.content.slice(0, 2000)).join('\n\n')
+    }`,
+  });
+
+  return summary.data.content;
+}
+```
+
+### With Specific Provider
+
+```typescript
+const result = await saturn.search({
+  query: 'privacy-focused search engines',
+  provider: 'brave', // Use Brave's independent index
+});
+```
+
+## Pricing
+
+| Provider | Cost per query |
+|----------|----------------|
+| Serper | ~$0.001 |
+| Brave | ~$0.002 |
+
+## Combining with Other Capabilities
+
+Search is often the first step in a research pipeline:
+
+```typescript
+// 1. Search
+const search = await saturn.search({ query: 'topic' });
+
+// 2. Read top result
+const content = await saturn.read({
+  url: search.data.results[0].url
+});
+
+// 3. Analyze
+const analysis = await saturn.reason({
+  prompt: `Analyze: ${content.data.content}`
+});
+```

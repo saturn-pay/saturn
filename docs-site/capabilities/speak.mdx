@@ -1,0 +1,147 @@
+---
+title: "speak"
+description: "Text to speech"
+---
+
+The `speak` capability converts text to natural-sounding speech using neural voice synthesis.
+
+## Providers
+
+| Provider | Features |
+|----------|----------|
+| ElevenLabs | High-quality voices, multiple languages |
+
+## Basic Usage
+
+```typescript
+const result = await saturn.speak({
+  text: 'Hello, welcome to Saturn.',
+});
+
+console.log(result.data.audioUrl);
+// → URL to audio file
+```
+
+## Parameters
+
+<ParamField body="text" type="string" required>
+  The text to convert to speech.
+</ParamField>
+
+<ParamField body="voice" type="string">
+  Voice ID or name. Default varies by provider.
+</ParamField>
+
+<ParamField body="model" type="string">
+  TTS model to use.
+</ParamField>
+
+## Response
+
+```typescript
+interface SpeakResponse {
+  data: {
+    audioUrl: string;   // URL to the audio file
+    duration: number;   // Audio duration in seconds
+    format: string;     // Audio format (mp3, wav, etc.)
+  };
+  metadata: {
+    chargedUsdCents: number;
+    provider: string;
+    latencyMs: number;
+    auditId: string;
+  };
+}
+```
+
+## Examples
+
+### With Specific Voice
+
+```typescript
+const result = await saturn.speak({
+  text: 'This is a professional announcement.',
+  voice: 'rachel', // ElevenLabs voice name
+});
+```
+
+### Generate Podcast Narration
+
+```typescript
+async function narrateArticle(articleUrl: string) {
+  // Read the article
+  const article = await saturn.read({ url: articleUrl });
+
+  // Generate speech
+  const audio = await saturn.speak({
+    text: article.data.content,
+  });
+
+  return audio.data.audioUrl;
+}
+```
+
+### Multi-Section Audio
+
+```typescript
+async function createAudioBook(chapters: string[]) {
+  const audioUrls = [];
+
+  for (const chapter of chapters) {
+    const result = await saturn.speak({ text: chapter });
+    audioUrls.push(result.data.audioUrl);
+  }
+
+  return audioUrls;
+}
+```
+
+## Pricing
+
+| Provider | Cost |
+|----------|------|
+| ElevenLabs | ~$0.30 per 1000 characters |
+
+## Download Audio
+
+```typescript
+import fs from 'fs';
+import fetch from 'node-fetch';
+
+const result = await saturn.speak({
+  text: 'Hello world',
+});
+
+// Download and save
+const response = await fetch(result.data.audioUrl);
+const buffer = await response.buffer();
+fs.writeFileSync('speech.mp3', buffer);
+```
+
+## Text Length Limits
+
+<Warning>
+  Very long texts may be split into multiple requests. Consider chunking long content to manage costs.
+</Warning>
+
+```typescript
+function chunkText(text: string, maxLength: number = 5000): string[] {
+  const chunks: string[] = [];
+  let current = '';
+
+  for (const sentence of text.split(/(?<=[.!?])\s+/)) {
+    if ((current + sentence).length > maxLength) {
+      chunks.push(current.trim());
+      current = sentence;
+    } else {
+      current += ' ' + sentence;
+    }
+  }
+
+  if (current.trim()) {
+    chunks.push(current.trim());
+  }
+
+  return chunks;
+}
+```

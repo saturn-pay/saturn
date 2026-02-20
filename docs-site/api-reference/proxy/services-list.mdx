@@ -1,0 +1,73 @@
+---
+title: "List Services"
+api: "GET /v1/services"
+description: "List all available services for direct proxy access"
+---
+
+Returns a list of all services available for direct proxy calls. These are individual providers that can be called directly (bypassing capability abstraction).
+
+## Response
+
+<ResponseField name="services" type="array">
+  Array of service objects
+  <Expandable title="Service object">
+    <ResponseField name="slug" type="string">
+      Service identifier used in proxy calls
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Human-readable name
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Service description
+    </ResponseField>
+    <ResponseField name="baseUrl" type="string">
+      Upstream API base URL
+    </ResponseField>
+    <ResponseField name="capabilities" type="array">
+      Capabilities this service provides
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl https://api.saturn-pay.com/v1/services \
+  -H "Authorization: Bearer sk_agt_..."
+```
+
+```typescript Node.js
+const response = await fetch('https://api.saturn-pay.com/v1/services', {
+  headers: { 'Authorization': 'Bearer sk_agt_...' }
+});
+
+const services = await response.json();
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+[
+  {
+    "slug": "openai",
+    "name": "OpenAI",
+    "description": "GPT models for text generation",
+    "baseUrl": "https://api.openai.com/v1",
+    "capabilities": ["reason"]
+  },
+  {
+    "slug": "anthropic",
+    "name": "Anthropic",
+    "description": "Claude models for text generation",
+    "baseUrl": "https://api.anthropic.com/v1",
+    "capabilities": ["reason"]
+  },
+  {
+    "slug": "serper",
+    "name": "Serper",
+    "description": "Google search API",
+    "baseUrl": "https://google.serper.dev",
+    "capabilities": ["search"]
+  }
+]
+```
+</ResponseExample>

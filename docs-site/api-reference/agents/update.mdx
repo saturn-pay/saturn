@@ -1,0 +1,83 @@
+---
+title: "Update Agent"
+api: "PATCH /v1/agents/{id}"
+description: "Update an agent's properties"
+---
+
+Updates an agent's name or kill switch status.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The agent ID (e.g., `agt_abc123`)
+</ParamField>
+
+## Request
+
+<ParamField body="name" type="string">
+  New name for the agent
+</ParamField>
+
+<ParamField body="killed" type="boolean">
+  Set to `true` to enable kill switch (immediately blocks all API calls).
+  Set to `false` to disable.
+</ParamField>
+
+## Response
+
+Returns the updated agent object.
+
+<RequestExample>
+```bash cURL (rename)
+curl -X PATCH https://api.saturn-pay.com/v1/agents/agt_abc123 \
+  -H "Authorization: Bearer sk_agt_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "renamed-agent"
+  }'
+```
+
+```bash cURL (kill switch)
+curl -X PATCH https://api.saturn-pay.com/v1/agents/agt_abc123 \
+  -H "Authorization: Bearer sk_agt_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "killed": true
+  }'
+```
+
+```typescript Node.js
+// Enable kill switch
+const response = await fetch('https://api.saturn-pay.com/v1/agents/agt_abc123', {
+  method: 'PATCH',
+  headers: {
+    'Authorization': 'Bearer sk_agt_...',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ killed: true })
+});
+```
+
+```python Python
+import requests
+
+# Disable kill switch
+response = requests.patch(
+    'https://api.saturn-pay.com/v1/agents/agt_abc123',
+    headers={'Authorization': 'Bearer sk_agt_...'},
+    json={'killed': False}
+)
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "agt_abc123",
+  "name": "renamed-agent",
+  "killed": true,
+  "createdAt": "2024-01-15T10:30:00Z",
+  "lastActiveAt": "2024-01-20T14:22:00Z"
+}
+```
+</ResponseExample>

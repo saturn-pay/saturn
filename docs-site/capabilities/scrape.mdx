@@ -1,0 +1,127 @@
+---
+title: "scrape"
+description: "URL to structured HTML — raw extraction"
+---
+
+The `scrape` capability extracts structured HTML content from URLs, preserving the page structure for data extraction.
+
+## Providers
+
+| Provider | Features |
+|----------|----------|
+| Firecrawl | JavaScript rendering, handles dynamic content |
+| ScraperAPI | Rotating proxies, handles blocks |
+
+## Basic Usage
+
+```typescript
+const result = await saturn.scrape({
+  url: 'https://example.com/products',
+});
+
+console.log(result.data.html);
+// → Raw HTML content
+```
+
+## Parameters
+
+<ParamField body="url" type="string" required>
+  The URL to scrape.
+</ParamField>
+
+<ParamField body="provider" type="string">
+  Specific provider to use (`firecrawl` or `scraperapi`).
+</ParamField>
+
+<ParamField body="waitFor" type="number">
+  Milliseconds to wait for JavaScript rendering.
+</ParamField>
+
+## Response
+
+```typescript
+interface ScrapeResponse {
+  data: {
+    html: string;       // Raw HTML content
+    url: string;        // Final URL (after redirects)
+    statusCode: number; // HTTP status code
+  };
+  metadata: {
+    chargedUsdCents: number;
+    provider: string;
+    latencyMs: number;
+    auditId: string;
+  };
+}
+```
+
+## Examples
+
+### Extract Product Data
+
+```typescript
+const page = await saturn.scrape({
+  url: 'https://store.example.com/product/123',
+});
+
+// Use LLM to extract structured data
+const extraction = await saturn.reason({
+  prompt: `Extract product information from this HTML as JSON:
+  - name
+  - price
+  - description
+  - availability
+
+  HTML:
+  ${page.data.html}`,
+});
+
+const product = JSON.parse(extraction.data.content);
+```
+
+### Handle Dynamic Content
+
+```typescript
+// Wait for JavaScript to render
+const page = await saturn.scrape({
+  url: 'https://spa.example.com',
+  waitFor: 3000, // Wait 3 seconds
+});
+```
+
+## When to Use `scrape` vs `read`
+
+| Capability | Use case | Returns |
+|------------|----------|---------|
+| `read` | Articles, blog posts, documentation | Clean text |
+| `scrape` | Data extraction, structured content | Raw HTML |
+
+Use `scrape` when you need to:
+- Extract specific elements (prices, tables, lists)
+- Parse structured data
+- Work with page layout
+
+## Pricing
+
+| Provider | Cost per page |
+|----------|---------------|
+| Firecrawl | ~$0.002 |
+| ScraperAPI | ~$0.005 |
+
+## Combining with LLM Extraction
+
+```typescript
+async function extractJobListings(url: string) {
+  const page = await saturn.scrape({ url });
+
+  const jobs = await saturn.reason({
+    prompt: `Extract job listings from this HTML as JSON array:
+    Each job should have: title, company, location, salary (if listed)
+
+    HTML:
+    ${page.data.html}`,
+  });
+
+  return JSON.parse(jobs.data.content);
+}
+```

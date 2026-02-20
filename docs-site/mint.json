@@ -1,0 +1,160 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Saturn",
+  "logo": {
+    "light": "/images/logo-light.svg",
+    "dark": "/images/logo-dark.svg"
+  },
+  "favicon": "/images/favicon.svg",
+  "colors": {
+    "primary": "#22c55e",
+    "light": "#4ade80",
+    "dark": "#16a34a",
+    "background": {
+      "dark": "#09090b",
+      "light": "#ffffff"
+    },
+    "anchors": {
+      "from": "#22c55e",
+      "to": "#16a34a"
+    }
+  },
+  "modeToggle": {
+    "default": "dark"
+  },
+  "styling": {
+    "customCss": "/custom.css"
+  },
+  "topbarLinks": [
+    {
+      "name": "Dashboard",
+      "url": "https://saturn-pay.com"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get Started",
+    "url": "https://saturn-pay.com/signup"
+  },
+  "tabs": [
+    {
+      "name": "API Reference",
+      "url": "api-reference"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/saturn-pay/saturn"
+    },
+    {
+      "name": "Discord",
+      "icon": "discord",
+      "url": "https://discord.gg/saturn-pay"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": ["introduction", "quickstart", "authentication"]
+    },
+    {
+      "group": "Core Concepts",
+      "pages": [
+        "concepts/agents-and-keys",
+        "concepts/budgets-and-caps",
+        "concepts/credits-and-ledger"
+      ]
+    },
+    {
+      "group": "Capabilities",
+      "pages": [
+        "capabilities/overview",
+        "capabilities/reason",
+        "capabilities/search",
+        "capabilities/read",
+        "capabilities/scrape",
+        "capabilities/execute",
+        "capabilities/imagine",
+        "capabilities/speak",
+        "capabilities/transcribe",
+        "capabilities/email",
+        "capabilities/sms"
+      ]
+    },
+    {
+      "group": "SDK",
+      "pages": ["sdk/typescript", "sdk/error-handling"]
+    },
+    {
+      "group": "Tutorials",
+      "pages": ["tutorials/research-agent", "tutorials/multi-provider"]
+    },
+    {
+      "group": "Resources",
+      "pages": ["pricing", "faq"]
+    },
+    {
+      "group": "API Reference",
+      "pages": ["api-reference/overview", "api-reference/authentication"]
+    },
+    {
+      "group": "Authentication",
+      "pages": ["api-reference/signup"]
+    },
+    {
+      "group": "Capabilities",
+      "pages": [
+        "api-reference/capabilities/list",
+        "api-reference/capabilities/get",
+        "api-reference/capabilities/execute"
+      ]
+    },
+    {
+      "group": "Agents",
+      "pages": [
+        "api-reference/agents/list",
+        "api-reference/agents/create",
+        "api-reference/agents/get",
+        "api-reference/agents/update"
+      ]
+    },
+    {
+      "group": "Policies",
+      "pages": [
+        "api-reference/policies/get",
+        "api-reference/policies/update",
+        "api-reference/policies/replace"
+      ]
+    },
+    {
+      "group": "Wallets",
+      "pages": [
+        "api-reference/wallets/get",
+        "api-reference/wallets/fund-lightning",
+        "api-reference/wallets/fund-card",
+        "api-reference/wallets/invoices",
+        "api-reference/wallets/transactions"
+      ]
+    },
+    {
+      "group": "Proxy",
+      "pages": [
+        "api-reference/proxy/services-list",
+        "api-reference/proxy/services-get",
+        "api-reference/proxy/proxy"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/saturn-pay/saturn",
+    "discord": "https://discord.gg/saturn-pay",
+    "x": "https://x.com/saturnpay"
+  },
+  "api": {
+    "baseUrl": "https://api.saturn-pay.com",
+    "auth": {
+      "method": "bearer"
+    }
+  }
+}

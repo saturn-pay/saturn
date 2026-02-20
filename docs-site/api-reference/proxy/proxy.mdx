@@ -1,0 +1,165 @@
+---
+title: "Proxy Request"
+api: "POST /v1/proxy/{slug}"
+description: "Proxy a request directly to a service"
+---
+
+Sends a request directly to an upstream service, bypassing the capability abstraction. Useful for accessing service-specific features not exposed through capabilities.
+
+The request body is passed directly to the upstream service. Saturn handles authentication with the provider, billing, and policy enforcement.
+
+## Path Parameters
+
+<ParamField path="slug" type="string" required>
+  Service slug (e.g., `openai`, `anthropic`, `serper`)
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="path" type="string">
+  Additional path to append to the service's base URL.
+  Example: `/chat/completions` for OpenAI
+</ParamField>
+
+## Request Body
+
+The request body is passed directly to the upstream service. See the service's own documentation for available parameters.
+
+## Response
+
+<ResponseField name="data" type="object">
+  Response from the upstream service (pass-through)
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Saturn billing metadata
+  <Expandable title="metadata fields">
+    <ResponseField name="chargedUsdCents" type="number">
+      Cost in USD cents
+    </ResponseField>
+    <ResponseField name="chargedSats" type="number">
+      Cost in satoshis
+    </ResponseField>
+    <ResponseField name="auditId" type="string">
+      Unique receipt ID
+    </ResponseField>
+    <ResponseField name="provider" type="string">
+      Service that handled the request
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL (OpenAI)
+curl -X POST "https://api.saturn-pay.com/v1/proxy/openai?path=/chat/completions" \
+  -H "Authorization: Bearer sk_agt_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "user", "content": "Hello, world!"}
+    ]
+  }'
+```
+
+```bash cURL (Anthropic)
+curl -X POST "https://api.saturn-pay.com/v1/proxy/anthropic?path=/messages" \
+  -H "Authorization: Bearer sk_agt_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-20250514",
+    "max_tokens": 1024,
+    "messages": [
+      {"role": "user", "content": "Hello, Claude!"}
+    ]
+  }'
+```
+
+```typescript Node.js
+const response = await fetch(
+  'https://api.saturn-pay.com/v1/proxy/openai?path=/chat/completions',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer sk_agt_...',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: 'Hello!' }]
+    })
+  }
+);
+
+const { data, metadata } = await response.json();
+console.log(data.choices[0].message.content);
+console.log(`Cost: ${metadata.chargedUsdCents} cents`);
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.saturn-pay.com/v1/proxy/openai',
+    params={'path': '/chat/completions'},
+    headers={'Authorization': 'Bearer sk_agt_...'},
+    json={
+        'model': 'gpt-4o',
+        'messages': [{'role': 'user', 'content': 'Hello!'}]
+    }
+)
+
+result = response.json()
+print(result['data']['choices'][0]['message']['content'])
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "data": {
+    "id": "chatcmpl-abc123",
+    "object": "chat.completion",
+    "created": 1705766400,
+    "model": "gpt-4o",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "Hello! How can I help you today?"
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 10,
+      "completion_tokens": 9,
+      "total_tokens": 19
+    }
+  },
+  "metadata": {
+    "chargedUsdCents": 1,
+    "chargedSats": 3,
+    "auditId": "aud_xyz789",
+    "provider": "openai"
+  }
+}
+```
+
+```json 402 Budget Exceeded
+{
+  "error": {
+    "code": "BUDGET_EXCEEDED",
+    "message": "Daily budget exceeded"
+  }
+}
+```
+</ResponseExample>
+
+## Notes
+
+- Budget caps and policies apply to proxy calls
+- All proxy calls are logged in the audit trail
+- Saturn handles provider authentication automatically
+- Use the capability endpoints when possible for better abstraction

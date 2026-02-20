@@ -1,0 +1,59 @@
+---
+title: "Get Wallet"
+api: "GET /v1/wallet"
+description: "Get current agent's wallet balance"
+---
+
+Returns the wallet balance for the authenticated agent.
+
+## Response
+
+<ResponseField name="balanceUsdCents" type="number">
+  Current balance in USD cents
+</ResponseField>
+
+<ResponseField name="balanceSats" type="number">
+  Current balance in satoshis
+</ResponseField>
+
+<ResponseField name="accountId" type="string">
+  Account ID this wallet belongs to
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl https://api.saturn-pay.com/v1/wallet \
+  -H "Authorization: Bearer sk_agt_..."
+```
+
+```typescript Node.js
+const response = await fetch('https://api.saturn-pay.com/v1/wallet', {
+  headers: { 'Authorization': 'Bearer sk_agt_...' }
+});
+
+const wallet = await response.json();
+console.log(`Balance: $${(wallet.balanceUsdCents / 100).toFixed(2)}`);
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://api.saturn-pay.com/v1/wallet',
+    headers={'Authorization': 'Bearer sk_agt_...'}
+)
+
+wallet = response.json()
+print(f"Balance: ${wallet['balanceUsdCents'] / 100:.2f}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "balanceUsdCents": 1523,
+  "balanceSats": 45690,
+  "accountId": "acc_123456"
+}
+```
+</ResponseExample>

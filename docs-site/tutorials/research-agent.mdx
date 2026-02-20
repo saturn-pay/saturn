@@ -1,0 +1,231 @@
+---
+title: "Research Agent with Budget Cap"
+description: "Build an autonomous research agent with hard financial boundaries"
+---
+
+Build an autonomous research agent that searches, reads, synthesizes — all within a strict $5/day budget.
+
+## What You'll Build
+
+A research agent that:
+- Searches the web for information
+- Reads and extracts content from URLs
+- Synthesizes findings with an LLM
+- Operates within a strict $5/day budget
+- Stops cleanly when budget is exhausted
+
+## Why This Matters
+
+Research agents iterate. They search, read, think, search again. Each iteration costs money. Without runtime enforcement:
+
+```
+Loop 1: search + read + reason = $0.15
+Loop 2: search + read + reason = $0.18
+Loop 3: search + read + reason = $0.12
+...
+Loop 847: You wake up to a $400 bill
+```
+
+Dashboards show you the damage. Saturn prevents it.
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│              Research Agent                     │
+│  ┌─────────┐  ┌─────────┐  ┌─────────────────┐  │
+│  │ Search  │──│  Read   │──│    Reason       │  │
+│  │  Loop   │  │  URLs   │  │  (Synthesize)   │  │
+│  └─────────┘  └─────────┘  └─────────────────┘  │
+└─────────────────────────┬───────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────┐
+│                    Saturn                       │
+│         $5/day cap • $0.50/call cap            │
+│         Enforced before every call             │
+└─────────────────────────────────────────────────┘
+```
+
+## Step 1: Create the Agent with Caps
+
+First, create an agent with budget caps:
+
+```typescript
+import { Saturn } from '@saturn-pay/sdk';
+
+const saturn = new Saturn({
+  apiKey: process.env.SATURN_KEY,
+});
+
+// Set caps via SDK or dashboard
+await saturn.policies.update(agentId, {
+  maxPerCallUsdCents: 50,   // $0.50 max per call
+  maxPerDayUsdCents: 500,   // $5.00 max per day
+  allowedCapabilities: ['search', 'read', 'reason'],
+});
+```
+
+## Step 2: Build the Research Loop
+
+```typescript
+async function research(topic: string, maxIterations = 10) {
+  const findings: string[] = [];
+  let totalCost = 0;
+
+  for (let i = 0; i < maxIterations; i++) {
+    try {
+      // Search
+      const searchResult = await saturn.search({
+        query: `${topic} ${findings.length ? 'more details' : ''}`,
+      });
+      totalCost += searchResult.metadata.chargedUsdCents;
+
+      // Read top result
+      const url = searchResult.data.results[0]?.url;
+      if (!url) break;
+
+      const readResult = await saturn.read({ url });
+      totalCost += readResult.metadata.chargedUsdCents;
+
+      // Synthesize
+      const reasonResult = await saturn.reason({
+        prompt: `Given this content:\n${readResult.data.content}\n\nExtract key facts about: ${topic}`,
+      });
+      totalCost += reasonResult.metadata.chargedUsdCents;
+
+      findings.push(reasonResult.data.content);
+
+      console.log(`Iteration ${i + 1}: $${(totalCost / 100).toFixed(2)} spent`);
+
+    } catch (err) {
+      if (err.code === 'BUDGET_EXCEEDED') {
+        console.log('Budget cap reached. Stopping research.');
+        break;
+      }
+      throw err;
+    }
+  }
+
+  return { findings, totalCost };
+}
+```
+
+## Step 3: Handle Budget Exhaustion Gracefully
+
+```typescript
+const { findings, totalCost } = await research(
+  'quantum computing advances 2024'
+);
+
+console.log(`Research complete.`);
+console.log(`Findings: ${findings.length}`);
+console.log(`Total cost: $${(totalCost / 100).toFixed(2)}`);
+
+// Even if budget exhausted mid-research, you have partial results
+// The agent did not exceed $5. Guaranteed.
+```
+
+## The Infinite Loop Scenario
+
+Without Saturn, this bug bankrupts you:
+
+```typescript
+// BUG: Forgot to increment or break
+while (true) {
+  await openai.chat.completions.create({ ... }); // $0.02 each
+  // Runs 50,000 times before you notice = $1,000
+}
+```
+
+With Saturn:
+
+```typescript
+while (true) {
+  await saturn.reason({ ... }); // $0.02 each
+  // Runs 250 times, then: BUDGET_EXCEEDED
+  // Total damage: $5.00 (your cap)
+}
+```
+
+## Risk Comparison
+
+| Risk | Without Saturn | With Saturn |
+|------|----------------|-------------|
+| Infinite loop | Unbounded spend | Capped at $5/day |
+| Expensive prompt | Single call can cost $10+ | Capped at $0.50/call |
+| Bug in production | Discover on invoice | Discover immediately via rejection |
+| Agent goes rogue | Hope you notice | Hard stop at boundary |
+
+## Production Checklist
+
+<Steps>
+  <Step title="Create dedicated agent">
+    Create a separate agent for this workload with its own API key.
+  </Step>
+  <Step title="Set per-call cap">
+    `maxPerCallUsdCents: 50` prevents single expensive calls.
+  </Step>
+  <Step title="Set daily cap">
+    `maxPerDayUsdCents: 500` prevents runaway loops.
+  </Step>
+  <Step title="Handle BUDGET_EXCEEDED">
+    Catch the error and return partial results gracefully.
+  </Step>
+  <Step title="Log audit IDs">
+    Store `metadata.auditId` for debugging and reconciliation.
+  </Step>
+  <Step title="Monitor spend">
+    Set up alerts when daily spend approaches cap.
+  </Step>
+</Steps>
+
+## Complete Example
+
+```typescript
+import { Saturn, SaturnPolicyDeniedError } from '@saturn-pay/sdk';
+
+async function main() {
+  const saturn = new Saturn({
+    apiKey: process.env.SATURN_KEY,
+  });
+
+  const { findings, totalCost } = await research(
+    'latest machine learning research'
+  );
+
+  // Synthesize final report
+  if (findings.length > 0) {
+    try {
+      const report = await saturn.reason({
+        prompt: `Create a research report from these findings:\n\n${findings.join('\n\n')}`,
+      });
+      console.log('Final Report:', report.data.content);
+    } catch (err) {
+      if (err.code === 'BUDGET_EXCEEDED') {
+        console.log('Could not generate final report (budget)');
+        console.log('Raw findings:', findings);
+      }
+    }
+  }
+
+  console.log(`Total spent: $${(totalCost / 100).toFixed(2)}`);
+}
+```
+
+## Extend This
+
+<CardGroup cols={2}>
+  <Card title="Adaptive Budgeting">
+    Start with tight caps, increase as agent proves reliable.
+  </Card>
+  <Card title="Priority Queuing">
+    When near cap, prioritize high-value research tasks.
+  </Card>
+  <Card title="Cost Estimation">
+    Estimate loop cost before starting, warn if likely to exceed.
+  </Card>
+  <Card title="Multi-Agent">
+    Split budget across specialized agents (search agent, synthesis agent).
+  </Card>
+</CardGroup>

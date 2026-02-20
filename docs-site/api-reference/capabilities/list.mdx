@@ -1,0 +1,73 @@
+---
+title: "List Capabilities"
+api: "GET /v1/capabilities"
+description: "List all available capabilities with providers and pricing"
+---
+
+Returns a list of all capabilities available on Saturn, including which providers back each capability and current pricing.
+
+## Response
+
+<ResponseField name="capabilities" type="array">
+  Array of capability objects.
+
+  <Expandable title="Capability object">
+    <ResponseField name="name" type="string">
+      Capability identifier (e.g., `reason`, `search`, `read`)
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Human-readable description
+    </ResponseField>
+    <ResponseField name="providers" type="array">
+      List of providers that can handle this capability
+    </ResponseField>
+    <ResponseField name="pricing" type="object">
+      Pricing information per provider/model
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl https://api.saturn-pay.com/v1/capabilities \
+  -H "Authorization: Bearer sk_agt_..."
+```
+
+```typescript Node.js
+const response = await fetch('https://api.saturn-pay.com/v1/capabilities', {
+  headers: { 'Authorization': 'Bearer sk_agt_...' }
+});
+
+const capabilities = await response.json();
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+[
+  {
+    "name": "reason",
+    "description": "LLM inference — completions, summarization, extraction",
+    "providers": ["openai", "anthropic"],
+    "pricing": {
+      "openai": {
+        "gpt-4o": { "inputPer1k": 2.5, "outputPer1k": 10.0 },
+        "gpt-4o-mini": { "inputPer1k": 0.15, "outputPer1k": 0.6 }
+      },
+      "anthropic": {
+        "claude-sonnet-4-20250514": { "inputPer1k": 3.0, "outputPer1k": 15.0 }
+      }
+    }
+  },
+  {
+    "name": "search",
+    "description": "Web search — query to ranked results",
+    "providers": ["serper", "brave"],
+    "pricing": {
+      "serper": { "perQuery": 0.001 },
+      "brave": { "perQuery": 0.002 }
+    }
+  }
+]
+```
+</ResponseExample>

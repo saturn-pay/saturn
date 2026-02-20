@@ -1,0 +1,108 @@
+---
+title: "Agents & Keys"
+description: "Isolated identities for AI workloads"
+---
+
+An **agent** is an isolated identity within Saturn. Each agent has:
+- A unique ID
+- An API key
+- Its own credit balance
+- Its own policy (caps, allowed capabilities)
+- Its own audit trail
+
+An agent is not a user account. It's a runtime identity for a specific workload.
+
+## Why Agents Exist
+
+Agents provide isolation boundaries. When Agent A exhausts its budget, Agent B continues operating. When Agent A's key is compromised, you revoke one key—not your entire system.
+
+Without per-agent isolation:
+- One runaway loop drains your entire balance
+- One compromised key exposes all capabilities
+- Cost attribution is impossible
+
+## Enforcement Behavior
+
+- Every API call requires a valid agent key
+- Invalid or revoked keys return `401 Unauthorized`
+- Agent keys are scoped to their policy—they cannot exceed their caps regardless of account balance
+- Kill switch on an agent immediately blocks all calls for that agent
+
+## Common Patterns
+
+### One Agent Per Workload
+
+```typescript
+// Research agent — searches and reads
+const research = await Saturn.signup({ name: 'research-agent' });
+
+// Synthesis agent — only calls LLMs
+const synthesis = await Saturn.signup({ name: 'synthesis-agent' });
+```
+
+### One Agent Per User (Multi-tenant)
+
+```typescript
+// When user signs up
+const userAgent = await saturn.agents.create({
+  name: `user-${userId}`,
+  maxPerDayUsdCents: 100, // $1/day per user
+});
+
+// Store userAgent.apiKey associated with user
+```
+
+### Separate Environments
+
+```typescript
+// Development — small budget, limited capabilities
+const dev = await Saturn.signup({ name: 'myapp-dev' });
+await saturn.policies.update(devId, { maxPerDayUsdCents: 100 });
+
+// Production — larger budget, full capabilities
+const prod = await Saturn.signup({ name: 'myapp-prod' });
+await saturn.policies.update(prodId, { maxPerDayUsdCents: 10000 });
+```
+
+## Common Mistakes
+
+| Mistake | Consequence |
+|---------|-------------|
+| Using one agent for all workloads | No isolation, no attribution |
+| Sharing keys across environments | Production incidents from dev mistakes |
+| Not rotating keys after team changes | Security exposure |
+| Creating agents without caps | Unbounded spend risk |
+
+## Example
+
+```typescript
+import { Saturn } from '@saturn-pay/sdk';
+
+// Create a dedicated agent for a specific workload
+const { saturn, apiKey } = await Saturn.signup({
+  name: 'research-agent-prod'
+});
+
+// Store apiKey securely — this is the agent's identity
+// Each agent operates independently with its own budget
+```
+
+## Agent Management
+
+```typescript
+// List all agents
+const agents = await saturn.agents.list();
+
+// Get specific agent
+const agent = await saturn.agents.get(agentId);
+
+// Update agent
+await saturn.agents.update(agentId, {
+  name: 'renamed-agent'
+});
+
+// Kill switch (immediately blocks all calls)
+await saturn.agents.update(agentId, {
+  killed: true
+});
+```

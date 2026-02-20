@@ -1,0 +1,174 @@
+---
+title: "execute"
+description: "Sandboxed code execution — Python, JS, shell"
+---
+
+The `execute` capability runs code in a secure, sandboxed environment. Perfect for data analysis, computation, or running untrusted code.
+
+## Providers
+
+| Provider | Features |
+|----------|----------|
+| E2B | Secure sandboxes, multiple languages, persistent filesystems |
+
+## Basic Usage
+
+```typescript
+const result = await saturn.execute({
+  language: 'python',
+  code: `
+import math
+print(f"Pi to 10 digits: {math.pi:.10f}")
+  `,
+});
+
+console.log(result.data.stdout);
+// → "Pi to 10 digits: 3.1415926536"
+```
+
+## Parameters
+
+<ParamField body="code" type="string" required>
+  The code to execute.
+</ParamField>
+
+<ParamField body="language" type="string" required>
+  Programming language: `python`, `javascript`, `bash`.
+</ParamField>
+
+<ParamField body="timeout" type="number">
+  Maximum execution time in milliseconds. Default: 30000 (30s).
+</ParamField>
+
+## Response
+
+```typescript
+interface ExecuteResponse {
+  data: {
+    stdout: string;     // Standard output
+    stderr: string;     // Standard error
+    exitCode: number;   // Exit code (0 = success)
+  };
+  metadata: {
+    chargedUsdCents: number;
+    executionTimeMs: number;
+    provider: string;
+    auditId: string;
+  };
+}
+```
+
+## Examples
+
+### Python Data Analysis
+
+```typescript
+const result = await saturn.execute({
+  language: 'python',
+  code: `
+import json
+data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+result = {
+    "mean": sum(data) / len(data),
+    "min": min(data),
+    "max": max(data),
+    "sum": sum(data)
+}
+print(json.dumps(result))
+  `,
+});
+
+const stats = JSON.parse(result.data.stdout);
+console.log(stats);
+// → { mean: 5.5, min: 1, max: 10, sum: 55 }
+```
+
+### JavaScript Execution
+
+```typescript
+const result = await saturn.execute({
+  language: 'javascript',
+  code: `
+const numbers = [1, 2, 3, 4, 5];
+const squared = numbers.map(n => n * n);
+console.log(JSON.stringify(squared));
+  `,
+});
+
+console.log(result.data.stdout);
+// → "[1,4,9,16,25]"
+```
+
+### Shell Commands
+
+```typescript
+const result = await saturn.execute({
+  language: 'bash',
+  code: `
+echo "Current date: $(date)"
+echo "Environment: $(uname -a)"
+  `,
+});
+
+console.log(result.data.stdout);
+```
+
+### LLM-Generated Code
+
+```typescript
+async function computeWithLLM(question: string) {
+  // Ask LLM to write code
+  const codeGen = await saturn.reason({
+    prompt: `Write Python code to answer: ${question}
+    Print only the final answer.
+    Do not include explanations.`,
+  });
+
+  // Execute the generated code
+  const result = await saturn.execute({
+    language: 'python',
+    code: codeGen.data.content,
+  });
+
+  return result.data.stdout;
+}
+
+const answer = await computeWithLLM(
+  "What is the 50th Fibonacci number?"
+);
+console.log(answer);
+// → "12586269025"
+```
+
+## Security
+
+<Warning>
+  All code runs in isolated sandboxes. There is no network access by default. Filesystems are ephemeral. This is safe for running untrusted code.
+</Warning>
+
+- Each execution runs in a fresh sandbox
+- No access to the internet (by default)
+- No access to other sandboxes
+- Filesystem is destroyed after execution
+- Resource limits enforced (CPU, memory, time)
+
+## Pricing
+
+| Resource | Cost |
+|----------|------|
+| Per execution | ~$0.01 base |
+| Per second of CPU | ~$0.001 |
+
+## Error Handling
+
+```typescript
+const result = await saturn.execute({
+  language: 'python',
+  code: 'print(undefined_variable)',
+});
+
+if (result.data.exitCode !== 0) {
+  console.log('Execution failed:', result.data.stderr);
+  // → "NameError: name 'undefined_variable' is not defined"
+}
+```

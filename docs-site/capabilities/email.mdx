@@ -1,0 +1,143 @@
+---
+title: "email"
+description: "Transactional email"
+---
+
+The `email` capability sends transactional emails through reliable email infrastructure.
+
+## Providers
+
+| Provider | Features |
+|----------|----------|
+| Resend | Modern API, high deliverability |
+
+## Basic Usage
+
+```typescript
+const result = await saturn.email({
+  to: 'user@example.com',
+  subject: 'Welcome to our service',
+  text: 'Thanks for signing up!',
+});
+
+console.log(result.data.messageId);
+// → Unique message ID for tracking
+```
+
+## Parameters
+
+<ParamField body="to" type="string | string[]" required>
+  Recipient email address(es).
+</ParamField>
+
+<ParamField body="subject" type="string" required>
+  Email subject line.
+</ParamField>
+
+<ParamField body="text" type="string">
+  Plain text body.
+</ParamField>
+
+<ParamField body="html" type="string">
+  HTML body (alternative to text).
+</ParamField>
+
+<ParamField body="from" type="string">
+  Sender email address. Defaults to configured address.
+</ParamField>
+
+<ParamField body="replyTo" type="string">
+  Reply-to address.
+</ParamField>
+
+## Response
+
+```typescript
+interface EmailResponse {
+  data: {
+    messageId: string;  // Unique message ID
+    status: string;     // 'sent', 'queued'
+  };
+  metadata: {
+    chargedUsdCents: number;
+    provider: string;
+    latencyMs: number;
+    auditId: string;
+  };
+}
+```
+
+## Examples
+
+### HTML Email
+
+```typescript
+const result = await saturn.email({
+  to: 'user@example.com',
+  subject: 'Your weekly report',
+  html: `
+    <h1>Weekly Report</h1>
+    <p>Here's your summary for this week:</p>
+    <ul>
+      <li>Tasks completed: 15</li>
+      <li>Hours logged: 40</li>
+    </ul>
+  `,
+});
+```
+
+### Multiple Recipients
+
+```typescript
+const result = await saturn.email({
+  to: ['alice@example.com', 'bob@example.com'],
+  subject: 'Team update',
+  text: 'Important team announcement...',
+});
+```
+
+### With AI-Generated Content
+
+```typescript
+async function sendPersonalizedEmail(
+  to: string,
+  topic: string,
+  context: string
+) {
+  // Generate email content with LLM
+  const content = await saturn.reason({
+    prompt: `Write a professional email about: ${topic}
+    Context: ${context}
+    Keep it concise and friendly.`,
+  });
+
+  // Send the email
+  return saturn.email({
+    to,
+    subject: `Update: ${topic}`,
+    text: content.data.content,
+  });
+}
+```
+
+## Pricing
+
+| Provider | Cost |
+|----------|------|
+| Resend | ~$0.001 per email |
+
+## Domain Configuration
+
+<Warning>
+  To send from your own domain, you'll need to configure DNS records (SPF, DKIM, DMARC). Contact support for custom domain setup.
+</Warning>
+
+By default, emails are sent from a Saturn-managed domain. For production use, configure your own sending domain for better deliverability.
+
+## Best Practices
+
+- Always include a plain text version for accessibility
+- Keep subjects under 50 characters
+- Don't send unsolicited emails (spam)
+- Include unsubscribe options for marketing emails
+- Test emails before sending to large lists

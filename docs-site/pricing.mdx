@@ -1,0 +1,209 @@
+---
+title: "Pricing"
+description: "Pay-as-you-go with prepaid credits"
+---
+
+Saturn uses a prepaid credit model. Add funds to your wallet, and pay only for what you use.
+
+## How It Works
+
+1. **Add credits** via card (USD) or Lightning (sats)
+2. **Use capabilities** — each call deducts from your balance
+3. **Get receipts** — every call returns exact cost
+
+No subscriptions. No minimum spend. No surprise bills.
+
+## Adding Credits
+
+<Tabs>
+  <Tab title="Card (USD)">
+    ```typescript
+    const checkout = await saturn.wallet.fundCard({
+      amountUsdCents: 1000 // $10 minimum
+    });
+    // Opens Stripe checkout
+    ```
+    - Minimum: $10
+    - Instant credit after payment
+    - Standard card processing fees apply
+  </Tab>
+  <Tab title="Lightning (sats)">
+    ```typescript
+    const invoice = await saturn.wallet.fund({
+      amountSats: 10000
+    });
+    // Pay with any Lightning wallet
+    ```
+    - No minimum
+    - Instant credit after payment
+    - No fees (you pay Lightning routing)
+  </Tab>
+</Tabs>
+
+## Capability Pricing
+
+Pricing varies by capability and provider. Here are typical costs:
+
+### Reason (LLM)
+
+| Model | Input | Output |
+|-------|-------|--------|
+| gpt-4o | $2.50/M tokens | $10.00/M tokens |
+| gpt-4o-mini | $0.15/M tokens | $0.60/M tokens |
+| claude-sonnet-4-20250514 | $3.00/M tokens | $15.00/M tokens |
+| claude-3-5-haiku | $0.25/M tokens | $1.25/M tokens |
+
+**Typical costs:**
+- Simple question: $0.001 - $0.01
+- Long analysis: $0.05 - $0.20
+- Complex reasoning: $0.10 - $0.50
+
+### Search
+
+| Provider | Cost per query |
+|----------|----------------|
+| Serper | ~$0.001 |
+| Brave | ~$0.002 |
+
+### Read / Scrape
+
+| Provider | Cost per page |
+|----------|---------------|
+| Jina | ~$0.001 |
+| Firecrawl | ~$0.002 |
+| ScraperAPI | ~$0.005 |
+
+### Execute (Code)
+
+| Resource | Cost |
+|----------|------|
+| Base execution | ~$0.01 |
+| Per second of CPU | ~$0.001 |
+
+### Imagine (Images)
+
+| Model | Cost per image |
+|-------|----------------|
+| SDXL | ~$0.01 |
+| Stable Diffusion | ~$0.005 |
+
+### Speak (TTS)
+
+| Provider | Cost |
+|----------|------|
+| ElevenLabs | ~$0.30 per 1000 characters |
+
+### Transcribe (STT)
+
+| Provider | Cost |
+|----------|------|
+| Deepgram | ~$0.01 per minute |
+
+### Email / SMS
+
+| Capability | Cost |
+|------------|------|
+| Email (Resend) | ~$0.001 per email |
+| SMS (US/Canada) | ~$0.01 per message |
+| SMS (International) | ~$0.05-0.15 per message |
+
+## Getting Exact Pricing
+
+Query the capabilities API for current pricing:
+
+```typescript
+const capabilities = await saturn.capabilities.list();
+
+for (const cap of capabilities) {
+  console.log(`${cap.name}: ${cap.pricing}`);
+}
+```
+
+Or check a specific capability:
+
+```typescript
+const reason = await saturn.capabilities.get('reason');
+console.log(reason.providers);
+// Shows pricing per provider/model
+```
+
+## Cost Control
+
+### Per-Call Quotes
+
+Every call is quoted before execution:
+
+```typescript
+const result = await saturn.reason({ prompt: '...' });
+
+console.log({
+  quoted: result.metadata.quotedUsdCents,   // Estimated cost
+  charged: result.metadata.chargedUsdCents, // Actual cost
+});
+```
+
+### Budget Caps
+
+Set spending limits per agent:
+
+```typescript
+await saturn.policies.update(agentId, {
+  maxPerCallUsdCents: 50,    // Max $0.50 per call
+  maxPerDayUsdCents: 500,    // Max $5.00 per day
+});
+```
+
+### Balance Monitoring
+
+```typescript
+const wallet = await saturn.wallet.get();
+console.log(`Balance: $${(wallet.balanceUsdCents / 100).toFixed(2)}`);
+
+if (wallet.balanceUsdCents < 100) {
+  console.warn('Low balance - add funds');
+}
+```
+
+## Receipt Details
+
+Every call returns a receipt with:
+
+```typescript
+{
+  metadata: {
+    chargedUsdCents: 15,      // Actual cost in cents
+    chargedSats: 45,          // Actual cost in sats
+    quotedUsdCents: 18,       // Pre-quoted estimate
+    balanceAfter: 985,        // Remaining credits
+    auditId: 'aud_abc123',    // Unique receipt ID
+    provider: 'openai',       // Which provider handled it
+    latencyMs: 1234,          // Request duration
+  }
+}
+```
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="What happens when credits run out?">
+    Calls are rejected with `CREDIT_EXHAUSTED`. No upstream call is made. Add credits to continue.
+  </Accordion>
+
+  <Accordion title="Can I get a refund?">
+    Unused credits can be refunded. Contact support.
+  </Accordion>
+
+  <Accordion title="Do credits expire?">
+    No. Credits don't expire.
+  </Accordion>
+
+  <Accordion title="How do I track spend?">
+    - Every call returns `chargedUsdCents`
+    - Use `saturn.wallet.transactions()` for history
+    - Dashboard shows per-agent spend
+  </Accordion>
+
+  <Accordion title="Is there volume pricing?">
+    Contact us for enterprise pricing at high volumes.
+  </Accordion>
+</AccordionGroup>

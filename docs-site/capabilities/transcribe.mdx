@@ -1,0 +1,157 @@
+---
+title: "transcribe"
+description: "Speech to text"
+---
+
+The `transcribe` capability converts audio to text using state-of-the-art speech recognition.
+
+## Providers
+
+| Provider | Features |
+|----------|----------|
+| Deepgram | Real-time and batch, multiple languages, speaker diarization |
+
+## Basic Usage
+
+```typescript
+const result = await saturn.transcribe({
+  audioUrl: 'https://example.com/audio.mp3',
+});
+
+console.log(result.data.text);
+// → "Hello, this is a transcription of the audio..."
+```
+
+## Parameters
+
+<ParamField body="audioUrl" type="string" required>
+  URL to the audio file to transcribe.
+</ParamField>
+
+<ParamField body="audioData" type="string">
+  Base64-encoded audio data (alternative to URL).
+</ParamField>
+
+<ParamField body="language" type="string">
+  Language code (e.g., 'en', 'es', 'fr'). Auto-detected if omitted.
+</ParamField>
+
+<ParamField body="diarize" type="boolean">
+  Enable speaker diarization (identify different speakers).
+</ParamField>
+
+## Response
+
+```typescript
+interface TranscribeResponse {
+  data: {
+    text: string;           // Full transcript
+    words: Array<{          // Word-level timestamps
+      word: string;
+      start: number;        // Start time in seconds
+      end: number;          // End time in seconds
+      confidence: number;   // 0-1 confidence score
+    }>;
+    speakers?: Array<{      // If diarization enabled
+      speaker: string;
+      text: string;
+      start: number;
+      end: number;
+    }>;
+    duration: number;       // Audio duration in seconds
+  };
+  metadata: {
+    chargedUsdCents: number;
+    provider: string;
+    latencyMs: number;
+    auditId: string;
+  };
+}
+```
+
+## Examples
+
+### Transcribe a Podcast
+
+```typescript
+const result = await saturn.transcribe({
+  audioUrl: 'https://podcast.example.com/episode-1.mp3',
+  diarize: true, // Identify different speakers
+});
+
+// Format as conversation
+for (const segment of result.data.speakers) {
+  console.log(`${segment.speaker}: ${segment.text}`);
+}
+```
+
+### Process Meeting Recording
+
+```typescript
+async function summarizeMeeting(audioUrl: string) {
+  // Transcribe the recording
+  const transcript = await saturn.transcribe({
+    audioUrl,
+    diarize: true,
+  });
+
+  // Summarize with LLM
+  const summary = await saturn.reason({
+    prompt: `Summarize this meeting transcript. Include:
+    - Key decisions made
+    - Action items
+    - Main discussion points
+
+    Transcript:
+    ${transcript.data.text}`,
+  });
+
+  return summary.data.content;
+}
+```
+
+### From Base64 Audio
+
+```typescript
+import fs from 'fs';
+
+// Read local audio file
+const audioBuffer = fs.readFileSync('recording.mp3');
+const audioBase64 = audioBuffer.toString('base64');
+
+const result = await saturn.transcribe({
+  audioData: audioBase64,
+});
+```
+
+## Pricing
+
+| Duration | Cost |
+|----------|------|
+| Per minute | ~$0.01 |
+
+## Supported Formats
+
+- MP3
+- WAV
+- M4A
+- FLAC
+- OGG
+- WebM
+
+## Language Support
+
+Deepgram supports 30+ languages including:
+- English (en)
+- Spanish (es)
+- French (fr)
+- German (de)
+- Chinese (zh)
+- Japanese (ja)
+
+```typescript
+const result = await saturn.transcribe({
+  audioUrl: 'https://example.com/spanish-audio.mp3',
+  language: 'es',
+});
+```

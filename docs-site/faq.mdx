@@ -1,0 +1,146 @@
+---
+title: "FAQ"
+description: "Frequently asked questions about Saturn"
+---
+
+## Is Saturn a proxy?
+
+Saturn is more than a proxy. A proxy forwards requests. Saturn:
+- Authenticates per-agent identity
+- Enforces spend limits before forwarding
+- Manages credits and settlement
+- Issues receipts with cost attribution
+- Provides kill switches and policy controls
+
+The request goes through Saturn, but Saturn is an enforcement layer, not a passthrough.
+
+## Can I use my own provider keys?
+
+**With hosted Saturn:** No. Saturn manages provider credentials. This is intentional:
+- You don't handle key rotation for multiple providers
+- Saturn negotiates rates and handles billing
+- Unified audit trail across providers
+
+**With self-hosted Saturn:** Yes. You configure your own provider credentials. You also handle your own payment processing and rate management.
+
+## Does Saturn add latency?
+
+Saturn adds minimal latency:
+- Policy checks: < 5ms
+- Credit checks: < 5ms
+- Total overhead: typically < 20ms
+
+For LLM calls that take 500ms–5000ms, Saturn overhead is negligible.
+
+## Can I do per-user budgets?
+
+Yes. Create one agent per user:
+
+```typescript
+// When user signs up
+const { apiKey } = await saturn.agents.create({
+  name: `user-${userId}`,
+  maxPerDayUsdCents: 100, // $1/day per user
+});
+
+// Store apiKey associated with user
+// Use that key for all calls on behalf of that user
+```
+
+This gives you:
+- Per-user isolation
+- Per-user spend limits
+- Per-user audit trail
+
+## How do I reconcile monthly spend?
+
+1. **Dashboard**: View aggregate and per-agent spend
+2. **API**: Query transactions and audit logs
+3. **Receipts**: Store audit IDs and sum `chargedUsdCents`
+
+```typescript
+// Example: sum spend for an agent this month
+const logs = await saturn.admin.auditLogs({
+  agentId,
+  startDate: startOfMonth,
+  endDate: now,
+});
+const totalCents = logs.reduce((sum, log) => sum + log.chargedUsdCents, 0);
+```
+
+Saturn credits = your spend. Provider reconciliation is Saturn's responsibility.
+
+## What happens when credits run out?
+
+Calls are rejected with `CREDIT_EXHAUSTED`. No call is made to upstream providers. Your agents stop making paid calls until you add credits.
+
+This is intentional. Prepaid means prepaid.
+
+## Can agents share a budget?
+
+Not directly. Each agent has its own policy. However:
+- All agents draw from the account's credit pool
+- You can set similar caps across agents
+- Account-level balance is shared; agent-level caps are not
+
+For true shared budgets, use a single agent for multiple workloads (not recommended for isolation reasons).
+
+## What providers are supported?
+
+Saturn currently supports:
+
+| Capability | Providers |
+|------------|-----------|
+| reason | OpenAI, Anthropic |
+| search | Serper, Brave |
+| read | Jina, Firecrawl |
+| scrape | Firecrawl, ScraperAPI |
+| execute | E2B |
+| imagine | Replicate |
+| speak | ElevenLabs |
+| transcribe | Deepgram |
+| email | Resend |
+| sms | Twilio |
+
+More providers are added regularly.
+
+## Can I request a new provider?
+
+Yes. Submit a request via the registry:
+
+```bash
+POST /v1/registry/submit
+```
+
+Or contact us directly. Provider requirements are documented in our [Provider Eligibility](/provider-eligibility) guide.
+
+## Is there an SLA?
+
+Contact us for enterprise SLA agreements.
+
+## How secure is Saturn?
+
+- All traffic is encrypted (TLS)
+- API keys are hashed (bcrypt)
+- No provider credentials in your runtime
+- Per-agent isolation
+- Full audit trail
+- SOC 2 compliance (in progress)
+
+See our [Security](/security) documentation for details.
+
+## Can I self-host Saturn?
+
+Yes. Saturn is available for self-hosting. You configure your own:
+- Provider credentials
+- Payment processing (LND for Lightning)
+- Database (PostgreSQL)
+
+See the [GitHub repository](https://github.com/saturn-pay/saturn) for deployment instructions.
+
+## How do I get support?
+
+- **Documentation**: You're here
+- **GitHub Issues**: Bug reports and feature requests
+- **Discord**: Community support
+- **Email**: enterprise@saturn-pay.com for enterprise support

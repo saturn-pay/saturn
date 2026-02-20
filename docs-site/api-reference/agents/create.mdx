@@ -1,0 +1,85 @@
+---
+title: "Create Agent"
+api: "POST /v1/agents"
+description: "Create a new agent"
+---
+
+Creates a new agent under your account. Returns the agent details including a new API key.
+
+<Warning>
+  The API key is only returned once. Store it securely.
+</Warning>
+
+## Request
+
+<ParamField body="name" type="string" required>
+  Name for the agent. Used for identification in logs and dashboard.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique agent identifier
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Agent name
+</ResponseField>
+
+<ResponseField name="apiKey" type="string">
+  API key for this agent. Only returned on creation.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.saturn-pay.com/v1/agents \
+  -H "Authorization: Bearer sk_agt_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "worker-2"
+  }'
+```
+
+```typescript Node.js
+const response = await fetch('https://api.saturn-pay.com/v1/agents', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer sk_agt_...',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ name: 'worker-2' })
+});
+
+const { id, apiKey } = await response.json();
+// Store apiKey securely
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.saturn-pay.com/v1/agents',
+    headers={'Authorization': 'Bearer sk_agt_...'},
+    json={'name': 'worker-2'}
+)
+
+data = response.json()
+api_key = data['apiKey']  # Store securely
+```
+</RequestExample>
+
+<ResponseExample>
+```json 201 Created
+{
+  "id": "agt_ghi789",
+  "name": "worker-2",
+  "apiKey": "sk_agt_new_key_here_abc123def456",
+  "killed": false,
+  "createdAt": "2024-01-20T15:00:00Z"
+}
+```
+</ResponseExample>

@@ -1,0 +1,121 @@
+---
+title: "read"
+description: "URL to clean text — articles, docs, pages"
+---
+
+The `read` capability extracts clean, readable text from URLs. It handles JavaScript rendering, removes navigation and ads, and returns the main content.
+
+## Providers
+
+| Provider | Features |
+|----------|----------|
+| Jina | Fast, clean extraction |
+| Firecrawl | Handles complex pages |
+
+## Basic Usage
+
+```typescript
+const result = await saturn.read({
+  url: 'https://example.com/article',
+});
+
+console.log(result.data.content);
+// → Clean text content without HTML, ads, or navigation
+```
+
+## Parameters
+
+<ParamField body="url" type="string" required>
+  The URL to read content from.
+</ParamField>
+
+<ParamField body="provider" type="string">
+  Specific provider to use (`jina` or `firecrawl`).
+</ParamField>
+
+## Response
+
+```typescript
+interface ReadResponse {
+  data: {
+    content: string;    // Extracted text content
+    title: string;      // Page title
+    url: string;        // Final URL (after redirects)
+  };
+  metadata: {
+    chargedUsdCents: number;
+    provider: string;
+    latencyMs: number;
+    auditId: string;
+  };
+}
+```
+
+## Examples
+
+### Read and Summarize
+
+```typescript
+const page = await saturn.read({
+  url: 'https://blog.example.com/long-article',
+});
+
+const summary = await saturn.reason({
+  prompt: `Summarize this article:\n\n${page.data.content}`,
+  maxTokens: 500,
+});
+
+console.log(summary.data.content);
+```
+
+### Research Pipeline
+
+```typescript
+async function researchTopic(query: string) {
+  // Find relevant pages
+  const search = await saturn.search({ query, numResults: 5 });
+
+  // Read all pages in parallel
+  const pages = await Promise.all(
+    search.data.results.map(r => saturn.read({ url: r.url }))
+  );
+
+  // Extract key information
+  const synthesis = await saturn.reason({
+    prompt: `Based on these sources, summarize what we know about "${query}":\n\n${
+      pages.map((p, i) => `Source ${i + 1}: ${p.data.content.slice(0, 3000)}`).join('\n\n')
+    }`,
+  });
+
+  return synthesis.data.content;
+}
+```
+
+## When to Use `read` vs `scrape`
+
+| Capability | Use case | Returns |
+|------------|----------|---------|
+| `read` | Articles, blog posts, documentation | Clean text |
+| `scrape` | Data extraction, structured content | Raw HTML |
+
+Use `read` when you want the **content**. Use `scrape` when you need the **structure**.
+
+## Pricing
+
+| Provider | Cost per page |
+|----------|---------------|
+| Jina | ~$0.001 |
+| Firecrawl | ~$0.002 |
+
+## Error Handling
+
+```typescript
+try {
+  const page = await saturn.read({ url: 'https://example.com/article' });
+} catch (err) {
+  if (err.code === 'PROVIDER_ERROR') {
+    // Page couldn't be read (404, blocked, etc.)
+    console.log('Could not read page:', err.message);
+  }
+}
+```

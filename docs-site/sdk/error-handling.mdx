@@ -1,0 +1,266 @@
+---
+title: "Error Handling"
+description: "Handling Saturn errors in your application"
+---
+
+Saturn returns structured errors with consistent codes and messages.
+
+## Error Response Format
+
+```typescript
+{
+  error: {
+    code: "BUDGET_EXCEEDED",
+    message: "Daily budget exceeded: $1.00 limit reached",
+    details: {
+      dailySpent: 100,
+      dailyCap: 100,
+      quotedCost: 15
+    }
+  }
+}
+```
+
+## Error Classes
+
+The SDK provides specific error classes for each error type:
+
+```typescript
+import {
+  SaturnError,                    // Base class
+  SaturnPolicyDeniedError,        // Policy violations
+  SaturnInsufficientBalanceError, // Low balance
+  SaturnProviderError,            // Upstream provider issues
+  SaturnAuthError,                // Authentication failures
+} from '@saturn-pay/sdk';
+```
+
+## Error Codes
+
+### `BUDGET_EXCEEDED` (HTTP 402)
+
+Call rejected because it would exceed a cap.
+
+**Causes:**
+- `maxPerCallUsdCents` exceeded
+- `maxPerDayUsdCents` exceeded
+
+**Response includes:**
+- Which cap was exceeded
+- Current spend vs cap
+- Quoted cost of rejected call
+
+**Action:** Wait for daily reset, increase cap, or reduce call cost.
+
+```typescript
+try {
+  await saturn.reason({ prompt: longPrompt });
+} catch (err) {
+  if (err instanceof SaturnPolicyDeniedError && err.code === 'BUDGET_EXCEEDED') {
+    console.log('Budget exceeded:', err.details);
+    // err.details.dailySpent, err.details.dailyCap, etc.
+  }
+}
+```
+
+### `CREDIT_EXHAUSTED` (HTTP 402)
+
+Call rejected because insufficient credits.
+
+**Causes:**
+- Account balance below quoted cost
+
+**Response includes:**
+- Available balance
+- Quoted cost
+
+**Action:** Add credits to account.
+
+```typescript
+if (err instanceof SaturnInsufficientBalanceError) {
+  console.log(`Need ${err.details.quotedCost}, have ${err.details.balance}`);
+  // Prompt user to add funds
+}
+```
+
+### `AGENT_KILLED` (HTTP 403)
+
+Call rejected because agent's kill switch is active.
+
+**Causes:**
+- Kill switch enabled via dashboard or API
+
+**Action:** Disable kill switch if intentional; investigate if unexpected.
+
+### `CAPABILITY_DENIED` (HTTP 403)
+
+Call rejected because capability not in agent's allowlist.
+
+**Causes:**
+- Agent policy restricts this capability
+
+**Action:** Update agent policy to allow capability.
+
+```typescript
+if (err.code === 'CAPABILITY_DENIED') {
+  console.log(`Capability '${err.details.capability}' not allowed`);
+  // Update policy or use different capability
+}
+```
+
+### `PROVIDER_ERROR` (HTTP 502)
+
+Upstream provider returned an error.
+
+**Response includes:**
+- Provider name
+- Upstream status code
+- Upstream error message (sanitized)
+
+**Action:** Check provider status; retry with backoff if transient.
+
+```typescript
+if (err instanceof SaturnProviderError) {
+  console.log(`${err.details.provider} error:`, err.message);
+  // Consider retry with different provider
+}
+```
+
+### `PROVIDER_UNAVAILABLE` (HTTP 503)
+
+Cannot reach upstream provider.
+
+**Causes:**
+- Network failure
+- Provider outage
+- Timeout
+
+**Action:** Retry with exponential backoff.
+
+## Retry Guidance
+
+| Error Code | Retry? | Strategy |
+|------------|--------|----------|
+| `BUDGET_EXCEEDED` | No | Wait for reset or increase cap |
+| `CREDIT_EXHAUSTED` | No | Add credits first |
+| `AGENT_KILLED` | No | Manual intervention required |
+| `CAPABILITY_DENIED` | No | Policy change required |
+| `PROVIDER_ERROR` | Maybe | Depends on upstream error |
+| `PROVIDER_UNAVAILABLE` | Yes | Exponential backoff |
+
+## Complete Error Handling Example
+
+```typescript
+import {
+  Saturn,
+  SaturnError,
+  SaturnPolicyDeniedError,
+  SaturnInsufficientBalanceError,
+  SaturnProviderError,
+} from '@saturn-pay/sdk';
+
+async function safeReason(saturn: Saturn, prompt: string) {
+  try {
+    return await saturn.reason({ prompt });
+  } catch (err) {
+    if (!(err instanceof SaturnError)) {
+      // Unknown error - rethrow
+      throw err;
+    }
+
+    switch (err.code) {
+      case 'BUDGET_EXCEEDED':
+        console.log('Budget limit reached');
+        // Could wait for reset or notify user
+        return null;
+
+      case 'CREDIT_EXHAUSTED':
+        console.log('Account needs funding');
+        // Could trigger funding flow
+        return null;
+
+      case 'AGENT_KILLED':
+        console.log('Agent is disabled');
+        // Requires manual intervention
+        throw err;
+
+      case 'CAPABILITY_DENIED':
+        console.log('Capability not allowed');
+        // Policy needs update
+        throw err;
+
+      case 'PROVIDER_UNAVAILABLE':
+        // Retry with backoff
+        await sleep(1000);
+        return await safeReason(saturn, prompt);
+
+      case 'PROVIDER_ERROR':
+        console.log('Upstream error:', err.message);
+        // Could try different provider
+        return null;
+
+      default:
+        throw err;
+    }
+  }
+}
+```
+
+## Graceful Degradation Pattern
+
+```typescript
+async function researchWithFallback(topic: string) {
+  const findings: string[] = [];
+
+  try {
+    // Primary research loop
+    for (let i = 0; i < 10; i++) {
+      const search = await saturn.search({ query: topic });
+      const read = await saturn.read({ url: search.data.results[0].url });
+      findings.push(read.data.content);
+    }
+  } catch (err) {
+    if (err.code === 'BUDGET_EXCEEDED') {
+      // Return partial results
+      console.log('Budget reached, returning partial results');
+    } else {
+      throw err;
+    }
+  }
+
+  // Always return what we have
+  return findings;
+}
+```
+
+## Idempotency
+
+Saturn does not provide built-in idempotency keys. Each call is independent.
+
+If you need idempotency:
+
+```typescript
+async function idempotentCall(
+  saturn: Saturn,
+  operationId: string,
+  prompt: string
+) {
+  // Check if already processed
+  const existing = await db.getOperation(operationId);
+  if (existing) {
+    return existing.result;
+  }
+
+  // Execute
+  const result = await saturn.reason({ prompt });
+
+  // Store result with audit ID
+  await db.saveOperation({
+    operationId,
+    auditId: result.metadata.auditId,
+    result: result.data,
+  });
+
+  return result.data;
+}
+```

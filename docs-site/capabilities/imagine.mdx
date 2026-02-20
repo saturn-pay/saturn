@@ -1,0 +1,141 @@
+---
+title: "imagine"
+description: "Text to image generation"
+---
+
+The `imagine` capability generates images from text descriptions using state-of-the-art diffusion models.
+
+## Providers
+
+| Provider | Models |
+|----------|--------|
+| Replicate | SDXL, Stable Diffusion, Flux |
+
+## Basic Usage
+
+```typescript
+const result = await saturn.imagine({
+  prompt: 'A futuristic city at sunset, cyberpunk style',
+});
+
+console.log(result.data.url);
+// → URL to generated image
+```
+
+## Parameters
+
+<ParamField body="prompt" type="string" required>
+  Text description of the image to generate.
+</ParamField>
+
+<ParamField body="negativePrompt" type="string">
+  What to avoid in the image.
+</ParamField>
+
+<ParamField body="width" type="number">
+  Image width in pixels. Default: 1024.
+</ParamField>
+
+<ParamField body="height" type="number">
+  Image height in pixels. Default: 1024.
+</ParamField>
+
+<ParamField body="model" type="string">
+  Specific model to use.
+</ParamField>
+
+## Response
+
+```typescript
+interface ImagineResponse {
+  data: {
+    url: string;        // URL to the generated image
+    width: number;      // Actual image width
+    height: number;     // Actual image height
+  };
+  metadata: {
+    chargedUsdCents: number;
+    provider: string;
+    model: string;
+    latencyMs: number;
+    auditId: string;
+  };
+}
+```
+
+## Examples
+
+### With Negative Prompt
+
+```typescript
+const result = await saturn.imagine({
+  prompt: 'Professional headshot portrait, studio lighting',
+  negativePrompt: 'cartoon, anime, distorted, blurry',
+  width: 512,
+  height: 512,
+});
+```
+
+### Generate Multiple Images
+
+```typescript
+async function generateVariations(prompt: string, count: number) {
+  const results = await Promise.all(
+    Array.from({ length: count }, () =>
+      saturn.imagine({ prompt })
+    )
+  );
+
+  return results.map(r => r.data.url);
+}
+
+const images = await generateVariations(
+  'Abstract art with vibrant colors',
+  4
+);
+```
+
+### With LLM-Enhanced Prompts
+
+```typescript
+async function createImage(description: string) {
+  // Enhance the prompt with LLM
+  const enhanced = await saturn.reason({
+    prompt: `Create a detailed image generation prompt for: "${description}"
+    Include style, lighting, composition, and mood details.
+    Return only the prompt, no explanations.`,
+  });
+
+  // Generate with enhanced prompt
+  return saturn.imagine({
+    prompt: enhanced.data.content,
+  });
+}
+
+const result = await createImage('a peaceful garden');
+```
+
+## Pricing
+
+| Model | Cost per image |
+|-------|----------------|
+| SDXL | ~$0.01 |
+| Stable Diffusion | ~$0.005 |
+
+## Image Storage
+
+<Info>
+  Generated images are stored temporarily. Download and store them in your own storage if you need to keep them long-term.
+</Info>
+
+```typescript
+import fs from 'fs';
+import fetch from 'node-fetch';
+
+const result = await saturn.imagine({ prompt: 'A sunset' });
+
+// Download and save locally
+const response = await fetch(result.data.url);
+const buffer = await response.buffer();
+fs.writeFileSync('sunset.png', buffer);
+```

@@ -1,0 +1,90 @@
+---
+title: "Get Service"
+api: "GET /v1/services/{slug}"
+description: "Get details for a specific service"
+---
+
+Returns detailed information about a specific service including pricing and available endpoints.
+
+## Path Parameters
+
+<ParamField path="slug" type="string" required>
+  Service slug (e.g., `openai`, `anthropic`, `serper`)
+</ParamField>
+
+## Response
+
+<ResponseField name="slug" type="string">
+  Service identifier
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Human-readable name
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Service description
+</ResponseField>
+
+<ResponseField name="baseUrl" type="string">
+  Upstream API base URL
+</ResponseField>
+
+<ResponseField name="pricing" type="object">
+  Pricing information for this service
+</ResponseField>
+
+<ResponseField name="endpoints" type="array">
+  Available endpoints that can be proxied
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl https://api.saturn-pay.com/v1/services/openai \
+  -H "Authorization: Bearer sk_agt_..."
+```
+
+```typescript Node.js
+const response = await fetch('https://api.saturn-pay.com/v1/services/openai', {
+  headers: { 'Authorization': 'Bearer sk_agt_...' }
+});
+
+const service = await response.json();
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "slug": "openai",
+  "name": "OpenAI",
+  "description": "GPT models for text generation",
+  "baseUrl": "https://api.openai.com/v1",
+  "capabilities": ["reason"],
+  "pricing": {
+    "chat/completions": {
+      "gpt-4o": {
+        "inputPer1kTokens": 2.5,
+        "outputPer1kTokens": 10.0
+      },
+      "gpt-4o-mini": {
+        "inputPer1kTokens": 0.15,
+        "outputPer1kTokens": 0.6
+      }
+    }
+  },
+  "endpoints": [
+    {
+      "path": "/chat/completions",
+      "method": "POST",
+      "description": "Create chat completion"
+    },
+    {
+      "path": "/embeddings",
+      "method": "POST",
+      "description": "Create embeddings"
+    }
+  ]
+}
+```
+</ResponseExample>

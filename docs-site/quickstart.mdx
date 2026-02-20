@@ -1,0 +1,162 @@
+---
+title: "Quickstart"
+description: "Deploy your first Saturn-powered agent in 5 minutes"
+---
+
+## Prerequisites
+
+- Node.js 18+
+- npm or yarn
+
+## Installation
+
+Install the Saturn SDK:
+
+```bash
+npm install @saturn-pay/sdk
+```
+
+## 1. Create an Agent
+
+Sign up and get an authenticated client:
+
+```typescript
+import { Saturn } from '@saturn-pay/sdk';
+
+const { saturn, apiKey } = await Saturn.signup({
+  name: 'my-first-agent',
+  baseUrl: 'https://api.saturn-pay.com',
+});
+
+// Save this API key — it's only shown once
+console.log('Your API key:', apiKey);
+```
+
+<Warning>
+  Store your API key securely. It cannot be retrieved after signup.
+</Warning>
+
+## 2. Fund Your Wallet
+
+Add credits via card or Lightning:
+
+<Tabs>
+  <Tab title="Card (USD)">
+    ```typescript
+    const checkout = await saturn.wallet.fundCard({
+      amountUsdCents: 1000 // $10
+    });
+
+    console.log('Pay here:', checkout.checkoutUrl);
+    // Opens Stripe checkout
+    ```
+  </Tab>
+  <Tab title="Lightning (sats)">
+    ```typescript
+    const invoice = await saturn.wallet.fund({
+      amountSats: 10000
+    });
+
+    console.log('Pay this invoice:', invoice.paymentRequest);
+    // Pay with any Lightning wallet
+    ```
+  </Tab>
+</Tabs>
+
+## 3. Make Your First Call
+
+Use a capability:
+
+```typescript
+const result = await saturn.reason({
+  prompt: 'Explain quantum computing in one sentence',
+});
+
+console.log(result.data.content);
+// → "Quantum computing uses quantum mechanical phenomena..."
+
+console.log(`Cost: ${result.metadata.chargedSats} sats`);
+console.log(`Balance remaining: ${result.metadata.balanceAfter} sats`);
+```
+
+## 4. Set Budget Limits
+
+Protect against runaway costs:
+
+```typescript
+await saturn.policies.update(agentId, {
+  maxPerCallSats: 500,      // Max $0.50 per call
+  maxPerDaySats: 5000,      // Max $5.00 per day
+  allowedCapabilities: ['reason', 'search', 'read'],
+});
+```
+
+## Complete Example
+
+```typescript
+import { Saturn, SaturnPolicyDeniedError } from '@saturn-pay/sdk';
+
+async function main() {
+  // Create agent
+  const { saturn, apiKey } = await Saturn.signup({
+    name: 'research-bot',
+    baseUrl: 'https://api.saturn-pay.com',
+  });
+
+  console.log('API Key:', apiKey);
+
+  // Fund wallet
+  const checkout = await saturn.wallet.fundCard({ amountUsdCents: 500 });
+  console.log('Fund your wallet:', checkout.checkoutUrl);
+
+  // Wait for payment (in real app, use webhook)
+  await new Promise(r => setTimeout(r, 60000));
+
+  // Use capabilities
+  try {
+    // Search the web
+    const search = await saturn.search({
+      query: 'latest AI research papers'
+    });
+    console.log('Found:', search.data.results.length, 'results');
+
+    // Read a page
+    const read = await saturn.read({
+      url: search.data.results[0].url
+    });
+    console.log('Content length:', read.data.content.length);
+
+    // Synthesize
+    const reason = await saturn.reason({
+      prompt: `Summarize this: ${read.data.content.slice(0, 2000)}`,
+    });
+    console.log('Summary:', reason.data.content);
+
+  } catch (err) {
+    if (err instanceof SaturnPolicyDeniedError) {
+      console.log('Budget exceeded:', err.message);
+    } else {
+      throw err;
+    }
+  }
+}
+
+main();
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Learn about API key management
+  </Card>
+  <Card title="Capabilities" icon="wand-magic-sparkles" href="/capabilities/overview">
+    Explore all 10 capability verbs
+  </Card>
+  <Card title="Budgets & Caps" icon="gauge" href="/concepts/budgets-and-caps">
+    Configure spend limits
+  </Card>
+  <Card title="Research Agent Tutorial" icon="flask" href="/tutorials/research-agent">
+    Build a budget-capped research agent
+  </Card>
+</CardGroup>

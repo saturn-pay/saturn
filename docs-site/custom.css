@@ -1,0 +1,91 @@
+/* Saturn Docs Custom Styles */
+/* Match the main website color scheme */
+
+:root {
+  --background-dark: #09090b;
+  --surface-dark: #18181b;
+  --border-dark: #27272a;
+  --muted: #71717a;
+  --accent: #22c55e;
+  --accent-light: #4ade80;
+  --accent-dark: #16a34a;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+}
+
+/* Dark mode overrides */
+.dark {
+  --tw-prose-body: #d4d4d8;
+  --tw-prose-headings: #fafafa;
+  --tw-prose-links: #22c55e;
+  --tw-prose-code: #fafafa;
+}
+
+/* Selection highlight */
+::selection {
+  background: rgba(34, 197, 94, 0.3);
+  color: #fff;
+}
+
+/* Code blocks */
+.dark pre {
+  background-color: #18181b !important;
+  border: 1px solid #27272a !important;
+}
+
+.dark code {
+  background-color: #27272a !important;
+}
+
+/* Cards */
+.dark .card {
+  background-color: #18181b;
+  border-color: #27272a;
+}
+
+/* Accent color for links */
+.dark a {
+  color: #22c55e;
+}
+
+.dark a:hover {
+  color: #4ade80;
+}
+
+/* Button styling */
+.dark button[data-primary="true"],
+.dark .btn-primary {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #000;
+}
+
+.dark button[data-primary="true"]:hover,
+.dark .btn-primary:hover {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+}
+
+/* Sidebar */
+.dark nav {
+  background-color: #09090b;
+}
+
+/* API method badges */
+.dark [data-method="GET"] {
+  background-color: #22c55e;
+}
+
+.dark [data-method="POST"] {
+  background-color: #3b82f6;
+}
+
+.dark [data-method="PATCH"] {
+  background-color: #f59e0b;
+}
+
+.dark [data-method="PUT"] {
+  background-color: #8b5cf6;
+}
+
+.dark [data-method="DELETE"] {
+  background-color: #ef4444;
+}

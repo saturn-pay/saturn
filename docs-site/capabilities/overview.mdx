@@ -1,0 +1,96 @@
+---
+title: "Capabilities Overview"
+description: "10 capability verbs for AI agents"
+---
+
+Saturn exposes AI services as **capabilities** — abstract verbs that route to the best available provider. You call `saturn.reason()`, not `openai.chat.completions.create()`.
+
+## Available Capabilities
+
+| Capability | What the agent gets | Backed by |
+|------------|---------------------|-----------|
+| [`reason`](/capabilities/reason) | LLM inference — completions, summarization, extraction | OpenAI, Anthropic |
+| [`search`](/capabilities/search) | Web search — query to ranked results | Serper, Brave |
+| [`read`](/capabilities/read) | URL to clean text — articles, docs, pages | Jina, Firecrawl |
+| [`scrape`](/capabilities/scrape) | URL to structured HTML — raw extraction | Firecrawl, ScraperAPI |
+| [`execute`](/capabilities/execute) | Sandboxed code execution — Python, JS, shell | E2B |
+| [`imagine`](/capabilities/imagine) | Text to image generation | Replicate |
+| [`speak`](/capabilities/speak) | Text to speech | ElevenLabs |
+| [`transcribe`](/capabilities/transcribe) | Speech to text | Deepgram |
+| [`email`](/capabilities/email) | Transactional email | Resend |
+| [`sms`](/capabilities/sms) | SMS messages | Twilio |
+
+## Why Capabilities?
+
+### Provider Abstraction
+
+You don't care which search provider is fastest today. You care about getting search results.
+
+```typescript
+// You call this:
+const results = await saturn.search({ query: 'AI news' });
+
+// Saturn routes to Serper, Brave, or the next best option
+// You get results in a consistent format
+```
+
+### Unified Billing
+
+Every capability call goes through the same billing pipeline:
+
+1. Quote the cost
+2. Check against budget
+3. Execute
+4. Deduct credits
+5. Return receipt
+
+One bill. One audit trail. Regardless of provider.
+
+### Automatic Failover
+
+If a provider is down, Saturn routes to the next available option. Your agent keeps working.
+
+## Response Format
+
+Every capability returns the same structure:
+
+```typescript
+interface CapabilityResponse<T> {
+  data: T;              // Capability-specific result
+  metadata: {
+    chargedSats: number;      // Actual cost (sats)
+    chargedUsdCents: number;  // Actual cost (USD)
+    quotedSats: number;       // Pre-quoted estimate
+    balanceAfter: number;     // Remaining credits
+    auditId: string;          // Unique receipt ID
+    provider: string;         // Which provider handled it
+    latencyMs: number;        // Request duration
+  };
+}
+```
+
+## Listing Capabilities
+
+```typescript
+// Get all available capabilities
+const capabilities = await saturn.capabilities.list();
+
+// Get details for a specific capability
+const reason = await saturn.capabilities.get('reason');
+console.log(reason.providers); // ['openai', 'anthropic', ...]
+console.log(reason.pricing);   // Pricing tiers
+```
+
+## Direct Service Access
+
+For services not mapped to a capability, use the proxy:
+
+```typescript
+// Call any registered service directly
+const result = await saturn.call<MyResponseType>('openai', {
+  model: 'gpt-4o',
+  messages: [{ role: 'user', content: 'Hello' }],
+});
+```
+
+This still goes through Saturn's billing and policy enforcement.

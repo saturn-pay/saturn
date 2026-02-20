@@ -1,0 +1,86 @@
+---
+title: "Get Capability"
+api: "GET /v1/capabilities/{capability}"
+description: "Get details for a specific capability"
+---
+
+Returns detailed information about a specific capability including all available providers, models, and pricing.
+
+## Path Parameters
+
+<ParamField path="capability" type="string" required>
+  The capability name. One of: `reason`, `search`, `read`, `scrape`, `execute`, `imagine`, `speak`, `transcribe`, `email`, `sms`
+</ParamField>
+
+## Response
+
+<ResponseField name="name" type="string">
+  Capability identifier
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Human-readable description
+</ResponseField>
+
+<ResponseField name="providers" type="array">
+  List of provider configurations
+</ResponseField>
+
+<ResponseField name="defaultProvider" type="string">
+  The default provider used when none is specified
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl https://api.saturn-pay.com/v1/capabilities/reason \
+  -H "Authorization: Bearer sk_agt_..."
+```
+
+```typescript Node.js
+const response = await fetch('https://api.saturn-pay.com/v1/capabilities/reason', {
+  headers: { 'Authorization': 'Bearer sk_agt_...' }
+});
+
+const capability = await response.json();
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "name": "reason",
+  "description": "LLM inference — completions, summarization, extraction",
+  "defaultProvider": "openai",
+  "providers": [
+    {
+      "name": "openai",
+      "models": [
+        {
+          "id": "gpt-4o",
+          "inputPricePer1kTokens": 2.5,
+          "outputPricePer1kTokens": 10.0,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-4o-mini",
+          "inputPricePer1kTokens": 0.15,
+          "outputPricePer1kTokens": 0.6,
+          "maxTokens": 128000
+        }
+      ]
+    },
+    {
+      "name": "anthropic",
+      "models": [
+        {
+          "id": "claude-sonnet-4-20250514",
+          "inputPricePer1kTokens": 3.0,
+          "outputPricePer1kTokens": 15.0,
+          "maxTokens": 200000
+        }
+      ]
+    }
+  ]
+}
+```
+</ResponseExample>

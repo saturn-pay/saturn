@@ -1,0 +1,124 @@
+---
+title: "API Reference"
+description: "Saturn REST API documentation"
+---
+
+The Saturn API is organized around REST. All endpoints are under `/v1` and return JSON.
+
+## Base URL
+
+```
+https://api.saturn-pay.com
+```
+
+## Authentication
+
+Authenticate using Bearer token in the Authorization header:
+
+```bash
+curl https://api.saturn-pay.com/v1/wallet \
+  -H "Authorization: Bearer sk_agt_your_key_here"
+```
+
+## Endpoints
+
+### Unauthenticated
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/v1/signup` | Create account + agent, get API key |
+| GET | `/health` | Health check |
+
+### Capabilities
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/v1/capabilities` | List all capabilities with providers and pricing |
+| GET | `/v1/capabilities/:capability` | Get capability details |
+| POST | `/v1/capabilities/:capability` | Execute a capability |
+
+### Proxy (Direct Service Access)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/v1/services` | List available services |
+| GET | `/v1/services/:slug` | Get service details and pricing |
+| POST | `/v1/proxy/:slug` | Proxy a request to a service |
+
+### Agents
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/v1/agents` | List agents |
+| POST | `/v1/agents` | Create agent (returns API key) |
+| GET | `/v1/agents/:id` | Get agent |
+| PATCH | `/v1/agents/:id` | Update agent |
+
+### Policies
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/v1/agents/:id/policy` | Get agent policy |
+| PUT | `/v1/agents/:id/policy` | Replace policy |
+| PATCH | `/v1/agents/:id/policy` | Update policy fields |
+
+### Wallets
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/v1/wallet` | Get current agent's wallet |
+| POST | `/v1/wallet/fund` | Create Lightning invoice to fund wallet (sats) |
+| POST | `/v1/wallet/fund-card` | Create Stripe checkout to fund wallet (USD) |
+| GET | `/v1/wallet/invoices` | List invoices |
+| GET | `/v1/wallet/transactions` | List transactions |
+| GET | `/v1/agents/:id/wallet` | Get agent's wallet (account owner) |
+
+### Admin
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/v1/admin/stats` | Dashboard statistics |
+| GET | `/v1/admin/agents` | List all agents with balances |
+| GET | `/v1/admin/transactions` | List all transactions |
+| GET | `/v1/admin/audit-logs` | Query audit logs |
+| GET | `/v1/admin/service-health` | Service health metrics |
+| GET | `/v1/admin/rate` | Current BTC/USD rate |
+
+### Registry (Community Services)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/v1/registry/submit` | Submit a service for review |
+| GET | `/v1/registry/submissions` | List your submissions |
+
+## Error Format
+
+All errors follow a consistent format:
+
+```json
+{
+  "error": {
+    "code": "BUDGET_EXCEEDED",
+    "message": "Daily budget exceeded: $1.00 limit reached",
+    "details": {
+      "dailySpent": 100,
+      "dailyCap": 100,
+      "quotedCost": 15
+    }
+  }
+}
+```
+
+See [Error Handling](/sdk/error-handling) for detailed error documentation.
+
+## Rate Limits
+
+- 100 requests per minute per agent
+- 1000 requests per minute per account
+- Rate limit headers included in responses
+
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1640000000
+```

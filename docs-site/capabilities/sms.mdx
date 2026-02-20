@@ -1,0 +1,158 @@
+---
+title: "sms"
+description: "SMS messages"
+---
+
+The `sms` capability sends SMS text messages to phone numbers worldwide.
+
+## Providers
+
+| Provider | Features |
+|----------|----------|
+| Twilio | Global coverage, delivery tracking |
+
+## Basic Usage
+
+```typescript
+const result = await saturn.sms({
+  to: '+14155551234',
+  message: 'Your verification code is: 123456',
+});
+
+console.log(result.data.messageId);
+```
+
+## Parameters
+
+<ParamField body="to" type="string" required>
+  Phone number in E.164 format (e.g., +14155551234).
+</ParamField>
+
+<ParamField body="message" type="string" required>
+  Message text. Max 1600 characters.
+</ParamField>
+
+## Response
+
+```typescript
+interface SmsResponse {
+  data: {
+    messageId: string;  // Unique message ID
+    status: string;     // 'queued', 'sent', 'delivered'
+  };
+  metadata: {
+    chargedUsdCents: number;
+    provider: string;
+    latencyMs: number;
+    auditId: string;
+  };
+}
+```
+
+## Examples
+
+### Verification Code
+
+```typescript
+async function sendVerificationCode(phoneNumber: string) {
+  const code = Math.floor(100000 + Math.random() * 900000);
+
+  await saturn.sms({
+    to: phoneNumber,
+    message: `Your verification code is: ${code}. Valid for 10 minutes.`,
+  });
+
+  return code;
+}
+```
+
+### Alert Notification
+
+```typescript
+async function sendAlert(phoneNumber: string, alert: string) {
+  await saturn.sms({
+    to: phoneNumber,
+    message: `ALERT: ${alert}. Log in to view details.`,
+  });
+}
+```
+
+### With AI-Generated Content
+
+```typescript
+async function sendSmsSummary(phoneNumber: string, data: any) {
+  // Generate concise summary
+  const summary = await saturn.reason({
+    prompt: `Summarize this data in under 160 characters for SMS:
+    ${JSON.stringify(data)}`,
+    maxTokens: 50,
+  });
+
+  // Send SMS
+  return saturn.sms({
+    to: phoneNumber,
+    message: summary.data.content,
+  });
+}
+```
+
+## Pricing
+
+| Destination | Cost per message |
+|-------------|-----------------|
+| US/Canada | ~$0.01 |
+| International | ~$0.05-0.15 |
+
+## Phone Number Format
+
+<Warning>
+  Phone numbers must be in E.164 format: `+[country code][number]`
+</Warning>
+
+Examples:
+- US: `+14155551234`
+- UK: `+447911123456`
+- Germany: `+4915123456789`
+
+```typescript
+// This will fail
+await saturn.sms({
+  to: '415-555-1234', // Wrong format
+  message: 'Hello',
+});
+
+// This works
+await saturn.sms({
+  to: '+14155551234', // E.164 format
+  message: 'Hello',
+});
+```
+
+## Message Length
+
+SMS messages are limited by segment size:
+- Standard SMS: 160 characters
+- Unicode SMS: 70 characters
+- Long messages are split into multiple segments (each charged separately)
+
+```typescript
+// This sends as 1 segment
+await saturn.sms({
+  to: '+1...',
+  message: 'Short message', // Under 160 chars
+});
+
+// This sends as 2 segments (charged as 2 messages)
+await saturn.sms({
+  to: '+1...',
+  message: 'A'.repeat(200), // Over 160 chars
+});
+```
+
+## Best Practices
+
+- Include opt-out instructions for marketing messages
+- Don't send messages outside business hours
+- Keep messages concise
+- Include sender identification
+- Follow local regulations (TCPA in US, GDPR in EU)

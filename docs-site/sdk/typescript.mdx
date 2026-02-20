@@ -1,0 +1,270 @@
+---
+title: "TypeScript SDK"
+description: "Official TypeScript SDK for Saturn"
+---
+
+The `@saturn-pay/sdk` package provides a type-safe interface to the Saturn API.
+
+## Installation
+
+```bash
+npm install @saturn-pay/sdk
+```
+
+## Quick Start
+
+```typescript
+import { Saturn } from '@saturn-pay/sdk';
+
+// Sign up and get an authenticated client
+const { saturn, apiKey } = await Saturn.signup({
+  name: 'my-agent',
+  baseUrl: 'https://api.saturn-pay.com',
+});
+
+// Or use an existing key
+const saturn = new Saturn({ apiKey: 'sk_agt_...' });
+
+// Use capabilities
+const result = await saturn.reason({
+  prompt: 'Explain quantum computing',
+});
+
+console.log(result.data.content);
+console.log(`Cost: ${result.metadata.chargedSats} sats`);
+```
+
+## Configuration
+
+```typescript
+const saturn = new Saturn({
+  // Required
+  apiKey: 'sk_agt_...',
+
+  // Optional
+  baseUrl: 'https://api.saturn-pay.com', // Default
+  timeout: 30000,                         // Request timeout in ms
+});
+```
+
+### Environment Variables
+
+```bash
+export SATURN_API_KEY=sk_agt_...
+export SATURN_BASE_URL=https://api.saturn-pay.com
+```
+
+```typescript
+const saturn = new Saturn({
+  apiKey: process.env.SATURN_API_KEY,
+  baseUrl: process.env.SATURN_BASE_URL,
+});
+```
+
+## Capabilities
+
+All capabilities return `{ data, metadata }`:
+
+```typescript
+interface CapabilityResponse<T> {
+  data: T;
+  metadata: {
+    chargedSats: number;
+    chargedUsdCents: number;
+    quotedSats: number;
+    balanceAfter: number;
+    auditId: string;
+    provider: string;
+    latencyMs: number;
+  };
+}
+```
+
+### Available Methods
+
+| Method | Description |
+|--------|-------------|
+| `saturn.reason()` | LLM inference |
+| `saturn.search()` | Web search |
+| `saturn.read()` | URL to clean text |
+| `saturn.scrape()` | URL to structured HTML |
+| `saturn.execute()` | Sandboxed code execution |
+| `saturn.imagine()` | Image generation |
+| `saturn.speak()` | Text to speech |
+| `saturn.transcribe()` | Speech to text |
+| `saturn.email()` | Send email |
+| `saturn.sms()` | Send SMS |
+
+## Direct Service Calls
+
+For services not mapped to a capability:
+
+```typescript
+const result = await saturn.call<MyResponseType>('openai', {
+  model: 'gpt-4o',
+  messages: [{ role: 'user', content: 'Hello' }],
+});
+```
+
+## Resource Management
+
+### Wallet
+
+```typescript
+// Get wallet balance
+const wallet = await saturn.wallet.get();
+console.log(`Balance: $${(wallet.balanceUsdCents / 100).toFixed(2)}`);
+
+// Fund with card (USD)
+const checkout = await saturn.wallet.fundCard({
+  amountUsdCents: 1000 // $10
+});
+console.log('Pay here:', checkout.checkoutUrl);
+
+// Fund with Lightning (sats)
+const invoice = await saturn.wallet.fund({
+  amountSats: 10000
+});
+console.log('Invoice:', invoice.paymentRequest);
+
+// Transaction history
+const txs = await saturn.wallet.transactions();
+```
+
+### Agents
+
+```typescript
+// List agents
+const agents = await saturn.agents.list();
+
+// Create agent
+const agent = await saturn.agents.create({
+  name: 'worker-1'
+});
+console.log('New key:', agent.apiKey);
+
+// Update agent
+await saturn.agents.update(agentId, {
+  name: 'renamed-agent'
+});
+
+// Kill switch
+await saturn.agents.update(agentId, {
+  killed: true
+});
+```
+
+### Policies
+
+```typescript
+// Get policy
+const policy = await saturn.policies.get(agentId);
+
+// Update policy
+await saturn.policies.update(agentId, {
+  maxPerCallSats: 500,
+  maxPerDaySats: 5000,
+  allowedCapabilities: ['reason', 'search'],
+});
+```
+
+### Services Catalog
+
+```typescript
+// List available services
+const services = await saturn.services.list();
+
+// List capabilities
+const capabilities = await saturn.capabilities.list();
+```
+
+## TypeScript Types
+
+The SDK is fully typed. Import types as needed:
+
+```typescript
+import type {
+  Saturn,
+  ReasonRequest,
+  ReasonResponse,
+  SearchRequest,
+  SearchResponse,
+  CapabilityResponse,
+  Agent,
+  Policy,
+  Wallet,
+} from '@saturn-pay/sdk';
+```
+
+## Error Handling
+
+See [Error Handling](/sdk/error-handling) for detailed error handling patterns.
+
+```typescript
+import {
+  SaturnError,
+  SaturnPolicyDeniedError,
+  SaturnInsufficientBalanceError,
+  SaturnProviderError,
+} from '@saturn-pay/sdk';
+
+try {
+  await saturn.reason({ prompt: 'hello' });
+} catch (err) {
+  if (err instanceof SaturnPolicyDeniedError) {
+    console.log('Policy blocked:', err.message);
+  } else if (err instanceof SaturnInsufficientBalanceError) {
+    console.log('Add credits:', err.message);
+  } else if (err instanceof SaturnProviderError) {
+    console.log('Provider error:', err.message);
+  }
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use environment variables for keys">
+    Never hardcode API keys in source code.
+    ```typescript
+    const saturn = new Saturn({
+      apiKey: process.env.SATURN_API_KEY,
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Handle errors gracefully">
+    Always catch and handle Saturn-specific errors.
+    ```typescript
+    try {
+      await saturn.reason({ prompt });
+    } catch (err) {
+      if (err instanceof SaturnPolicyDeniedError) {
+        // Log and handle gracefully
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Check balance before operations">
+    For critical workflows, verify balance first.
+    ```typescript
+    const wallet = await saturn.wallet.get();
+    if (wallet.balanceUsdCents < 100) {
+      console.warn('Low balance');
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Use typed responses">
+    Leverage TypeScript for type safety.
+    ```typescript
+    const result: CapabilityResponse<ReasonData> =
+      await saturn.reason({ prompt });
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## License
+
+MIT
