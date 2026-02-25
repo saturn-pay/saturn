@@ -12,6 +12,8 @@ export const auditLogs = pgTable('audit_logs', {
   policyReason: text('policy_reason'),
   quotedSats: bigint('quoted_sats', { mode: 'number' }),
   chargedSats: bigint('charged_sats', { mode: 'number' }),
+  quotedUsdCents: bigint('quoted_usd_cents', { mode: 'number' }),
+  chargedUsdCents: bigint('charged_usd_cents', { mode: 'number' }),
   upstreamStatus: integer('upstream_status'),
   upstreamLatencyMs: integer('upstream_latency_ms'),
   responseMeta: jsonb('response_meta'),

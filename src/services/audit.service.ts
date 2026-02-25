@@ -18,6 +18,8 @@ export interface AuditLogParams {
   policyReason?: string;
   quotedSats?: number;
   chargedSats?: number;
+  quotedUsdCents?: number;
+  chargedUsdCents?: number;
   upstreamStatus?: number;
   upstreamLatencyMs?: number;
   responseMeta?: unknown;
@@ -96,6 +98,8 @@ export async function logProxyCall(params: AuditLogParams): Promise<string> {
     policyReason: params.policyReason ?? null,
     quotedSats: params.quotedSats ?? null,
     chargedSats: params.chargedSats ?? null,
+    quotedUsdCents: params.quotedUsdCents ?? null,
+    chargedUsdCents: params.chargedUsdCents ?? null,
     upstreamStatus: params.upstreamStatus ?? null,
     upstreamLatencyMs: params.upstreamLatencyMs ?? null,
     responseMeta: params.responseMeta ?? null,

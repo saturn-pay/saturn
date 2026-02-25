@@ -68,6 +68,10 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
   });
 
   if (!policyResult.allowed) {
+    // Calculate USD cents for denied calls too
+    const { btcUsd } = pricing.getCurrentRate();
+    const quotedUsdCents = pricing.satsToUsdCents(quotedSats, btcUsd);
+
     await auditService.logProxyCall({
       agentId: agent.id,
       serviceSlug,
@@ -77,6 +81,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
       policyResult: 'denied',
       policyReason: policyResult.reason,
       quotedSats,
+      quotedUsdCents,
     });
 
     throw new PolicyDeniedError(policyResult.reason ?? 'policy_denied');
@@ -122,6 +127,8 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
         policyResult: 'allowed',
         quotedSats,
         chargedSats: 0,
+        quotedUsdCents,
+        chargedUsdCents: 0,
         upstreamStatus: response.status,
         upstreamLatencyMs,
         error: `Upstream returned ${response.status}`,
@@ -145,8 +152,9 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
     const { finalSats } = await adapter.finalize(response, quotedSats);
 
     // Convert final amount to the currency that was held
+    const finalUsdCents = pricing.satsToUsdCents(finalSats, btcUsd);
     const finalAmount = heldCurrency === 'usd_cents'
-      ? pricing.satsToUsdCents(finalSats, btcUsd)
+      ? finalUsdCents
       : finalSats;
 
     const { wallet: settledWallet } = await walletService.settle(
@@ -169,6 +177,8 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
       policyResult: 'allowed',
       quotedSats,
       chargedSats: finalSats,
+      quotedUsdCents,
+      chargedUsdCents: finalUsdCents,
       upstreamStatus: response.status,
       upstreamLatencyMs,
     });
@@ -201,6 +211,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
         requestBody,
         policyResult: 'allowed',
         quotedSats,
+        quotedUsdCents,
         upstreamLatencyMs,
         error: `Release failed: ${releaseMsg}`,
       });
@@ -216,6 +227,7 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
       requestBody,
       policyResult: 'allowed',
       quotedSats,
+      quotedUsdCents,
       upstreamLatencyMs,
       error: errorMessage,
     });
