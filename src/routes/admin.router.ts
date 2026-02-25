@@ -109,7 +109,8 @@ adminRouter.get('/agents', async (req: Request, res: Response) => {
   const todaySpend = await db
     .select({
       agentId: auditLogs.agentId,
-      spend: sum(auditLogs.chargedSats),
+      spendSats: sum(auditLogs.chargedSats),
+      spendUsdCents: sum(auditLogs.chargedUsdCents),
     })
     .from(auditLogs)
     .innerJoin(agents, eq(auditLogs.agentId, agents.id))
@@ -121,24 +122,58 @@ adminRouter.get('/agents', async (req: Request, res: Response) => {
     )
     .groupBy(auditLogs.agentId);
 
-  const spendMap = new Map(
-    todaySpend.map((r) => [r.agentId, Number(r.spend ?? 0)]),
+  const todaySpendMap = new Map(
+    todaySpend.map((r) => [r.agentId, {
+      sats: Number(r.spendSats ?? 0),
+      usdCents: Number(r.spendUsdCents ?? 0),
+    }]),
   );
 
-  const result = agentRows.map((row) => ({
-    ...row,
-    // Sats balance
-    balanceSats: accountWallet?.balanceSats ?? 0,
-    heldSats: accountWallet?.heldSats ?? 0,
-    lifetimeIn: accountWallet?.lifetimeIn ?? 0,
-    lifetimeOut: accountWallet?.lifetimeOut ?? 0,
-    // USD balance
-    balanceUsdCents: accountWallet?.balanceUsdCents ?? 0,
-    heldUsdCents: accountWallet?.heldUsdCents ?? 0,
-    lifetimeInUsdCents: accountWallet?.lifetimeInUsdCents ?? 0,
-    lifetimeOutUsdCents: accountWallet?.lifetimeOutUsdCents ?? 0,
-    todaySpendSats: spendMap.get(row.id) ?? 0,
-  }));
+  // Lifetime spend per agent
+  const lifetimeSpend = await db
+    .select({
+      agentId: auditLogs.agentId,
+      spendSats: sum(auditLogs.chargedSats),
+      spendUsdCents: sum(auditLogs.chargedUsdCents),
+      callCount: count(),
+    })
+    .from(auditLogs)
+    .innerJoin(agents, eq(auditLogs.agentId, agents.id))
+    .where(eq(agents.accountId, accountId))
+    .groupBy(auditLogs.agentId);
+
+  const lifetimeSpendMap = new Map(
+    lifetimeSpend.map((r) => [r.agentId, {
+      sats: Number(r.spendSats ?? 0),
+      usdCents: Number(r.spendUsdCents ?? 0),
+      calls: Number(r.callCount ?? 0),
+    }]),
+  );
+
+  const result = agentRows.map((row) => {
+    const today = todaySpendMap.get(row.id) ?? { sats: 0, usdCents: 0 };
+    const lifetime = lifetimeSpendMap.get(row.id) ?? { sats: 0, usdCents: 0, calls: 0 };
+
+    return {
+      ...row,
+      role: 'worker' as const,
+      // Account-level balance (shared)
+      balanceSats: accountWallet?.balanceSats ?? 0,
+      heldSats: accountWallet?.heldSats ?? 0,
+      balanceUsdCents: accountWallet?.balanceUsdCents ?? 0,
+      heldUsdCents: accountWallet?.heldUsdCents ?? 0,
+      // Per-agent lifetime stats
+      lifetimeIn: 0,
+      lifetimeOut: lifetime.sats,
+      lifetimeInUsdCents: 0,
+      lifetimeOutUsdCents: lifetime.usdCents,
+      // Per-agent today stats
+      todaySpendSats: today.sats,
+      todaySpendUsdCents: today.usdCents,
+      // Per-agent call count
+      totalCalls: lifetime.calls,
+    };
+  });
 
   res.json(result);
 });

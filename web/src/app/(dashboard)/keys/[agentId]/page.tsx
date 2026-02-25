@@ -199,7 +199,7 @@ export default function AgentDetailPage() {
         <div className="border border-border rounded-xl p-5 bg-surface">
           <div className="text-xs text-muted uppercase tracking-wider mb-2">Today&apos;s Spend</div>
           <div className="text-2xl font-bold font-mono">
-            {formatUsdCents(agent?.lifetimeOutUsdCents ?? 0)}
+            {formatUsdCents(agent?.todaySpendUsdCents ?? 0)}
           </div>
         </div>
         <div className="border border-border rounded-xl p-5 bg-surface">
@@ -211,7 +211,7 @@ export default function AgentDetailPage() {
         <div className="border border-border rounded-xl p-5 bg-surface">
           <div className="text-xs text-muted uppercase tracking-wider mb-2">API Calls</div>
           <div className="text-2xl font-bold font-mono">
-            {formatNumber(auditTotal)}
+            {formatNumber(agent?.totalCalls ?? 0)}
           </div>
         </div>
         <div className="border border-border rounded-xl p-5 bg-surface">

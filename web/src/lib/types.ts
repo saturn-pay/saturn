@@ -56,17 +56,21 @@ export interface AdminAgent {
   metadata: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
-  // Sats balance
+  // Account-level balance (shared)
   balanceSats: number;
   heldSats: number;
-  lifetimeIn: number;
-  lifetimeOut: number;
-  // USD balance
   balanceUsdCents: number;
   heldUsdCents: number;
+  // Per-agent lifetime stats
+  lifetimeIn: number;
+  lifetimeOut: number;
   lifetimeInUsdCents: number;
   lifetimeOutUsdCents: number;
+  // Per-agent today stats
   todaySpendSats: number;
+  todaySpendUsdCents: number;
+  // Per-agent call count
+  totalCalls: number;
 }
 
 export interface Transaction {
