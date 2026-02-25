@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 1200px;
+      height: 630px;
+      background: #09090b;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      color: #fafafa;
+      display: flex;
+      align-items: center;
+      padding: 60px 80px;
+      gap: 60px;
+    }
+
+    .left {
+      flex: 1;
+    }
+
+    h1 {
+      font-size: 58px;
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -2.5px;
+      margin-bottom: 28px;
+    }
+
+    .green { color: #22c55e; }
+
+    .subtitle {
+      font-size: 18px;
+      color: #a1a1aa;
+      line-height: 1.5;
+      max-width: 480px;
+    }
+
+    .subtitle strong {
+      color: #fafafa;
+      font-weight: 600;
+    }
+
+    .right {
+      width: 520px;
+      flex-shrink: 0;
+    }
+
+    .terminal {
+      background: #0a0a0a;
+      border: 1px solid #27272a;
+      border-radius: 10px;
+      font-family: 'JetBrains Mono', 'SF Mono', monospace;
+      font-size: 13px;
+      overflow: hidden;
+    }
+
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      background: #18181b;
+      border-bottom: 1px solid #27272a;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #3f3f46;
+    }
+
+    .terminal-title {
+      margin-left: 10px;
+      font-size: 12px;
+      color: #71717a;
+    }
+
+    .terminal-body {
+      padding: 18px 20px;
+    }
+
+    .line {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .prompt { color: #71717a; }
+    .cmd { color: #fafafa; }
+    .blue { color: #3b82f6; }
+    .dim { color: #71717a; }
+    .green-text { color: #22c55e; }
+    .red { color: #ef4444; }
+
+    .result {
+      color: #a1a1aa;
+      margin-bottom: 6px;
+    }
+
+    .sep {
+      border-top: 1px solid #27272a;
+      margin: 12px 0;
+    }
+
+    .receipt {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      font-size: 13px;
+    }
+
+    .receipt-key { color: #71717a; }
+    .receipt-val { color: #fafafa; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="left">
+    <h1>
+      Stop AI agents<br>
+      from <span class="green">burning<br>
+      money</span> in<br>
+      production.
+    </h1>
+    <p class="subtitle">
+      <strong>Hard caps enforced before execution.</strong> Per-call receipts. Kill switch. Zero API key chaos.
+    </p>
+  </div>
+
+  <div class="right">
+    <div class="terminal">
+      <div class="terminal-bar">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="terminal-title">agent session</span>
+      </div>
+      <div class="terminal-body">
+        <div class="line">
+          <span class="prompt">&gt;</span>
+          <span class="cmd">saturn.<span class="blue">reason</span>({ prompt: <span class="dim">'Summarize Q4 earnings...'</span> })</span>
+        </div>
+        <div class="result"><span class="green-text">✓</span> 280 tokens · $0.024</div>
+
+        <div class="sep"></div>
+
+        <div class="receipt"><span class="receipt-key">estimated</span><span class="receipt-val">$0.026</span></div>
+        <div class="receipt"><span class="receipt-key">charged</span><span class="receipt-val">$0.024</span></div>
+        <div class="receipt"><span class="receipt-key">daily used</span><span class="receipt-val">$0.89 of $5.00</span></div>
+        <div class="receipt"><span class="receipt-key">policy</span><span class="receipt-val green-text">ALLOW</span></div>
+
+        <div class="sep"></div>
+
+        <div class="line">
+          <span class="prompt">&gt;</span>
+          <span class="cmd">saturn.<span class="blue">reason</span>({ prompt: <span class="dim">'Analyze 200-page PDF...'</span> })</span>
+        </div>
+        <div class="result"><span class="red">✗</span> <span class="red">REJECTED</span> — would exceed daily cap ($5.00)</div>
+
+        <div class="sep"></div>
+
+        <div class="receipt"><span class="receipt-key">estimated</span><span class="receipt-val">$4.80</span></div>
+        <div class="receipt"><span class="receipt-key">charged</span><span class="receipt-val">$0.00</span></div>
+        <div class="receipt"><span class="receipt-key">policy</span><span class="receipt-val red">REJECT (DAILY_CAP)</span></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
