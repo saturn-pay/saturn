@@ -43,8 +43,9 @@ export interface AdminStats {
   satsOut: number;
   usdCentsIn: number;
   usdCentsOut: number;
+  todaySpendUsdCents: number;
   activeAgents: number;
-  totalTransactions: number;
+  totalApiCalls: number;
   revenueEstimateSats: number;
 }
 

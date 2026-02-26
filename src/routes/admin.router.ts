@@ -35,6 +35,12 @@ adminRouter.use(requirePrimary);
 adminRouter.get('/stats', async (req: Request, res: Response) => {
   const accountId = req.account!.id;
 
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+
+  // Convert sats to USD cents (fallback for old data without USD cents)
+  const satsToUsdCents = (sats: number) => Math.round(sats * 0.04);
+
   // Total volume from wallets belonging to this account
   const [volumeRow] = await db
     .select({
@@ -46,18 +52,37 @@ adminRouter.get('/stats', async (req: Request, res: Response) => {
     .from(wallets)
     .where(eq(wallets.accountId, accountId));
 
+  // Today's spend from audit_logs
+  const [todaySpendRow] = await db
+    .select({
+      sats: sum(auditLogs.chargedSats),
+      usdCents: sum(auditLogs.chargedUsdCents),
+    })
+    .from(auditLogs)
+    .innerJoin(agents, eq(auditLogs.agentId, agents.id))
+    .where(
+      and(
+        eq(agents.accountId, accountId),
+        gte(auditLogs.createdAt, todayStart)
+      )
+    );
+
+  const todaySats = Number(todaySpendRow?.sats ?? 0);
+  const todayUsdCentsRaw = Number(todaySpendRow?.usdCents ?? 0);
+  const todaySpendUsdCents = todayUsdCentsRaw > 0 ? todayUsdCentsRaw : satsToUsdCents(todaySats);
+
   // Active agents count
   const [agentCountRow] = await db
     .select({ count: count() })
     .from(agents)
     .where(and(eq(agents.accountId, accountId), eq(agents.status, 'active')));
 
-  // Total transactions count
-  const [txCountRow] = await db
+  // Total API calls count from audit_logs
+  const [apiCallsRow] = await db
     .select({ count: count() })
-    .from(transactions)
-    .innerJoin(wallets, eq(transactions.walletId, wallets.id))
-    .where(eq(wallets.accountId, accountId));
+    .from(auditLogs)
+    .innerJoin(agents, eq(auditLogs.agentId, agents.id))
+    .where(eq(agents.accountId, accountId));
 
   // Revenue estimate: sum of charged_sats from audit_logs for this account's agents
   const [revenueRow] = await db
@@ -71,8 +96,9 @@ adminRouter.get('/stats', async (req: Request, res: Response) => {
     satsOut: Number(volumeRow?.satsOut ?? 0),
     usdCentsIn: Number(volumeRow?.usdCentsIn ?? 0),
     usdCentsOut: Number(volumeRow?.usdCentsOut ?? 0),
+    todaySpendUsdCents,
     activeAgents: agentCountRow?.count ?? 0,
-    totalTransactions: txCountRow?.count ?? 0,
+    totalApiCalls: apiCallsRow?.count ?? 0,
     revenueEstimateSats: Number(revenueRow?.revenue ?? 0),
   });
 });

@@ -92,7 +92,7 @@ export default function DashboardHome() {
   // Check if user is new
   const isNewUser = recentTx.length === 0 && !loading;
   const hasBalance = (wallet?.balanceUsdCents ?? 0) > 0;
-  const hasApiCalls = (stats?.totalTransactions ?? 0) > 0;
+  const hasApiCalls = (stats?.totalApiCalls ?? 0) > 0;
 
   // Initial data fetch
   useEffect(() => {
@@ -173,13 +173,13 @@ export default function DashboardHome() {
         <div className="border border-border rounded-xl p-5 bg-surface">
           <div className="text-xs text-muted uppercase tracking-wider mb-2">Today&apos;s Spend</div>
           <div className="text-2xl font-bold font-mono">
-            {formatUsdCents(stats?.usdCentsOut ?? 0)}
+            {formatUsdCents(stats?.todaySpendUsdCents ?? 0)}
           </div>
         </div>
         <div className="border border-border rounded-xl p-5 bg-surface">
           <div className="text-xs text-muted uppercase tracking-wider mb-2">Total API Calls</div>
           <div className="text-2xl font-bold font-mono">
-            {formatNumber(stats?.totalTransactions ?? 0)}
+            {formatNumber(stats?.totalApiCalls ?? 0)}
           </div>
         </div>
         <div className="border border-border rounded-xl p-5 bg-surface">
