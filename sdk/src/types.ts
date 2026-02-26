@@ -233,6 +233,8 @@ export interface ProxyCallMetadata {
   auditId: string;
   quotedSats: number;
   chargedSats: number;
+  quotedUsdCents: number;
+  chargedUsdCents: number;
   balanceAfter: number;
 }
 

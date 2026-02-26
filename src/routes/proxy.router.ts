@@ -80,6 +80,8 @@ capabilityRouter.post('/:capability', requireAuth, async (req: Request, res: Res
   res.set('X-Saturn-Audit-Id', result.metadata.auditId);
   res.set('X-Saturn-Quoted-Sats', String(result.metadata.quotedSats));
   res.set('X-Saturn-Charged-Sats', String(result.metadata.chargedSats));
+  res.set('X-Saturn-Quoted-Usd-Cents', String(result.metadata.quotedUsdCents));
+  res.set('X-Saturn-Charged-Usd-Cents', String(result.metadata.chargedUsdCents));
   res.set('X-Saturn-Balance-After', String(result.metadata.balanceAfter));
   res.set('X-Saturn-Capability', capability);
   res.set('X-Saturn-Provider', serviceSlug);
@@ -128,6 +130,8 @@ proxyRouter.post('/:serviceSlug', requireAuth, async (req: Request, res: Respons
   res.set('X-Saturn-Audit-Id', result.metadata.auditId);
   res.set('X-Saturn-Quoted-Sats', String(result.metadata.quotedSats));
   res.set('X-Saturn-Charged-Sats', String(result.metadata.chargedSats));
+  res.set('X-Saturn-Quoted-Usd-Cents', String(result.metadata.quotedUsdCents));
+  res.set('X-Saturn-Charged-Usd-Cents', String(result.metadata.chargedUsdCents));
   res.set('X-Saturn-Balance-After', String(result.metadata.balanceAfter));
 
   // Forward safe upstream headers

@@ -38,6 +38,8 @@ export interface ProxyCallResult {
     auditId: string;
     quotedSats: number;
     chargedSats: number;
+    quotedUsdCents: number;
+    chargedUsdCents: number;
     balanceAfter: number;
   };
 }
@@ -143,6 +145,8 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
           auditId,
           quotedSats,
           chargedSats: 0,
+          quotedUsdCents,
+          chargedUsdCents: 0,
           balanceAfter: refreshedWallet.balanceSats,
         },
       };
@@ -191,6 +195,8 @@ export async function executeProxyCall(params: ProxyCallParams): Promise<ProxyCa
         auditId,
         quotedSats,
         chargedSats: finalSats,
+        quotedUsdCents,
+        chargedUsdCents: finalUsdCents,
         balanceAfter: settledWallet.balanceSats,
       },
     };

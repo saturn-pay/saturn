@@ -51,6 +51,8 @@ export class HttpClient {
       auditId: res.headers.get('x-saturn-audit-id') ?? '',
       quotedSats: Number(res.headers.get('x-saturn-quoted-sats') ?? 0),
       chargedSats: Number(res.headers.get('x-saturn-charged-sats') ?? 0),
+      quotedUsdCents: Number(res.headers.get('x-saturn-quoted-usd-cents') ?? 0),
+      chargedUsdCents: Number(res.headers.get('x-saturn-charged-usd-cents') ?? 0),
       balanceAfter: Number(res.headers.get('x-saturn-balance-after') ?? 0),
     };
 
