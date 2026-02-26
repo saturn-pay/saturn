@@ -431,7 +431,7 @@ function ChecklistItem({ done, label, href }: { done: boolean; label: string; hr
 }
 
 function formatCharge(log: AuditLog): string {
-  // Try chargedUsdCents first, fallback to quotedUsdCents
+  // Try chargedUsdCents first
   const cents = log.chargedUsdCents ?? log.quotedUsdCents;
   if (cents !== null && cents !== undefined && cents > 0) {
     const dollars = cents / 100;
@@ -440,11 +440,11 @@ function formatCharge(log: AuditLog): string {
     }
     return '$' + dollars.toFixed(2);
   }
-  // Try sats
+  // Fallback: convert sats to USD (approx $40k BTC = 0.04 cents per sat)
   const sats = log.chargedSats ?? log.quotedSats;
   if (sats !== null && sats !== undefined && sats > 0) {
-    // Convert sats to USD (rough: 1 BTC = $100k, so 1 sat = $0.001)
-    const dollars = sats * 0.00001;
+    const usdCents = sats * 0.04;
+    const dollars = usdCents / 100;
     if (dollars < 0.01) {
       return '$' + dollars.toFixed(4);
     }

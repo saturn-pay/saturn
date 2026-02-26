@@ -413,10 +413,12 @@ export default function AgentDetailPage() {
 }
 
 function formatCharge(log: AuditLog): string {
-  if (log.chargedUsdCents !== null && log.chargedUsdCents !== undefined) {
+  // Try USD cents first
+  if (log.chargedUsdCents !== null && log.chargedUsdCents !== undefined && log.chargedUsdCents > 0) {
     return formatUsdCents(log.chargedUsdCents);
   }
-  if (log.chargedSats !== null && log.chargedSats !== undefined) {
+  // Fallback: convert sats to USD cents (approx $40k BTC = 0.04 cents per sat)
+  if (log.chargedSats !== null && log.chargedSats !== undefined && log.chargedSats > 0) {
     return formatUsdCents(Math.round(log.chargedSats * 0.04));
   }
   return '—';

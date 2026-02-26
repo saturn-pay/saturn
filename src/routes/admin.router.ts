@@ -150,9 +150,17 @@ adminRouter.get('/agents', async (req: Request, res: Response) => {
     }]),
   );
 
+  // Convert sats to USD cents (fallback for old data without USD cents)
+  // Using approximate rate: 1 sat ≈ $0.0004 at ~$40k BTC
+  const satsToUsdCents = (sats: number) => Math.round(sats * 0.04);
+
   const result = agentRows.map((row) => {
     const today = todaySpendMap.get(row.id) ?? { sats: 0, usdCents: 0 };
     const lifetime = lifetimeSpendMap.get(row.id) ?? { sats: 0, usdCents: 0, calls: 0 };
+
+    // Use USD cents if available, otherwise convert from sats
+    const todayUsdCents = today.usdCents > 0 ? today.usdCents : satsToUsdCents(today.sats);
+    const lifetimeUsdCents = lifetime.usdCents > 0 ? lifetime.usdCents : satsToUsdCents(lifetime.sats);
 
     return {
       ...row,
@@ -166,10 +174,10 @@ adminRouter.get('/agents', async (req: Request, res: Response) => {
       lifetimeIn: 0,
       lifetimeOut: lifetime.sats,
       lifetimeInUsdCents: 0,
-      lifetimeOutUsdCents: lifetime.usdCents,
+      lifetimeOutUsdCents: lifetimeUsdCents,
       // Per-agent today stats
       todaySpendSats: today.sats,
-      todaySpendUsdCents: today.usdCents,
+      todaySpendUsdCents: todayUsdCents,
       // Per-agent call count
       totalCalls: lifetime.calls,
     };
