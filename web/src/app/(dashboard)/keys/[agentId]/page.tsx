@@ -1,13 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
 import { formatUsdCents, formatNumber, formatDateTime } from '@/lib/format';
 import { LoadingPage } from '@/components/loading';
 import { DataTable } from '@/components/data-table';
+import { ReceiptModal } from '@/components/receipt-modal';
 import type { AdminAgent, Policy, UpdatePolicyRequest, AuditLog, Paginated, Capability } from '@/lib/types';
+
+const CHART_COLORS = [
+  '#22c55e', // green
+  '#3b82f6', // blue
+  '#f59e0b', // amber
+  '#ef4444', // red
+  '#8b5cf6', // violet
+  '#ec4899', // pink
+  '#06b6d4', // cyan
+  '#84cc16', // lime
+];
 
 export default function AgentDetailPage() {
   const params = useParams();
@@ -24,6 +36,17 @@ export default function AgentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+
+  // Service color map for consistent colors
+  const serviceColorMap = useMemo(() => {
+    const services = [...new Set(auditLogs.map((log) => log.serviceSlug))];
+    const map: Record<string, string> = {};
+    services.forEach((service, index) => {
+      map[service] = CHART_COLORS[index % CHART_COLORS.length];
+    });
+    return map;
+  }, [auditLogs]);
 
   // Editable policy fields
   const [maxPerCall, setMaxPerCall] = useState<string>('');
@@ -374,7 +397,13 @@ export default function AgentDetailPage() {
               key: 'service',
               header: 'Service',
               render: (log: AuditLog) => (
-                <span className="font-mono text-xs">{log.serviceSlug}</span>
+                <span className="font-mono text-xs flex items-center gap-2">
+                  <span
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: serviceColorMap[log.serviceSlug] || '#6b7280' }}
+                  />
+                  {log.serviceSlug}
+                </span>
               ),
             },
             {
@@ -404,9 +433,19 @@ export default function AgentDetailPage() {
           offset={auditOffset}
           limit={AUDIT_LIMIT}
           onPageChange={setAuditOffset}
+          onRowClick={(log) => setSelectedLog(log)}
           rowKey={(log) => log.id}
           emptyMessage="No activity yet for this agent."
         />
+
+        {/* Receipt Modal */}
+        {selectedLog && (
+          <ReceiptModal
+            log={selectedLog}
+            agentName={agent?.name || agentId.slice(-8)}
+            onClose={() => setSelectedLog(null)}
+          />
+        )}
       </div>
     </div>
   );
