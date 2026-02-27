@@ -13,13 +13,22 @@ export class SerperAdapter extends BaseAdapter {
     const apiKey = process.env.SERPER_API_KEY;
     if (!apiKey) throw new Error('SERPER_API_KEY is not set');
 
+    // Transform normalized body to Serper format
+    const input = body as Record<string, unknown>;
+    const serperBody: Record<string, unknown> = {
+      q: input.query || input.q,
+    };
+    if (input.num) serperBody.num = input.num;
+    if (input.gl) serperBody.gl = input.gl;
+    if (input.hl) serperBody.hl = input.hl;
+
     const res = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       headers: {
         'X-API-KEY': apiKey,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(serperBody),
     });
 
     const data = await res.json();
