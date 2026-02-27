@@ -32,7 +32,9 @@ export class OpenAIAdapter extends BaseAdapter {
   slug = 'openai';
 
   async quote(body: unknown): Promise<QuoteResult> {
-    const { model = 'gpt-4o', max_tokens = 4096 } = (body ?? {}) as OpenAIRequestBody;
+    const input = (body ?? {}) as OpenAIRequestBody;
+    const model = (input.model as string) || 'gpt-4o';
+    const max_tokens = (input.max_tokens as number) || 4096;
     const operation = mapModelToOperation(model);
     const pricing = await getPrice('openai', operation);
     const quotedSats = pricing.priceSats * Math.ceil(max_tokens / 1000);
@@ -43,13 +45,29 @@ export class OpenAIAdapter extends BaseAdapter {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error('OPENAI_API_KEY is not set');
 
+    // Transform normalized body to OpenAI format
+    const input = body as Record<string, unknown>;
+    let openaiBody: Record<string, unknown>;
+
+    if (input.prompt && !input.messages) {
+      // Normalized format: { prompt: "..." } -> OpenAI chat format
+      openaiBody = {
+        model: input.model || 'gpt-4o',
+        messages: [{ role: 'user', content: input.prompt }],
+        max_tokens: input.max_tokens || 4096,
+      };
+    } else {
+      // Already in OpenAI format
+      openaiBody = input;
+    }
+
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(openaiBody),
     });
 
     const data = await res.json();
